@@ -21,8 +21,8 @@ $stmt = $db->prepare("
         o.id AS oID,
         o.num AS oNum,
         o.name AS oName,
-        o.address AS oAddress,
-        REPLACE(o.operativ_info , '\"', ' ') AS oInfo,
+        COALESCE(o.address, '...') AS oAddress,
+        COALESCE(REPLACE(o.operativ_info , '\"', ' '), '...') AS oInfo,
         o.geo_lat AS oLat,
         o.geo_lan AS oLan
     FROM objects o

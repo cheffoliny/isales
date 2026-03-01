@@ -23,6 +23,9 @@
                 <a href="dashboard.php?page=orders" class="nav-link">
                     Reports
                 </a>
+                 <a href="dashboard.php?page=import_nomenclatures" class="nav-link">
+                    Импорт
+                </a>
             </ul>
 
             <div class="d-flex align-items-center gap-3">
@@ -36,6 +39,7 @@
                     </a>
 
             </div>
+
         </div>
     </div>
 </nav>

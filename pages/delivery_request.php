@@ -114,7 +114,7 @@ $db = db_connect('storage');
 
 $sql = "
     SELECT
-        DATE_FORMAT(p.source_date, '%d.%m.%Y') AS lOrder,
+        DATE_FORMAT(pe.updated_time, '%d.%m.%Y') AS lOrder,
         COALESCE(ROUND(pe.`count`,0),0) AS oQuantity,
         n.id AS nID,
         UPPER(n.nom_code) AS nCode,
@@ -123,44 +123,53 @@ $sql = "
         n.sales_price AS sPrice,
         n.is_calc AS nCount
     FROM nomenclatures n
-    LEFT JOIN ppp_elements pe
-        ON pe.id_nomenclature = n.id
-        AND pe.id_ppp = ?
-    LEFT JOIN ppp p
-        ON p.id = pe.id_ppp
+    LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp = ?
     WHERE n.to_arc = 0
-      AND n.is_calc > 0
+      AND n.is_calc > 0 AND n.client_price > 0
     ORDER BY n.name ASC
+    LIMIT 100
 ";
 
 $stmt = $db->prepare($sql);
 $stmt->bind_param("i", $pppID);
 $stmt->execute();
-$result = $stmt->get_result();
 
-if (!$result || $result->num_rows === 0) {
+$stmt->store_result();
+
+if ($stmt->num_rows === 0) {
     echo '<div class="alert alert-info">НЯМА НАМЕРЕНИ АРТИКУЛИ.</div>';
 } else {
 
-    while ($row = $result->fetch_assoc()) {
+    $stmt->bind_result(
+        $lOrder,
+        $oQuantity,
+        $nID,
+        $nCode,
+        $nName,
+        $cPrice,
+        $sPrice,
+        $nCount
+    );
 
-        $nID       = (int)$row['nID'];
-        $sCode     = htmlspecialchars($row['nCode'] ?? '');
-        $sName     = htmlspecialchars($row['nName'] ?? '');
+    while ($stmt->fetch()) {
 
-        $cPriceRaw = (float)$row['cPrice'];
-        $sPriceRaw = (float)$row['sPrice'];
-        $isPromo = $sPriceRaw > 0 ? 1 : 0;
+        $nID       = (int)$nID;
+        $sCode     = htmlspecialchars($nCode ?? '');
+        $sName     = htmlspecialchars($nName ?? '');
+
+        $cPriceRaw = (float)$cPrice;
+        $sPriceRaw = (float)$sPrice;
+        $isPromo   = $sPriceRaw > 0 ? 1 : 0;
 
         $nPriceRaw = $sPriceRaw > 0 ? $sPriceRaw : $cPriceRaw;
 
         $cPriceFormatted = number_format($cPriceRaw, 2);
         $sPriceFormatted = number_format($sPriceRaw, 2);
 
-        $nCount    = (int)$row['nCount'];
-        $lOrder    = htmlspecialchars($row['lOrder'] ?? '-');
+        $nCount    = (int)$nCount;
+        $lOrder    = $lOrder ? date('d.m.Y', strtotime($lOrder)) : '-';
 
-        $oQuantity = (int)$row['oQuantity'];
+        $oQuantity = (int)$oQuantity;
         $hasSaved  = $oQuantity > 0;
 
         $inputValue = $hasSaved ? $oQuantity : 0;
@@ -169,73 +178,79 @@ if (!$result || $result->num_rows === 0) {
             ? 'fa-check text-success'
             : 'fa-circle-check text-white';
 
-        $btnStyle   = $hasSaved
-            ? 'background-color:#16a34a; box-shadow:0 0 15px rgba(22,163,74,0.6);'
-            : 'background-color: rgba(6, 182, 212, 0.125); box-shadow: rgba(6, 182, 212, 0.19) 0px 0px 20px;';
-
         $maxQty = max(1, min(100, $nCount));
 
-    echo '
-    <div data-slot="card" data-promo="'.$isPromo.'" role="button" data-page="route_objects" data-id="<?= $officeId ?>"
-        class="text-card-foreground flex flex-col pt-3 gap-3 rounded-xl mb-1 shadow-sm relative overflow-hidden border-0 bg-zinc-900/50 backdrop-blur-sm transition-all duration-300 hover:scale-[1.02] hover:bg-zinc-900/70 cursor-pointer h-full"
-        style="box-shadow: rgba(6, 182, 212, 0.125) 0px 0px 0px 1px, rgba(6, 182, 212, 0.063) 0px 4px 24px;"
-        data-search="['.$sCode.'] - '.$sName.'">
-        <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style="background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.082) 0%, transparent 70%);"></div>
+?>
+    <div data-slot="card" data-promo="<?= $isPromo ?>" role="button" data-page="route_objects" data-id="<?= $officeId ?>"
+        class="text-card-foreground flex flex-col pt-3 gap-3 rounded-xl mb-1 shadow-sm relative overflow-hidden border-0 bg-zinc-900/50 backdrop-blur-sm"
+
+        data-code="<?= $sCode ?>"
+        data-name="<?= $sName ?>">
+
         <div data-slot="card-header" class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-1 relative z-10">
-            <div class="flex items-start">
-                <span class="m-1 p-3 inline rounded-xl transition-all duration-300 group-hover:scale-110" style="background-color: rgba(6, 182, 212, 0.125); box-shadow: rgba(6, 182, 212, 0.19) 0px 0px 20px;">
-                    <i class="fa-solid fa-barcode fa-lg text-white"></i>
-                </span>
-                <div class="m-1 ms-3 p-0 text-start">
-                    <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
-                       class="d-block text-decoration-none text-white">
+            <div class="row align-items-center">
 
-                        <div class="fw-semibold">
-                            [ '.$sCode.' ] - '.$sName.' -
+                <!-- ЛЯВА ЧАСТ -->
+                <div class="col-12 col-lg-8 d-flex">
+
+                    <div class="m-1 ms-3 p-0 text-start text-decoration-none text-white">
+                        <div class="fs-6 fw-semibold">
+                            [ <?= $sCode ?> ] - <?= $sName ?>
                         </div>
 
-                        <div class="text-secondary small">
-                            Налично ('.$nCount.') / Цена: '.$cPriceFormatted.' '.$sPriceFormatted.'
+                        <div class="text-info">
+                            Налично (<?= $nCount ?>) / Цена: <?= $cPriceFormatted ?>
+                        <?php
+                            if($sPriceFormatted > 0) {
+                                echo ' / <span class="fs-6 text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
+                            }
+                        ?>
                         </div>
-                        <div class="text-secondary small">
-                            Последна поръчка ['.$oQuantity.'] - '.$lOrder.'
+                        <div class="text-dark bg-info">
+                            Последна поръчка [<?= $oQuantity ?>] - <?= $lOrder ?>
                         </div>
-                    </a>
+                    </div>
                 </div>
 
-                <div class="ms-auto me-3 my-auto">
-                   <div class="qty-wrapper d-flex align-items-center">
+                <!-- ДЯСНА ЧАСТ -->
+                <div class="col-12 col-lg-4">
 
-                       <button type="button" class="qty-btn btn-minus">
-                           <i class="fa-solid fa-minus"></i>
-                       </button>
+                    <div class="d-flex justify-content-lg-end align-items-center flex-wrap gap-2">
 
-                       <input type="number"
-                              class="qty-input fs-4"
-                              value="'.$inputValue.'"
-                              min="1"
-                              max="'.$maxQty.'">
+                        <div class="qty-wrapper d-flex align-items-center">
 
-                       <button type="button" class="qty-btn btn-plus">
-                           <i class="fa-solid fa-plus"></i>
-                       </button>
+                            <button type="button" class="qty-btn btn-minus">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
 
-                   </div>
-                </div>
-                <span class="my-1 p-3 inline rounded-xl save-delivery"
-                      style="'.$btnStyle.'"
-                      data-ppp="'. $pppID.'"
-                      data-id="'. $nID.'"
-                      data-price="'. $nPriceRaw.'">
+                               <input type="number"
+                                      class="qty-input fs-4"
+                                      value="<?= $inputValue ?>"
+                                      min="1"
+                                      max="<?= $maxQty ?>">
 
-                    <i class="fa-solid '.$iconClass.' fa-lg text-white m-1"></i>
+                            <button type="button" class="qty-btn btn-plus">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
 
-                </span>
+                        </div>
+
+                        <div class="my-1 p-3 rounded-xl save-delivery"
+                              style="<?= $hasSaved ? 'saved' : 'not-saved' ?>"
+                              data-ppp="<?= $pppID ?>"
+                              data-id="<?= $nID ?>"
+                              data-price="<?= $nPriceRaw ?>">
+
+                            <i class="fa-solid <?= $iconClass ?> fa-lg text-white m-1"></i>
+
+                        </div>
+                    </div>
             </div>
         </div>
-    </div>';
 
+
+    </div>
+<?php
 
     }
 }

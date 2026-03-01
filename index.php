@@ -163,7 +163,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="login-card">
 
     <div class="login-title">
-        iSales System
+        <div class="text-center mb-4">
+            <img src="./assets/images/isales_logo.svg"
+                 alt="iSales ASSISTANT"
+                 class="img-fluid"
+                 style="width: 270px;">
+        </div>
     </div>
 
     <?php if ($error): ?>

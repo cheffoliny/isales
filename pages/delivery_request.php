@@ -182,7 +182,7 @@ if ($stmt->num_rows === 0) {
 
 ?>
     <div data-slot="card" data-promo="<?= $isPromo ?>" role="button" data-page="route_objects" data-id="<?= $officeId ?>"
-        class="text-card-foreground flex flex-col pt-3 gap-3 rounded-xl mb-1 shadow-sm relative overflow-hidden border-0 bg-zinc-900/50 backdrop-blur-sm"
+        class="text-card-foreground flex flex-col pt-3 gap-3 rounded-xl mb-1 shadow-md relative overflow-hidden border-0 bg-zinc-900/50 backdrop-blur-md"
 
         data-code="<?= $sCode ?>"
         data-name="<?= $sName ?>">

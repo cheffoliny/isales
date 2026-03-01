@@ -127,7 +127,7 @@ $sql = "
     WHERE n.to_arc = 0
       AND n.is_calc > 0 AND n.client_price > 0
     ORDER BY n.name ASC
-    LIMIT 100
+    LIMIT 500
 ";
 
 $stmt = $db->prepare($sql);

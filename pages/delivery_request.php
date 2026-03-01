@@ -215,7 +215,7 @@ if ($stmt->num_rows === 0) {
                 <!-- ДЯСНА ЧАСТ -->
                 <div class="col-12 col-lg-4">
 
-                    <div class="delivery-row d-flex justify-content-lg-end align-items-center flex-wrap gap-2"
+                    <div class="delivery-row d-flex justify-content-end align-items-center flex-wrap gap-2"
                          id="row-<?= $nID ?>"
                          data-id="<?= $nID ?>">
 

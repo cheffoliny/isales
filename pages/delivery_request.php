@@ -215,43 +215,41 @@ if ($stmt->num_rows === 0) {
                 <!-- ДЯСНА ЧАСТ -->
                 <div class="col-12 col-lg-4">
 
-                    <div class="d-flex justify-content-lg-end align-items-center flex-wrap gap-2">
+                    <div class="delivery-row d-flex justify-content-lg-end align-items-center flex-wrap gap-2"
+                         id="row-<?= $nID ?>"
+                         data-id="<?= $nID ?>">
 
-                        <div class="delivery-row d-flex justify-content-lg-end align-items-center flex-wrap gap-2"
-                             id="row-<?= $nID ?>"
-                             data-id="<?= $nID ?>">
+                        <div class="qty-wrapper d-flex align-items-center">
 
-                            <div class="qty-wrapper d-flex align-items-center">
+                            <button type="button" class="qty-btn btn-minus">
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
 
-                                <button type="button" class="qty-btn btn-minus">
-                                    <i class="fa-solid fa-minus"></i>
-                                </button>
+                            <input type="number"
+                                   class="qty-input fs-4"
+                                   value="<?= $inputValue ?>"
+                                   data-saved="<?= $inputValue ?>"
+                                   min="1"
+                                   max="<?= $maxQty ?>">
 
-                                <input type="number"
-                                       class="qty-input fs-4"
-                                       value="<?= $inputValue ?>"
-                                       data-saved="<?= $inputValue ?>"
-                                       min="1"
-                                       max="<?= $maxQty ?>">
+                            <button type="button" class="qty-btn btn-plus">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
 
-                                <button type="button" class="qty-btn btn-plus">
-                                    <i class="fa-solid fa-plus"></i>
-                                </button>
+                        </div>
 
-                            </div>
+                        <div class="my-1 p-3 rounded-xl save-delivery <?= $hasSaved ? 'saved' : 'not-saved' ?>"
+                              data-ppp="<?= $pppID ?>"
+                              data-id="<?= $nID ?>"
+                              data-price="<?= $nPriceRaw ?>">
 
-                            <div class="my-1 p-3 rounded-xl save-delivery <?= $hasSaved ? 'saved' : 'not-saved' ?>"
-                                  data-ppp="<?= $pppID ?>"
-                                  data-id="<?= $nID ?>"
-                                  data-price="<?= $nPriceRaw ?>">
-
-                                <i class="fa-solid <?= $iconClass ?> fa-lg text-white m-1"></i>
-
-                            </div>
+                            <i class="fa-solid <?= $iconClass ?> fa-lg text-white m-1"></i>
 
                         </div>
 
                     </div>
+
+                </div>
             </div>
         </div>
 

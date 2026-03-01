@@ -223,11 +223,12 @@ if ($stmt->num_rows === 0) {
                                 <i class="fa-solid fa-minus"></i>
                             </button>
 
-                               <input type="number"
-                                      class="qty-input fs-4"
-                                      value="<?= $inputValue ?>"
-                                      min="1"
-                                      max="<?= $maxQty ?>">
+                            <input type="number"
+                                   class="qty-input fs-4"
+                                   value="<?= $inputValue ?>"
+                                   data-saved="<?= $inputValue ?>"
+                                   min="1"
+                                   max="<?= $maxQty ?>">
 
                             <button type="button" class="qty-btn btn-plus">
                                 <i class="fa-solid fa-plus"></i>
@@ -325,12 +326,31 @@ $(document).off('click', '#promoFilter').on('click', '#promoFilter', function() 
 //     });
 // });
 
+function markAsUnsaved(input) {
+
+    const wrapper = input.closest('.flex');
+    const btn = wrapper.find('.save-delivery');
+
+    btn.css({
+        backgroundColor: 'rgba(6, 182, 212, 0.125)',
+        boxShadow: 'rgba(6, 182, 212, 0.19) 0px 0px 20px'
+    });
+
+    btn.find('i')
+       .removeClass('fa-check')
+       .addClass('fa-circle-check');
+}
+
 // ===================== QTY PLUS =====================
 $(document).off('click', '.btn-plus').on('click', '.btn-plus', function() {
     const input = $(this).closest('.qty-wrapper').find('.qty-input');
     const max = parseInt(input.attr('max'));
     let value = parseInt(input.val()) || 0;
     if (value < max) input.val(value + 1);
+
+    if (value - 1 !== parseInt(input.data('saved'))) {
+        markAsUnsaved(input);
+    }
 });
 
 // ===================== QTY MINUS =====================
@@ -338,21 +358,28 @@ $(document).off('click', '.btn-minus').on('click', '.btn-minus', function() {
     const input = $(this).closest('.qty-wrapper').find('.qty-input');
     let value = parseInt(input.val()) || 0;
     if (value > 0) input.val(value - 1);
+
+    if (value + 1 !== parseInt(input.data('saved'))) {
+        markAsUnsaved(input);
+    }
 });
 
 // ===================== MANUAL LIMIT =====================
 $(document).off('input', '.qty-input').on('input', '.qty-input', function() {
+
     const max = parseInt($(this).attr('max'));
     let value = parseInt($(this).val()) || 1;
+
     if (value < 1) value = 1;
     if (value > max) value = max;
-    $(this).val(value);
-});
 
-// ===================== SEND QTY =====================
-$(document).off('click', '.ajax-delivery-request').on('click', '.ajax-delivery-request', function() {
-    const qty = $(this).closest('.row').find('.qty-input').val();
-    $(this).attr('data-qty', qty);
+    $(this).val(value);
+
+    const saved = parseInt($(this).data('saved')) || 0;
+
+    if (value !== saved) {
+        markAsUnsaved($(this));
+    }
 });
 
 
@@ -394,6 +421,8 @@ $(document).on('click', '.save-delivery', function () {
 
             if (response.success) {
 
+                wrapper.find('.qty-input').data('saved', parseInt(qty));
+
                 btn.css({
                     backgroundColor: '#16a34a',
                     boxShadow: '0 0 15px rgba(22,163,74,0.6)'
@@ -402,7 +431,6 @@ $(document).on('click', '.save-delivery', function () {
                 btn.find('i')
                    .removeClass('fa-circle-check')
                    .addClass('fa-check');
-
             } else {
                 alert('Грешка: ' + response.message);
             }

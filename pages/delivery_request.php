@@ -236,8 +236,7 @@ if ($stmt->num_rows === 0) {
 
                         </div>
 
-                        <div class="my-1 p-3 rounded-xl save-delivery"
-                              style="<?= $hasSaved ? 'saved' : 'not-saved' ?>"
+                        <div class="my-1 p-3 rounded-xl save-delivery <?= $hasSaved ? 'saved' : 'not-saved' ?>"
                               data-ppp="<?= $pppID ?>"
                               data-id="<?= $nID ?>"
                               data-price="<?= $nPriceRaw ?>">
@@ -325,16 +324,21 @@ $(document).off('click', '#promoFilter').on('click', '#promoFilter', function() 
 //         }
 //     });
 // });
+function markAsSaved(btn) {
+
+    btn.removeClass('not-saved').addClass('saved');
+
+    btn.find('i')
+       .removeClass('fa-circle-check')
+       .addClass('fa-check');
+}
 
 function markAsUnsaved(input) {
 
     const wrapper = input.closest('.flex');
     const btn = wrapper.find('.save-delivery');
 
-    btn.css({
-        backgroundColor: 'rgba(6, 182, 212, 0.125)',
-        boxShadow: 'rgba(6, 182, 212, 0.19) 0px 0px 20px'
-    });
+    btn.removeClass('saved').addClass('not-saved');
 
     btn.find('i')
        .removeClass('fa-check')
@@ -343,23 +347,37 @@ function markAsUnsaved(input) {
 
 // ===================== QTY PLUS =====================
 $(document).off('click', '.btn-plus').on('click', '.btn-plus', function() {
+
     const input = $(this).closest('.qty-wrapper').find('.qty-input');
     const max = parseInt(input.attr('max'));
     let value = parseInt(input.val()) || 0;
-    if (value < max) input.val(value + 1);
 
-    if (value - 1 !== parseInt(input.data('saved'))) {
+    if (value < max) {
+        value++;
+        input.val(value);
+    }
+
+    const saved = parseInt(input.data('saved')) || 0;
+
+    if (value !== saved) {
         markAsUnsaved(input);
     }
 });
 
 // ===================== QTY MINUS =====================
 $(document).off('click', '.btn-minus').on('click', '.btn-minus', function() {
+
     const input = $(this).closest('.qty-wrapper').find('.qty-input');
     let value = parseInt(input.val()) || 0;
-    if (value > 0) input.val(value - 1);
 
-    if (value + 1 !== parseInt(input.data('saved'))) {
+    if (value > 0) {
+        value--;
+        input.val(value);
+    }
+
+    const saved = parseInt(input.data('saved')) || 0;
+
+    if (value !== saved) {
         markAsUnsaved(input);
     }
 });
@@ -423,14 +441,8 @@ $(document).on('click', '.save-delivery', function () {
 
                 wrapper.find('.qty-input').data('saved', parseInt(qty));
 
-                btn.css({
-                    backgroundColor: '#16a34a',
-                    boxShadow: '0 0 15px rgba(22,163,74,0.6)'
-                });
+                markAsSaved(btn);
 
-                btn.find('i')
-                   .removeClass('fa-circle-check')
-                   .addClass('fa-check');
             } else {
                 alert('Грешка: ' + response.message);
             }

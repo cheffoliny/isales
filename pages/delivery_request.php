@@ -217,33 +217,40 @@ if ($stmt->num_rows === 0) {
 
                     <div class="d-flex justify-content-lg-end align-items-center flex-wrap gap-2">
 
-                        <div class="qty-wrapper d-flex align-items-center">
+                        <div class="delivery-row d-flex justify-content-lg-end align-items-center flex-wrap gap-2"
+                             id="row-<?= $nID ?>"
+                             data-id="<?= $nID ?>">
 
-                            <button type="button" class="qty-btn btn-minus">
-                                <i class="fa-solid fa-minus"></i>
-                            </button>
+                            <div class="qty-wrapper d-flex align-items-center">
 
-                            <input type="number"
-                                   class="qty-input fs-4"
-                                   value="<?= $inputValue ?>"
-                                   data-saved="<?= $inputValue ?>"
-                                   min="1"
-                                   max="<?= $maxQty ?>">
+                                <button type="button" class="qty-btn btn-minus">
+                                    <i class="fa-solid fa-minus"></i>
+                                </button>
 
-                            <button type="button" class="qty-btn btn-plus">
-                                <i class="fa-solid fa-plus"></i>
-                            </button>
+                                <input type="number"
+                                       class="qty-input fs-4"
+                                       value="<?= $inputValue ?>"
+                                       data-saved="<?= $inputValue ?>"
+                                       min="1"
+                                       max="<?= $maxQty ?>">
+
+                                <button type="button" class="qty-btn btn-plus">
+                                    <i class="fa-solid fa-plus"></i>
+                                </button>
+
+                            </div>
+
+                            <div class="my-1 p-3 rounded-xl save-delivery <?= $hasSaved ? 'saved' : 'not-saved' ?>"
+                                  data-ppp="<?= $pppID ?>"
+                                  data-id="<?= $nID ?>"
+                                  data-price="<?= $nPriceRaw ?>">
+
+                                <i class="fa-solid <?= $iconClass ?> fa-lg text-white m-1"></i>
+
+                            </div>
 
                         </div>
 
-                        <div class="my-1 p-3 rounded-xl save-delivery <?= $hasSaved ? 'saved' : 'not-saved' ?>"
-                              data-ppp="<?= $pppID ?>"
-                              data-id="<?= $nID ?>"
-                              data-price="<?= $nPriceRaw ?>">
-
-                            <i class="fa-solid <?= $iconClass ?> fa-lg text-white m-1"></i>
-
-                        </div>
                     </div>
             </div>
         </div>
@@ -335,8 +342,8 @@ function markAsSaved(btn) {
 
 function markAsUnsaved(input) {
 
-    const wrapper = input.closest('.flex');
-    const btn = wrapper.find('.save-delivery');
+    const row = input.closest('.delivery-row');
+    const btn = row.find('.save-delivery');
 
     btn.removeClass('saved').addClass('not-saved');
 
@@ -346,9 +353,11 @@ function markAsUnsaved(input) {
 }
 
 // ===================== QTY PLUS =====================
-$(document).off('click', '.btn-plus').on('click', '.btn-plus', function() {
+$(document).on('click', '.btn-plus', function () {
 
-    const input = $(this).closest('.qty-wrapper').find('.qty-input');
+    const row = $(this).closest('.delivery-row');
+    const input = row.find('.qty-input');
+
     const max = parseInt(input.attr('max'));
     let value = parseInt(input.val()) || 0;
 
@@ -365,12 +374,14 @@ $(document).off('click', '.btn-plus').on('click', '.btn-plus', function() {
 });
 
 // ===================== QTY MINUS =====================
-$(document).off('click', '.btn-minus').on('click', '.btn-minus', function() {
+$(document).on('click', '.btn-minus', function () {
 
-    const input = $(this).closest('.qty-wrapper').find('.qty-input');
+    const row = $(this).closest('.delivery-row');
+    const input = row.find('.qty-input');
+
     let value = parseInt(input.val()) || 0;
 
-    if (value > 0) {
+    if (value > 1) {   // защото имаш min="1"
         value--;
         input.val(value);
     }
@@ -404,21 +415,13 @@ $(document).off('input', '.qty-input').on('input', '.qty-input', function() {
 $(document).on('click', '.save-delivery', function () {
 
     const btn = $(this);
-
-    // намираме най-близкия qty-wrapper
-    const wrapper = btn.closest('.flex').find('.qty-wrapper');
+    const row = btn.closest('.delivery-row');
+    const wrapper = row.find('.qty-wrapper');
     const qty = wrapper.find('.qty-input').val();
 
     const id_ppp = btn.data('ppp');
     const id_nomenclature = btn.data('id');
     const single_price = btn.data('price');
-
-    console.log({
-        id_ppp,
-        id_nomenclature,
-        qty,
-        single_price
-    });
 
     if (!id_ppp || !id_nomenclature || !qty || qty <= 0) {
         alert('Липсват данни!');
@@ -448,6 +451,5 @@ $(document).on('click', '.save-delivery', function () {
             }
         }
     });
-
 });
 </script>

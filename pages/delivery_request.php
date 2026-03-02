@@ -202,7 +202,7 @@ if ($stmt->num_rows === 0) {
                             Налично (<?= $nCount ?>) / Цена: <?= $cPriceFormatted ?>
                         <?php
                             if($sPriceFormatted > 0) {
-                                echo ' / <span class="fs-6 text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
+                                echo ' / <span class="fs-5 text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
                             }
                         ?>
                         </div>

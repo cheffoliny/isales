@@ -230,7 +230,7 @@ if ($stmt->num_rows === 0) {
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"
-                                   max=""> <? $maxQty ?>
+                                   >
 
                             <button type="button" class="qty-btn btn-plus">
                                 <i class="fa-solid fa-plus fa-2x"></i>
@@ -394,11 +394,11 @@ $(document).on('click', '.btn-minus', function () {
 // ===================== MANUAL LIMIT =====================
 $(document).off('input', '.qty-input').on('input', '.qty-input', function() {
 
-    const max = parseInt($(this).attr('max'));
+   // const max = parseInt($(this).attr('max'));
     let value = parseInt($(this).val()) || 1;
 
     if (value < 1) value = 1;
-    if (value > max) value = max;
+    //if (value > max) value = max;
 
     $(this).val(value);
 

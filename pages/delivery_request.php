@@ -194,11 +194,11 @@ if ($stmt->num_rows === 0) {
                 <div class="col-md-12 col-lg-8 d-flex">
 
                     <div class="m-1 ms-3 p-0 text-start text-decoration-none text-white">
-                        <div class="fs-2 fw-semibold">
+                        <div class="fs-1 fw-semibold">
                             [ <?= $sCode ?> ] - <?= $sName ?>
                         </div>
 
-                        <div class="fs-3 text-info">
+                        <div class="fs-2 text-info">
                             Налично (<?= $nCount ?>) / Цена: <?= $cPriceFormatted ?>
                         <?php
                             if($sPriceFormatted > 0) {
@@ -206,7 +206,7 @@ if ($stmt->num_rows === 0) {
                             }
                         ?>
                         </div>
-                        <div class="fs-3 text-success">
+                        <div class="fs-2 text-dark bg-info">
                             Последна поръчка [<?= $oQuantity ?>] - <?= $lOrder ?>
                         </div>
                     </div>
@@ -221,19 +221,19 @@ if ($stmt->num_rows === 0) {
 
                         <div class="qty-wrapper d-flex align-items-center">
 
-                            <button type="button" class="qty-btn btn-minus">
-                                <i class="fa-solid fa-minus fa-2x"></i>
+                            <button type="button" class="qty-btn btn-minus px-1">
+                                <i class="fa-solid fa-minus fa-3x"></i>
                             </button>
 
                             <input type="number"
-                                   class="qty-input fs-1"
+                                   class="qty-input fs-2"
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"
-                                   >
+                                   max="1000">
 
-                            <button type="button" class="qty-btn btn-plus">
-                                <i class="fa-solid fa-plus fa-2x"></i>
+                            <button type="button" class="qty-btn btn-plus px-1">
+                                <i class="fa-solid fa-plus fa-3x"></i>
                             </button>
 
                         </div>
@@ -356,13 +356,13 @@ $(document).on('click', '.btn-plus', function () {
     const row = $(this).closest('.delivery-row');
     const input = row.find('.qty-input');
 
-    //const max = parseInt(input.attr('max'));
+    const max = parseInt(input.attr('max'));
     let value = parseInt(input.val()) || 0;
 
-//     if (value < max) {
-//         value++;
-//         input.val(value);
-//     }
+    if (value < max) {
+        value++;
+        input.val(value);
+    }
 
     const saved = parseInt(input.data('saved')) || 0;
 
@@ -394,11 +394,11 @@ $(document).on('click', '.btn-minus', function () {
 // ===================== MANUAL LIMIT =====================
 $(document).off('input', '.qty-input').on('input', '.qty-input', function() {
 
-   // const max = parseInt($(this).attr('max'));
+    const max = parseInt($(this).attr('max'));
     let value = parseInt($(this).val()) || 1;
 
     if (value < 1) value = 1;
-    //if (value > max) value = max;
+    if (value > max) value = max;
 
     $(this).val(value);
 

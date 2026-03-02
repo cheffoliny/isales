@@ -198,7 +198,7 @@ if ($stmt->num_rows === 0) {
                             [ <?= $sCode ?> ] - <?= $sName ?>
                         </div>
 
-                        <div class="fs-2 text-info">
+                        <div class="fs-3 text-info">
                             Налично (<?= $nCount ?>) / Цена: <?= $cPriceFormatted ?>
                         <?php
                             if($sPriceFormatted > 0) {
@@ -206,7 +206,7 @@ if ($stmt->num_rows === 0) {
                             }
                         ?>
                         </div>
-                        <div class="fs-2 text-dark text-success">
+                        <div class="fs-3 text-success">
                             Последна поръчка [<?= $oQuantity ?>] - <?= $lOrder ?>
                         </div>
                     </div>

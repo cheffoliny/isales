@@ -221,18 +221,18 @@ if ($stmt->num_rows === 0) {
 
                         <div class="qty-wrapper d-flex align-items-center">
 
-                            <button type="button" class="qty-btn btn-minus px-1">
+                            <button type="button" class="qty-btn btn-minus p-1">
                                 <i class="fa-solid fa-minus fa-2x"></i>
                             </button>
 
                             <input type="number"
-                                   class="qty-input fs-1 px-1"
+                                   class="qty-input fs-1 px-2"
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"
                                    max="1000">
 
-                            <button type="button" class="qty-btn btn-plus px-1">
+                            <button type="button" class="qty-btn btn-plus p-1">
                                 <i class="fa-solid fa-plus fa-2x"></i>
                             </button>
 

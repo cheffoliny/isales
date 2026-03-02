@@ -158,8 +158,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (Throwable $e) {
 
             $pdo->rollBack();
-            logError("Transaction failed: " . $e->getMessage());
-            $message = "Import failed. Check error log.";
+
+            echo "<pre>";
+            echo $e->getMessage();
+            echo "</pre>";
+            exit;
         }
     }
 }

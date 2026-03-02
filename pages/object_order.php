@@ -149,7 +149,7 @@ if (!$result || $result->num_rows === 0) {
                               class="qty-input fs-2"
                               value="'.$inputValue.'"
                               min="1"
-                              max="">
+                              max="'.$maxQty.'">
 
                        <button type="button" class="qty-btn btn-plus">
                            <i class="fa-solid fa-plus fa-2x"></i>

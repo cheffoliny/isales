@@ -230,7 +230,7 @@ if ($stmt->num_rows === 0) {
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"
-                                   max=""> <?// $maxQty ?>
+                                   max=""> <? $maxQty ?>
 
                             <button type="button" class="qty-btn btn-plus">
                                 <i class="fa-solid fa-plus fa-2x"></i>
@@ -356,13 +356,13 @@ $(document).on('click', '.btn-plus', function () {
     const row = $(this).closest('.delivery-row');
     const input = row.find('.qty-input');
 
-    const max = parseInt(input.attr('max'));
+    //const max = parseInt(input.attr('max'));
     let value = parseInt(input.val()) || 0;
 
-    if (value < max) {
-        value++;
-        input.val(value);
-    }
+//     if (value < max) {
+//         value++;
+//         input.val(value);
+//     }
 
     const saved = parseInt(input.data('saved')) || 0;
 

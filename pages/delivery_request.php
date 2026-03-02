@@ -226,7 +226,7 @@ if ($stmt->num_rows === 0) {
                             </button>
 
                             <input type="number"
-                                   class="qty-input fs-2"
+                                   class="qty-input fs-1 px-1"
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"

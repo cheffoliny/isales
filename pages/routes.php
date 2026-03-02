@@ -54,17 +54,17 @@ while ($row = mysqli_fetch_assoc($result)) {
                         <!-- LEFT ICON -->
                         <div class="col">
                             <div class="p-3 inline rounded-xl transition-all duration-300 group-hover:scale-110" style="background-color: rgba(6, 182, 212, 0.125); box-shadow: rgba(6, 182, 212, 0.19) 0px 0px 20px;">
-                                <i class="fa-solid fa-route fa-2x text-white"></i>
+                                <i class="fa-solid fa-route fa-3x text-white"></i>
                             </div>
                         </div>
-                        <!-- TEXT BLOCK -->
+                    <!-- TEXT BLOCK -->
                         <div class="col-9 text-start px-1">
                             <div class="font-semibold text-white fs-1">
                                 <?= $officeName ?>
                             </div>
                         </div>
                         <div class="col">
-                            <span class="fs-2 font-mono px-2 py-1 rounded-md" style="background-color: rgba(6, 182, 212, 0.082); color: rgb(6, 182, 212);"><?= $objectCount ?></span>
+                            <span class="fs-1 px-2 py-1 rounded-md" style="background-color: rgba(6, 182, 212, 0.082); color: rgb(6, 182, 212);"><?= $objectCount ?></span>
                         </div>
                     </div>
                <!--

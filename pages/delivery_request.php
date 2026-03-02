@@ -226,11 +226,13 @@ if ($stmt->num_rows === 0) {
                             </button>
 
                             <input type="number"
-                                   class="qty-input fs-1 px-2"
-                                   value="<?= $inputValue ?>"
-                                   data-saved="<?= $inputValue ?>"
-                                   min="1"
-                                   max="1000">
+                                class="qty-input fs-1 px-2"
+                                value="<?= $inputValue ?>"
+                                data-saved="<?= $inputValue ?>"
+                                maxlength="3"
+                                size="3"
+                                min="1"
+                                max="1000">
 
                             <button type="button" class="qty-btn btn-plus p-1">
                                 <i class="fa-solid fa-plus fa-2x"></i>

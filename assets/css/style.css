@@ -23,8 +23,6 @@
     background: transparent;
     border: none;
     color: #fff;
-    width: 28px;
-    height: 28px;
     border-radius: 8px;
     transition: all 0.2s ease;
 }
@@ -35,13 +33,11 @@
 }
 
 .qty-input {
-    width: 45px;
     text-align: center;
     background: transparent;
     border: none;
     color: #fff;
     font-weight: 600;
-    font-size: 14px;
 }
 
 .qty-input:focus {

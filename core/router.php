@@ -6,6 +6,7 @@ $allowedPages = [
     'object_order',
     'route_objects',
     'import_nomenclatures',
+    'import_sales',
     'delivery_request'
 ];
 

@@ -26,6 +26,9 @@
                  <a href="dashboard.php?page=import_nomenclatures" class="nav-link">
                     Импорт
                 </a>
+                             <a href="dashboard.php?page=import_sales" class="nav-link">
+                                Импорт продажби
+                            </a>
             </ul>
 
             <div class="d-flex align-items-center gap-3">

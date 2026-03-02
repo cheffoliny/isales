@@ -135,9 +135,6 @@ if (!$result || $result->num_rows === 0) {
                         <div class="text-secondary small">
                             Налично ('.$nCount.') / Цена: '.$cPriceFormatted.' '.$sPriceFormatted.'
                         </div>
-                        <div class="text-secondary small">
-                            Последна поръчка ['.$oQuantity.'] - '.$lOrder.'
-                        </div>
                     </a>
                 </div>
 

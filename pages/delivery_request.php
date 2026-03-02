@@ -230,7 +230,7 @@ if ($stmt->num_rows === 0) {
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"
-                                   max="<?= $maxQty ?>">
+                                   max=""> <?// $maxQty ?>
 
                             <button type="button" class="qty-btn btn-plus">
                                 <i class="fa-solid fa-plus fa-2x"></i>

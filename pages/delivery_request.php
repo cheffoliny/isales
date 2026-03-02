@@ -194,7 +194,7 @@ if ($stmt->num_rows === 0) {
                 <div class="col-md-12 col-lg-8 d-flex">
 
                     <div class="m-1 ms-3 p-0 text-start text-decoration-none text-white">
-                        <div class="fs-6 fw-semibold">
+                        <div class="fs-2 fw-semibold">
                             [ <?= $sCode ?> ] - <?= $sName ?>
                         </div>
 

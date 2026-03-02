@@ -202,7 +202,7 @@ if ($stmt->num_rows === 0) {
                             Налично (<?= $nCount ?>) / Цена: <?= $cPriceFormatted ?>
                         <?php
                             if($sPriceFormatted > 0) {
-                                echo ' / <span class="fs-5 text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
+                                echo ' / <span class="fs-3 text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
                             }
                         ?>
                         </div>
@@ -226,7 +226,7 @@ if ($stmt->num_rows === 0) {
                             </button>
 
                             <input type="number"
-                                   class="qty-input fs-4"
+                                   class="qty-input fs-3"
                                    value="<?= $inputValue ?>"
                                    data-saved="<?= $inputValue ?>"
                                    min="1"

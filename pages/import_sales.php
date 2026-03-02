@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
-                $line = trim(mb_convert_encoding($line, 'UTF-8', 'UTF-8, CP1251, ISO-8859-1'));
+                $line = trim(mb_convert_encoding($line, 'UTF-8', 'CP1251'));
 
                 if ($line === '') {
                     continue;

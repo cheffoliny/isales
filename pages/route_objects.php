@@ -73,7 +73,7 @@ while ($row = $result->fetch_assoc()) {
                               data-oid="<?= $oID ?>"
                               data-type="familiar"
                               onclick="openMapModal('<?= $strMapModal ?>', '<?= $oLat ?>', '<?= $oLan ?>', <?= $idUser ?>)">
-                            <i class="fa-solid fa-car text-white fa-3x"></i>
+                            <i class="fa-solid fa-car text-white fa-2x"></i>
                         </span>
                     </div>
 
@@ -100,7 +100,7 @@ while ($row = $result->fetch_assoc()) {
                               style="cursor:pointer;"
                               data-bs-toggle="modal"
                               data-bs-target="#<?= $infoModalId ?>">
-                            <i class="fa-solid fa-circle-user text-white fa-3x"></i>
+                            <i class="fa-solid fa-circle-user text-white fa-2x"></i>
                         </span>
                     </div>
 

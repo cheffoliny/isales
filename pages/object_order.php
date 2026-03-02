@@ -166,7 +166,7 @@ if (!$result || $result->num_rows === 0) {
                       data-id="'. $nID.'"
                       data-price="'. $nPriceRaw.'">
 
-                    <i class="fa-solid '.$iconClass.' fa-lg text-white m-1"></i>
+                    <i class="fa-solid '.$iconClass.' fa-2x text-white m-1"></i>
 
                 </span>
             </div>

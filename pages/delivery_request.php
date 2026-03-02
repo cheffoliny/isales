@@ -222,7 +222,7 @@ if ($stmt->num_rows === 0) {
                         <div class="qty-wrapper d-flex align-items-center">
 
                             <button type="button" class="qty-btn btn-minus">
-                                <i class="fa-solid fa-minus"></i>
+                                <i class="fa-solid fa-minus fa-2x"></i>
                             </button>
 
                             <input type="number"
@@ -233,7 +233,7 @@ if ($stmt->num_rows === 0) {
                                    max="<?= $maxQty ?>">
 
                             <button type="button" class="qty-btn btn-plus">
-                                <i class="fa-solid fa-plus"></i>
+                                <i class="fa-solid fa-plus fa-2x"></i>
                             </button>
 
                         </div>

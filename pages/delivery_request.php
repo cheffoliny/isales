@@ -206,7 +206,7 @@ if ($stmt->num_rows === 0) {
                             }
                         ?>
                         </div>
-                        <div class="fs-2 text-dark text-light">
+                        <div class="fs-2 text-dark text-success">
                             Последна поръчка [<?= $oQuantity ?>] - <?= $lOrder ?>
                         </div>
                     </div>

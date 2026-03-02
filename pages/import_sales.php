@@ -93,10 +93,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Skip unwanted rows
                 if (
-                    str_contains($line, '----') ||
-                    str_contains($line, 'Общо за') ||
-                    str_contains($line, 'Код и наименование') ||
-                    str_contains($line, 'стр.')
+                    strpos($line, '----') !== false ||
+                    strpos($line, 'Общо за') !== false ||
+                    strpos($line, 'Код и наименование') !== false ||
+                    strpos($line, 'стр.') !== false
                 ) {
                     continue;
                 }

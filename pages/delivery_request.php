@@ -194,19 +194,19 @@ if ($stmt->num_rows === 0) {
                 <div class="col-md-12 col-lg-8 d-flex">
 
                     <div class="m-1 ms-3 p-0 text-start text-decoration-none text-white">
-                        <div class="fs-2 fw-semibold">
+                        <div class="fs-1 fw-semibold">
                             [ <?= $sCode ?> ] - <?= $sName ?>
                         </div>
 
-                        <div class="text-info">
+                        <div class="fs-2 text-info">
                             Налично (<?= $nCount ?>) / Цена: <?= $cPriceFormatted ?>
                         <?php
                             if($sPriceFormatted > 0) {
-                                echo ' / <span class="fs-3 text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
+                                echo ' / <span class="text-white bg-danger ps-1 pe-4 mx-0">Промо: '.$sPriceFormatted.'</span>';
                             }
                         ?>
                         </div>
-                        <div class="text-dark bg-info">
+                        <div class="fs-2 text-dark bg-info">
                             Последна поръчка [<?= $oQuantity ?>] - <?= $lOrder ?>
                         </div>
                     </div>
@@ -243,7 +243,7 @@ if ($stmt->num_rows === 0) {
                               data-id="<?= $nID ?>"
                               data-price="<?= $nPriceRaw ?>">
 
-                            <i class="fa-solid <?= $iconClass ?> fa-lg text-white m-1"></i>
+                            <i class="fa-solid <?= $iconClass ?> fa-2x text-white m-1"></i>
 
                         </div>
 

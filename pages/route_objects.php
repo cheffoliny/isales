@@ -63,11 +63,10 @@ while ($row = $result->fetch_assoc()) {
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style="background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.082) 0%, transparent 70%);"></div>
         <div data-slot="card-header" class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-1 relative z-10">
-            <div class="container-fluid px-2">
                 <div class="row align-items-center g-2 py-2 flex-nowrap flex-md-wrap">
 
                     <!-- LEFT ICON -->
-                    <div class="col-1">
+                    <div class="col">
                         <span class="p-3 d-inline-flex align-items-center justify-content-center rounded-3 bg-primary
                                      transition"
                               style="cursor:pointer;"
@@ -79,13 +78,13 @@ while ($row = $result->fetch_assoc()) {
                     </div>
 
                     <!-- TEXT BLOCK -->
-                    <div class="col text-start text-break">
+                    <div class="col-9 text-start px-1">
 
                         <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
                            class="text-decoration-none text-white">
 
                             <div class="fw-semibold fs-2">
-                                [ <?= $oNum ?> ] - <?= $oName ?>
+                                <?= $oName ?>
                             </div>
 
                             <div class="text-secondary small">
@@ -96,7 +95,7 @@ while ($row = $result->fetch_assoc()) {
                     </div>
 
                     <!-- RIGHT ICON -->
-                    <div class="col-1">
+                    <div class="col">
                         <span class="p-3 d-inline-flex align-items-center justify-content-center rounded-3 bg-dark save-delivery"
                               style="cursor:pointer;"
                               data-bs-toggle="modal"
@@ -106,7 +105,6 @@ while ($row = $result->fetch_assoc()) {
                     </div>
 
                 </div>
-            </div>
         </div>
     </div>
 

@@ -63,39 +63,49 @@ while ($row = $result->fetch_assoc()) {
         <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
         style="background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.082) 0%, transparent 70%);"></div>
         <div data-slot="card-header" class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-1 relative z-10">
-            <div class="flex items-start">
-                <span class="m-1 p-3 inline rounded-xl transition-all duration-300 group-hover:scale-110" style="background-color: rgba(6, 182, 212, 0.125); box-shadow: rgba(6, 182, 212, 0.19) 0px 0px 20px;"
-                    data-oid="<?= $oID ?>"
-                    data-type="familiar"
-                    onclick="openMapModal('<?= $strMapModal ?>', '<?= $oLat ?>', '<?= $oLan ?>', <?= $idUser ?>)">
-                    <i class="fa-solid fa-car fa-lg text-white"></i>
-                </span>
-                <div class="m-1 ms-3 p-0 text-start">
-                    <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
-                       class="d-block text-decoration-none text-white">
+            <div class="container-fluid px-2">
+                <div class="row align-items-center g-2 py-2 flex-nowrap flex-md-wrap">
 
-                        <div class="fw-semibold">
-                            [ <?= $oNum ?> ] - <?= $oName ?>
-                        </div>
+                    <!-- LEFT ICON -->
+                    <div class="col-1">
+                        <span class="p-3 d-inline-flex align-items-center justify-content-center rounded-3 bg-primary
+                                     transition"
+                              style="cursor:pointer;"
+                              data-oid="<?= $oID ?>"
+                              data-type="familiar"
+                              onclick="openMapModal('<?= $strMapModal ?>', '<?= $oLat ?>', '<?= $oLan ?>', <?= $idUser ?>)">
+                            <i class="fa-solid fa-car text-white fa-2x"></i>
+                        </span>
+                    </div>
 
-                        <div class="text-secondary small">
-                            <?= $oAddress ?>
-                        </div>
-                        <div class="text-secondary small">
+                    <!-- TEXT BLOCK -->
+                    <div class="col text-start text-break">
 
-                        </div>
-                    </a>
+                        <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
+                           class="text-decoration-none text-white">
+
+                            <div class="fw-semibold fs-3">
+                                [ <?= $oNum ?> ] - <?= $oName ?>
+                            </div>
+
+                            <div class="text-secondary small">
+                                <?= $oAddress ?>
+                            </div>
+
+                        </a>
+                    </div>
+
+                    <!-- RIGHT ICON -->
+                    <div class="col-1">
+                        <span class="p-3 d-inline-flex align-items-center justify-content-center rounded-3 bg-dark save-delivery"
+                              style="cursor:pointer;"
+                              data-bs-toggle="modal"
+                              data-bs-target="#<?= $infoModalId ?>">
+                            <i class="fa-solid fa-circle-user text-white fa-2x"></i>
+                        </span>
+                    </div>
+
                 </div>
-
-                <div class="ms-auto me-3 my-auto">
-
-                </div>
-                <span class="my-1 p-3 inline rounded-xl save-delivery"
-                      data-bs-toggle="modal"
-                      data-bs-target="#<?= $infoModalId ?>">
-                      <i class="fa-solid fa-circle-user fa-lg text-white m-1"></i>
-
-                </span>
             </div>
         </div>
     </div>

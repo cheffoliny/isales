@@ -106,7 +106,7 @@ WHERE n.to_arc = 0
   AND n.is_calc > 0
   AND n.client_price > 0
 ORDER BY n.name ASC
-LIMIT 20
+LIMIT 1000
 ";
 
 $stmt = $db->prepare($sql);
@@ -163,7 +163,7 @@ if ($stmt->num_rows === 0) {
                         <?= $sCode ?> - <?= $sName ?>
                     </div>
 
-                    <div class="small text-body-secondary">
+                    <div class="small text-body-success">
                         Налично: <?= $nCount ?> / Цена: <?= $cPriceFormatted ?>
 
                         <?php if($sPriceRaw > 0): ?>
@@ -265,7 +265,7 @@ $('#promoFilter').on('click', function() {
 /* QTY PLUS */
 $(document).on('click', '.qty-plus', function(){
     const input = $(this).siblings('.qty-input');
-    let val = parseInt(input.val()) || 1;
+    let val = parseInt(input.val()) || 0;
     let max = parseInt(input.attr('max')) || 1000;
     if(val < max) input.val(val+1).trigger('input');
 });

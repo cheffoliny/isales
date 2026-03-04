@@ -1,52 +1,48 @@
-<div class="sidebar">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container-fluid">
+<?php
+$currentPage = $_GET['page'] ?? 'routes';
+?>
 
-        <span class="navbar-brand fw-bold">
+<nav class="navbar navbar-dark bg-primary app-header shadow-sm">
+
+    <div class="container-fluid d-flex justify-content-between">
+
+        <span class="fw-semibold">
             iSales
         </span>
 
-        <button class="navbar-toggler" type="button"
-                data-bs-toggle="collapse"
-                data-bs-target="#navbarScroll">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <div class="d-flex align-items-center gap-2">
 
-        <div class="collapse navbar-collapse" id="navbarScroll">
+            <button id="themeToggle"
+                    class="btn btn-sm btn-outline-light">
+                <i class="fa-solid fa-moon"></i>
+            </button>
 
-            <ul class="navbar-nav me-auto">
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-light dropdown-toggle"
+                        data-bs-toggle="dropdown">
+                    <i class="fa-solid fa-user"></i>
+                </button>
 
-                <a href="dashboard.php?page=routes" class="nav-link">
-                    <i class="fa-solid fa-route"></i> Маршрути
-                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
 
-                <a href="dashboard.php?page=orders" class="nav-link">
-                    Reports
-                </a>
-                 <a href="dashboard.php?page=import_nomenclatures" class="nav-link">
-                    Импорт
-                </a>
-                             <a href="dashboard.php?page=import_sales" class="nav-link">
-                                Импорт продажби
-                            </a>
-            </ul>
+                    <li class="dropdown-item-text small text-muted">
+                        <?= htmlspecialchars($_SESSION['username']); ?>
+                    </li>
 
-            <div class="d-flex align-items-center gap-3">
+                    <li><hr class="dropdown-divider"></li>
 
-                <span class="text-light" href="#">
-                    <?= htmlspecialchars($_SESSION['username']); ?>
-                </span>
+                    <li>
+                        <a class="dropdown-item text-danger" href="logout.php">
+                            <i class="fa-solid fa-right-from-bracket me-2"></i>
+                            Изход
+                        </a>
+                    </li>
 
-                    <a href="logout.php" class="nav-link text-danger">
-                        <i class="fa-solid fa-right-from-bracket"></i> Изход
-                    </a>
-
+                </ul>
             </div>
 
         </div>
+
     </div>
+
 </nav>
-
-
-
-</div>

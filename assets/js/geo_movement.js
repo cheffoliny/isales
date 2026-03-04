@@ -396,48 +396,89 @@ function drawFallbackLine(el, fromLatLng, toLatLng) {
 /* ------------------------
    openMapModal(modalId, oLat, oLan, idUser)
    ------------------------ */
-function openMapModal(modalId, oLat, oLan, idUser) {
-    const modalEl = document.getElementById(modalId);
-    if (!modalEl) {
-        console.error('openMapModal: modal element not found', modalId);
-        return;
-    }
+   window.openMapModal = function(modalId, oLat, oLan, idUser) {
+       const modalEl = document.getElementById(modalId);
+       if (!modalEl) {
+           console.error('openMapModal: modal element not found', modalId);
+           return;
+       }
 
-    const bsModal = new bootstrap.Modal(modalEl);
-    bsModal.show();
+       const bsModal = new bootstrap.Modal(modalEl);
+       bsModal.show();
 
-    const suffix = modalId.replace(/^modalMap/i, '');
-    const containerId = 'mapContainer_' + suffix;
+       const suffix = modalId.replace(/^modalMap/i, '');
+       const containerId = 'mapContainer_' + suffix;
 
-    // wait a bit for modal animation so container has size
-    setTimeout(() => {
-        initMapUnique(containerId, oLat, oLan, idUser);
-    }, 300);
+       setTimeout(() => {
+           initMapUnique(containerId, oLat, oLan, idUser);
+       }, 300);
 
-    const handlerName = '__cleanup_handler_' + modalId;
-    if (modalEl[handlerName]) {
-        modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]);
-        modalEl[handlerName] = null;
-    }
+       const handlerName = '__cleanup_handler_' + modalId;
+       if (modalEl[handlerName]) {
+           modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]);
+           modalEl[handlerName] = null;
+       }
 
-    modalEl[handlerName] = function() {
-        const mapEl = document.getElementById(containerId);
-        if (mapEl && mapEl._fallbackLine) {
-            mapEl._fallbackLine.remove();
-            mapEl._fallbackLine = null;
-            removeDistanceLabel(mapEl);
-        }
+       modalEl[handlerName] = function() {
+           const mapEl = document.getElementById(containerId);
+           if (mapEl && mapEl._fallbackLine) {
+               mapEl._fallbackLine.remove();
+               mapEl._fallbackLine = null;
+               removeDistanceLabel(mapEl);
+           }
 
-        cleanupMapContainer(containerId);
-        try {
-            if (typeof updateInterval !== 'undefined') { clearInterval(updateInterval); updateInterval = null; }
-        } catch (e) {}
-        try { modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]); } catch (e) {}
-        modalEl[handlerName] = null;
-    };
+           cleanupMapContainer(containerId);
+           try {
+               if (typeof updateInterval !== 'undefined') { clearInterval(updateInterval); updateInterval = null; }
+           } catch (e) {}
+           try { modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]); } catch (e) {}
+           modalEl[handlerName] = null;
+       };
 
-    modalEl.addEventListener('hidden.bs.modal', modalEl[handlerName]);
-}
+       modalEl.addEventListener('hidden.bs.modal', modalEl[handlerName]);
+   };
+//function openMapModal(modalId, oLat, oLan, idUser) {
+//    const modalEl = document.getElementById(modalId);
+//    if (!modalEl) {
+//        console.error('openMapModal: modal element not found', modalId);
+//        return;
+//    }
+//
+//    const bsModal = new bootstrap.Modal(modalEl);
+//    bsModal.show();
+//
+//    const suffix = modalId.replace(/^modalMap/i, '');
+//    const containerId = 'mapContainer_' + suffix;
+//
+//    // wait a bit for modal animation so container has size
+//    setTimeout(() => {
+//        initMapUnique(containerId, oLat, oLan, idUser);
+//    }, 300);
+//
+//    const handlerName = '__cleanup_handler_' + modalId;
+//    if (modalEl[handlerName]) {
+//        modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]);
+//        modalEl[handlerName] = null;
+//    }
+//
+//    modalEl[handlerName] = function() {
+//        const mapEl = document.getElementById(containerId);
+//        if (mapEl && mapEl._fallbackLine) {
+//            mapEl._fallbackLine.remove();
+//            mapEl._fallbackLine = null;
+//            removeDistanceLabel(mapEl);
+//        }
+//
+//        cleanupMapContainer(containerId);
+//        try {
+//            if (typeof updateInterval !== 'undefined') { clearInterval(updateInterval); updateInterval = null; }
+//        } catch (e) {}
+//        try { modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]); } catch (e) {}
+//        modalEl[handlerName] = null;
+//    };
+//
+//    modalEl.addEventListener('hidden.bs.modal', modalEl[handlerName]);
+//}
 
 /* ------------------------
    Глобална функция за подаване на GPS от WebView

@@ -75,136 +75,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="bg">
+<html lang="bg" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
     <title>Login | iSales</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
 
     <style>
         body {
-            margin: 0;
-            height: 100vh;
-            background: #0f1117;
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
-            font-family: 'Inter', sans-serif;
-            color: #fff;
+            justify-content: center;
+            background: var(--bs-body-bg);
         }
 
         .login-card {
-            background: #161a23;
-            padding: 45px;
-            width: 380px;
-            border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 0 40px rgba(0,0,0,0.6);
+            width: 420px;
+            border-radius: 16px;
         }
 
-        .login-title {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 22px;
-            font-weight: 600;
-            color: #4f8cff;
-        }
-
-        .form-control {
-            background: #0f1117;
-            border: 1px solid rgba(255,255,255,0.08);
-            color: #fff;
-            border-radius: 12px;
-            padding: 12px;
-        }
-
-        .form-control:focus {
-            background: #0f1117;
-            border-color: #4f8cff;
-            box-shadow: 0 0 10px rgba(79,140,255,0.5);
-            color: #fff;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 12px;
-            border-radius: 12px;
-            border: none;
-            background: #4f8cff;
-            font-weight: 500;
-            margin-top: 10px;
-        }
-
-        .btn-login:hover {
-            box-shadow: 0 0 15px rgba(79,140,255,0.6);
-        }
-
-        .error-box {
-            background: rgba(255,0,0,0.08);
-            border: 1px solid rgba(255,0,0,0.3);
-            padding: 10px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .footer-text {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 12px;
-            color: #888;
+        .login-logo {
+            max-width: 220px;
         }
     </style>
 </head>
+
 <body>
 
-<div class="login-card">
+<div class="card shadow-lg login-card border-0">
 
-    <div class="login-title">
+    <div class="card-body p-4">
+
         <div class="text-center mb-4">
-            <img src="./assets/images/isales_logo.svg"
-                 alt="iSales ASSISTANT"
-                 class="img-fluid"
-                 style="width: 270px;">
+            <img src="./assets/images/isales_logo.svg" class="login-logo mb-3">
+            <h5 class="fw-semibold">iSales System</h5>
         </div>
+
+        <?php if ($error): ?>
+            <div class="alert alert-danger">
+                <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
+        <form method="POST">
+
+            <div class="mb-3">
+                <label class="form-label">Потребител</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Парола</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+            </div>
+
+            <button class="btn btn-primary w-100">
+                <i class="fa-solid fa-right-to-bracket me-2"></i> Вход
+            </button>
+
+        </form>
+
+        <div class="text-center small text-muted mt-4">
+            © <?= date('Y') ?> iSales
+        </div>
+
     </div>
-
-    <?php if ($error): ?>
-        <div class="error-box">
-            <?= htmlspecialchars($error) ?>
-        </div>
-    <?php endif; ?>
-
-    <form method="POST" autocomplete="off">
-
-        <div class="mb-3">
-            <input type="text"
-                   name="username"
-                   class="form-control"
-                   placeholder="Потребител"
-                   required>
-        </div>
-
-        <div class="mb-3">
-            <input type="password"
-                   name="password"
-                   class="form-control"
-                   placeholder="Парола"
-                   required>
-        </div>
-
-        <button type="submit" class="btn-login">
-            Вход
-        </button>
-
-    </form>
-
-    <div class="footer-text">
-        © <?= date('Y') ?> iSales
-    </div>
-
 </div>
 
 </body>

@@ -10,30 +10,13 @@ $db = db_connect('storage');
 ?>
 
 <div class="card shadow border-0">
-
-<div class="card-header d-flex justify-content-between align-items-center">
-
-<h5 class="mb-0">
-Inventory
-</h5>
-
-<div class="d-flex gap-2">
-
-<input type="text"
-id="search"
-class="form-control form-control-sm"
-placeholder="КОД / ИМЕ">
-
-<button id="promoFilter"
-class="btn btn-sm btn-danger">
-ПРОМО
-</button>
-
-    <button id="zeroFilter" class="btn btn-sm btn-warning"> НУЛЕВИ </button>
-
-</div>
-
-</div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="d-flex gap-2">
+            <input type="text" id="search" class="form-control form-control-sm" placeholder="КОД / ИМЕ">
+            <button id="promoFilter" class="btn btn-sm btn-danger"> ПРОМО </button>
+            <button id="zeroFilter" class="btn btn-sm btn-warning"> НУЛЕВИ </button>
+        </div>
+    </div>
 
     <div class="card-body p-0">
         <div class="table-responsive">

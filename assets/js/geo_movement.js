@@ -396,47 +396,41 @@ function drawFallbackLine(el, fromLatLng, toLatLng) {
 /* ------------------------
    openMapModal(modalId, oLat, oLan, idUser)
    ------------------------ */
-   window.openMapModal = function(modalId, oLat, oLan, idUser) {
-       const modalEl = document.getElementById(modalId);
-       if (!modalEl) {
-           console.error('openMapModal: modal element not found', modalId);
-           return;
-       }
+  window.openMapModal = function(modalId, oLat, oLan, idUser) {
 
-       const bsModal = new bootstrap.Modal(modalEl);
-       bsModal.show();
+      console.log('openMapModal called:', modalId, oLat, oLan, idUser);
 
-       const suffix = modalId.replace(/^modalMap/i, '');
-       const containerId = 'mapContainer_' + suffix;
+      const modalEl = document.getElementById(modalId);
 
-       setTimeout(() => {
-           initMapUnique(containerId, oLat, oLan, idUser);
-       }, 300);
+      if (!modalEl) {
+          console.error('Modal not found:', modalId);
+          return;
+      }
 
-       const handlerName = '__cleanup_handler_' + modalId;
-       if (modalEl[handlerName]) {
-           modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]);
-           modalEl[handlerName] = null;
-       }
+      const bsModal = new bootstrap.Modal(modalEl);
+      bsModal.show();
 
-       modalEl[handlerName] = function() {
-           const mapEl = document.getElementById(containerId);
-           if (mapEl && mapEl._fallbackLine) {
-               mapEl._fallbackLine.remove();
-               mapEl._fallbackLine = null;
-               removeDistanceLabel(mapEl);
-           }
+      const suffix = modalId.replace(/^mapModal/i, '');
+      const containerId = 'mapContainer_' + suffix;
 
-           cleanupMapContainer(containerId);
-           try {
-               if (typeof updateInterval !== 'undefined') { clearInterval(updateInterval); updateInterval = null; }
-           } catch (e) {}
-           try { modalEl.removeEventListener('hidden.bs.modal', modalEl[handlerName]); } catch (e) {}
-           modalEl[handlerName] = null;
-       };
+      console.log('suffix:', suffix);
+      console.log('containerId:', containerId);
 
-       modalEl.addEventListener('hidden.bs.modal', modalEl[handlerName]);
-   };
+      setTimeout(() => {
+
+          const container = document.getElementById(containerId);
+
+          if(!container){
+              console.error('Map container not found:', containerId);
+              return;
+          }
+
+          console.log('Initializing map...');
+
+          initMapUnique(containerId, oLat, oLan, idUser);
+
+      }, 300);
+  };
 //function openMapModal(modalId, oLat, oLan, idUser) {
 //    const modalEl = document.getElementById(modalId);
 //    if (!modalEl) {

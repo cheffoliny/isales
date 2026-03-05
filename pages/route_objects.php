@@ -167,7 +167,7 @@ while ($row = $result->fetch_assoc()):
             <div class="p-3 text-center">
                 <button class="btn btn-success"
                         onclick="openMapModal('mapContainer_<?= $oID ?>', '<?= $oLat ?>', '<?= $oLan ?>')">
-                    Познавам
+                    ГЕО КООРДИНАТИ
                 </button>
             </div>
 

@@ -83,7 +83,7 @@ $objName = getObjectByID($objectId);
         </div>
 
         <!-- ITEMS -->
-        <div class="list-group list-group-flush" id="itemsList">
+        <div class="list-group px-0 list-group-flush" id="itemsList">
 
 <?php
 $db = db_connect('storage');
@@ -167,7 +167,7 @@ if ($stmt->num_rows === 0) {
         $oldQty     = (int)$oldQty;
 ?>
 
-            <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap"
+            <div class="list-group-item px-0 d-flex justify-content-between align-items-center flex-wrap"
                  data-code="<?= $sCode ?>"
                  data-name="<?= $sName ?>"
                  data-promo="<?= $isPromo ?>">

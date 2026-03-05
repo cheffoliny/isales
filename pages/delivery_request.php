@@ -97,20 +97,21 @@ SELECT
     UPPER(n.name) AS nName,
     n.client_price AS cPrice,
     n.sales_price AS sPrice,
-    n.is_calc AS nCount
+    n.is_calc AS nCount,
+    COALESCE(ROUND(pe_o.`count`,0),0) AS oldQty,
+    DATE_FORMAT(pe_o.updated_time, '%d.%m.%Y') AS oldOrderTime
 FROM nomenclatures n
-LEFT JOIN ppp_elements pe
-    ON pe.id_nomenclature = n.id
-    AND pe.id_ppp = ?
+LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp = ?
+LEFT JOIN ppp_elements pe_o ON pe_o.id_nomenclature = n.id AND pe_o.id_ppp != ?
 WHERE n.to_arc = 0
   AND n.is_calc > 0
   AND n.client_price > 0
-ORDER BY n.name ASC
+ORDER BY n.name, n.sales_price, pe.id_ppp, pe_o.id_ppp DESC
 LIMIT 1000
 ";
 
 $stmt = $db->prepare($sql);
-$stmt->bind_param("i", $pppID);
+$stmt->bind_param("ii", $pppID, $pppID);
 $stmt->execute();
 $stmt->store_result();
 
@@ -126,7 +127,9 @@ if ($stmt->num_rows === 0) {
         $nName,
         $cPrice,
         $sPrice,
-        $nCount
+        $nCount,
+        $oldQty,
+        $oldOrderTime
     );
 
     while ($stmt->fetch()):
@@ -150,6 +153,10 @@ if ($stmt->num_rows === 0) {
         $inputValue = $hasSaved ? $oQuantity : 0;
 
         $btnClass   = $hasSaved ? 'btn-success' : 'btn-secondary';
+
+        // Стара поръчка
+        $oldOrderTime = $oldOrderTime ? date('d.m.Y', strtotime($oldOrderTime)) : '-';
+        $oldQty     = (int)$oldQty;
 ?>
 
             <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap"
@@ -174,7 +181,7 @@ if ($stmt->num_rows === 0) {
                     </div>
 
                     <div class="small text-body-secondary">
-                        Последна поръчка: <?= $oQuantity ?> - <?= $lOrder ?>
+                        Последна поръчка: <?= $oldQty ?> - <?= $oldOrderTime ?>
                     </div>
                 </div>
 

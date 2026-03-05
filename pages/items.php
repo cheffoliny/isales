@@ -42,8 +42,8 @@ class="btn btn-sm btn-danger">
                     <tr>
                         <th class="col-1">Код</th>
                         <th class="col">Име</th>
-                        <th class="col-1">Наличност</th>
-                        <th class="col-1">Клиентска цена</th>
+                        <th class="col-1">Налично</th>
+                        <th class="col-1">Клиентска</th>
                         <th class="col-1">Промо</th>
                         <th class="col-1"></th>
                     </tr>

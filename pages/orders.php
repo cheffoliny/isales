@@ -12,6 +12,7 @@ $officeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $db = db_connect('storage');
 $today = date('Y-m-d');
 
+/* ===== ВАЖНО: взимаме wait И confirm ===== */
 $sql = "
 SELECT
     o.id AS oID,
@@ -19,13 +20,14 @@ SELECT
     o.name AS oName,
     o.address AS oAddress,
     p.id AS pID,
+    p.status,
     p.source_user,
     DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate
 FROM ppp p
-JOIN ". DB_NAMES['sod'] .".objects o 
-    ON o.id = p.id_dest 
+JOIN ". DB_NAMES['sod'] .".objects o
+    ON o.id = p.id_dest
     AND p.dest_type = 'object'
-WHERE p.status = 'open'
+WHERE p.status IN ('wait','confirm')
   AND DATE(p.source_date) = ?
 ORDER BY o.name ASC
 ";
@@ -34,7 +36,6 @@ $stmt = $db->prepare($sql);
 $stmt->bind_param("s", $today);
 $stmt->execute();
 $stmt->store_result();
-
 ?>
 
 <div class="card shadow mb-3 border-0">
@@ -46,7 +47,7 @@ $stmt->store_result();
         </a>
 
         <h5 class="mb-0">
-            Активни заявки за днес
+            Заявки за потвърждение
         </h5>
     </div>
 
@@ -54,67 +55,118 @@ $stmt->store_result();
 
         <div class="list-group list-group-flush">
 
-            <?php
+<?php
 
-            if ($stmt->num_rows === 0) {
+if ($stmt->num_rows === 0) {
 
-                echo '<div class="alert alert-warning mb-0">Няма активни заявки за днес.</div>';
+    echo '<div class="alert alert-warning mb-0">Няма заявки за обработка.</div>';
 
-            } else {
+} else {
 
-                $stmt->bind_result(
-                    $oID,
-                    $oNum,
-                    $oName,
-                    $oAddress,
-                    $pID,
-                    $sourceUser,
-                    $sourceDate
-                );
+    $stmt->bind_result(
+        $oID,
+        $oNum,
+        $oName,
+        $oAddress,
+        $pID,
+        $status,
+        $sourceUser,
+        $sourceDate
+    );
 
-                while ($stmt->fetch()):
+    while ($stmt->fetch()):
 
-                    $oID   = (int)$oID;
-                    $pID   = (int)$pID;
-                    $oNum  = htmlspecialchars($oNum ?? '');
-                    $oName = htmlspecialchars($oName ?? '');
-                    $oAddress = htmlspecialchars($oAddress ?? '');
-                    $sourceUser = htmlspecialchars($sourceUser ?? '');
-                    ?>
+        $oID   = (int)$oID;
+        $pID   = (int)$pID;
+        $status = $status ?? 'wait';
 
-                    <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
-                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        $oNum  = htmlspecialchars($oNum ?? '');
+        $oName = htmlspecialchars($oName ?? '');
+        $oAddress = htmlspecialchars($oAddress ?? '');
+        $sourceUser = htmlspecialchars($sourceUser ?? '');
 
-                        <div>
+        /* ===== Цветова логика ===== */
+        $statusClass = ($status === 'confirm')
+                        ? 'bg-success'
+                        : 'bg-warning';
+?>
 
-                            <div class="fw-semibold">
-                                [ <?= $oNum ?> ] - <?= $oName ?>
-                            </div>
+<div class="list-group-item d-flex justify-content-between align-items-center">
 
-                            <div class="small text-body-secondary">
-                                <?= $oAddress ?>
-                            </div>
+    <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
+       class="text-decoration-none text-body flex-grow-1">
 
-                            <div class="small text-body-secondary">
-                                Създадена от: <?= $sourceUser ?> | <?= $sourceDate ?>
-                            </div>
+        <div class="fw-semibold">
+            [ <?= $oNum ?> ] - <?= $oName ?>
+        </div>
 
-                        </div>
+        <div class="small text-body-secondary">
+            <?= $oAddress ?>
+        </div>
 
-                        <span class="badge bg-primary">
-                    <i class="fa-solid fa-clipboard-list"></i>
-                </span>
+        <div class="small text-body-secondary">
+            Създадена от: <?= $sourceUser ?> | <?= $sourceDate ?>
+        </div>
 
-                    </a>
+    </a>
 
-                <?php
-                endwhile;
-            }
+    <!-- STATUS BUTTON -->
+    <button class="btn text-white rounded-circle d-flex align-items-center justify-content-center ms-3 order-status-btn <?= $statusClass ?>"
+            style="width:42px;height:42px;"
+            data-ppp="<?= $pID ?>"
+            data-status="<?= $status ?>">
+        <i class="fa-solid fa-check"></i>
+    </button>
 
-            $stmt->close();
-            $db->close();
-            ?>
+</div>
+
+<?php
+    endwhile;
+}
+
+$stmt->close();
+$db->close();
+?>
 
         </div>
     </div>
 </div>
+
+<!-- ================= STATUS TOGGLE SCRIPT ================= -->
+<script>
+$(document).on('click', '.order-status-btn', function(e){
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const btn = $(this);
+    const pppID = btn.data('ppp');
+    let currentStatus = btn.data('status');
+
+    let newStatus = (currentStatus === 'wait') ? 'confirm' : 'wait';
+
+    $.post('includes/update_ppp_status.php', {
+        pppID: pppID,
+        status: newStatus
+    }, function(resp){
+
+        if(resp.success){
+
+            btn.data('status', newStatus);
+
+            btn.removeClass('bg-warning bg-success');
+
+            if(newStatus === 'confirm'){
+                btn.addClass('bg-success');
+            } else {
+                btn.addClass('bg-warning');
+            }
+
+        } else {
+            alert('Грешка при обновяване!');
+        }
+
+    }, 'json');
+
+});
+</script>

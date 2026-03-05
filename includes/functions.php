@@ -59,4 +59,118 @@ function getObjectByID($oID) {
     return $name ?? '';
 }
 
+function update_ppp_status($pppID, $newStatus, $idUser)
+{
+    $db = db_connect('storage');
+
+    $allowed = ['open','wait','confirm','cancel'];
+    if (!in_array($newStatus, $allowed)) {
+        return false;
+    }
+
+    $pppID = (int)$pppID;
+    $idUser = (int)$idUser;
+
+    /* ===== ВЗИМАМЕ ТЕКУЩИЯ СТАТУС ===== */
+    $stmt = $db->prepare("SELECT status FROM ppp WHERE id = ? LIMIT 1");
+    $stmt->bind_param("i", $pppID);
+    $stmt->execute();
+    $stmt->bind_result($currentStatus);
+    $stmt->fetch();
+    $stmt->close();
+
+    if (!$currentStatus) {
+        return false;
+    }
+
+    $db->begin_transaction();
+
+    try {
+
+        /* =======================================================
+           OPEN ⇄ WAIT
+        ======================================================= */
+        if (
+            ($currentStatus === 'wait' && $newStatus === 'open') ||
+            ($currentStatus === 'open' && $newStatus === 'wait')
+        ) {
+
+            $stmt = $db->prepare("
+                UPDATE ppp
+                SET status = ?,
+                    updated_user = ?,
+                    updated_time = NOW()
+                WHERE id = ?
+            ");
+            $stmt->bind_param("sii", $newStatus, $idUser, $pppID);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        /* =======================================================
+           WAIT → CONFIRM
+        ======================================================= */
+        elseif ($currentStatus === 'wait' && $newStatus === 'confirm') {
+
+            $stmt = $db->prepare("
+                UPDATE ppp
+                SET status = 'confirm',
+                    dest_user = ?,
+                    dest_date = NOW(),
+                    updated_user = ?,
+                    updated_time = NOW()
+                WHERE id = ?
+            ");
+            $stmt->bind_param("iii", $idUser, $idUser, $pppID);
+            $stmt->execute();
+            $stmt->close();
+
+            /* ===== Обновяваме ppp_elements ===== */
+            $stmt2 = $db->prepare("
+                UPDATE ppp_elements
+                SET client_own = 1
+                WHERE id_ppp = ?
+            ");
+            $stmt2->bind_param("i", $pppID);
+            $stmt2->execute();
+            $stmt2->close();
+        }
+
+        /* =======================================================
+           CONFIRM → WAIT
+        ======================================================= */
+        elseif ($currentStatus === 'confirm' && $newStatus === 'wait') {
+
+            $zeroDate = '0000-00-00 00:00:00';
+
+            $stmt = $db->prepare("
+                UPDATE ppp
+                SET status = 'wait',
+                    dest_user = 0,
+                    dest_date = ?,
+                    updated_user = ?,
+                    updated_time = NOW()
+                WHERE id = ?
+            ");
+            $stmt->bind_param("sii", $zeroDate, $idUser, $pppID);
+            $stmt->execute();
+            $stmt->close();
+        }
+
+        else {
+            $db->rollback();
+            return false;
+        }
+
+        $db->commit();
+        $db->close();
+        return true;
+
+    } catch (Exception $e) {
+
+        $db->rollback();
+        $db->close();
+        return false;
+    }
+}
 ?>

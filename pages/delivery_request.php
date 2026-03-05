@@ -18,8 +18,10 @@ if ($objectId <= 0) {
 $db_storage = db_connect('storage');
 $today = date('Y-m-d');
 
-/* ================== CHECK / CREATE PPP ================== */
-$checkSql = "SELECT id FROM ppp
+/* ================= CHECK / CREATE PPP ================= */
+
+$checkSql = "SELECT id, status
+             FROM ppp
              WHERE id_dest = ?
                AND dest_type = 'object'
                AND DATE(source_date) = ?
@@ -28,340 +30,401 @@ $checkSql = "SELECT id FROM ppp
 $stmt = $db_storage->prepare($checkSql);
 $stmt->bind_param("is", $objectId, $today);
 $stmt->execute();
-$stmt->bind_result($existingID);
+$stmt->bind_result($existingID, $pppStatus);
 $stmt->fetch();
 $stmt->close();
 
 if ($existingID) {
+
     $pppID = (int)$existingID;
+    $pppStatus = $pppStatus ?: 'open';
+
 } else {
-    $sourceUser = trim($_SESSION['first_name'] . ' ' . $_SESSION['last_name']);
+
+    $sourceUser = trim($_SESSION['first_name'].' '.$_SESSION['last_name']);
     $status = 'open';
+    $pppStatus = $status;
 
     $insertSql = "INSERT INTO ppp
-        (`status`, `source_date`, `source_user`, `source_type`, `id_source`, `dest_type`, `id_dest`)
-        VALUES (?, NOW(), ?, 'storagehouse', 1, 'object', ?)";
+        (`status`,`source_date`,`source_user`,`source_type`,`id_source`,`dest_type`,`id_dest`)
+        VALUES (?,NOW(),?,'storagehouse',1,'object',?)";
 
     $stmt = $db_storage->prepare($insertSql);
-    $stmt->bind_param("ssi", $status, $sourceUser, $objectId);
+    $stmt->bind_param("ssi",$status,$sourceUser,$objectId);
     $stmt->execute();
+
     $pppID = $db_storage->insert_id;
+
     $stmt->close();
 }
 
-if (!$pppID) die('Грешка при определяне на pppID');
+if(!$pppID) die('PPP error');
 
 $objName = getObjectByID($objectId);
+
+/* ================= LOCK LOGIC ================= */
+
+$isConfirmed = ($pppStatus === 'confirm');
+
+$disabledAttr = $isConfirmed ? 'disabled' : '';
+$lockedClass  = $isConfirmed ? 'opacity-50' : '';
 ?>
 
 <div class="card shadow mb-3 border-0">
 
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
-           class="btn btn-outline-secondary btn-sm">
-            <i class="fa-solid fa-angles-left"></i>
-        </a>
+<div class="card-header d-flex justify-content-between align-items-center">
 
-        <h5 class="mb-0">
-            Заявка за: <?= htmlspecialchars($objName) ?>
-        </h5>
-    </div>
+<a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
+class="btn btn-outline-secondary btn-sm">
+<i class="fa-solid fa-angles-left"></i>
+</a>
 
-    <div class="card-body">
+<h5 class="mb-0">
+Заявка за: <?= htmlspecialchars($objName) ?>
+</h5>
 
-        <!-- SEARCH + PROMO -->
-        <div class="d-flex gap-2 mb-3 align-items-center">
-            <input type="text"
-                   id="deliverySearch"
-                   class="form-control form-control-sm flex-grow-1"
-                   placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
+</div>
 
-            <button id="promoFilter"
-                    class="btn btn-sm btn-danger">
-                ПРОМОЦИИ
-            </button>
-        </div>
+<?php if($isConfirmed): ?>
 
-        <!-- ITEMS -->
-        <div class="list-group px-0 list-group-flush" id="itemsList">
+<div class="alert alert-success text-center mb-0">
+Заявката е потвърдена
+</div>
+
+<?php endif; ?>
+
+<div class="card-body">
+
+<!-- SEARCH + PROMO -->
+
+<div class="d-flex gap-2 mb-3">
+
+<input type="text"
+id="deliverySearch"
+class="form-control form-control-sm"
+placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
+
+<button id="promoFilter"
+class="btn btn-sm btn-danger">
+ПРОМОЦИИ
+</button>
+
+</div>
+
+<div class="list-group list-group-flush" id="itemsList">
 
 <?php
+
 $db = db_connect('storage');
 
 $sql = "
 SELECT
-    COALESCE(pe.id_ppp, pe_o.id_ppp) AS orderUnit,
-    DATE_FORMAT(pe.updated_time, '%d.%m.%Y') AS lOrder,
-    COALESCE(ROUND(pe.`count`,0),0) AS oQuantity,
-    n.id AS nID,
-    UPPER(n.nom_code) AS nCode,
-    UPPER(n.name) AS nName,
-    n.client_price AS cPrice,
-    n.sales_price AS sPrice,
-    n.is_calc AS nCount,
-    n.unit AS nUnit,
-    COALESCE(ROUND(pe_o.`count`,0),0) AS oldQty,
-    DATE_FORMAT(pe_o.updated_time, '%d.%m.%Y') AS oldOrderTime
+
+n.id,
+UPPER(n.nom_code),
+UPPER(n.name),
+n.client_price,
+n.sales_price,
+n.is_calc,
+n.unit,
+
+COALESCE(pe.count,0),
+DATE_FORMAT(pe.updated_time,'%d.%m.%Y'),
+
+COALESCE(oldpe.count,0),
+DATE_FORMAT(oldpe.updated_time,'%d.%m.%Y')
+
 FROM nomenclatures n
-LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp = ?
-LEFT JOIN ppp_elements pe_o ON pe_o.id_nomenclature = n.id AND pe_o.id_ppp != ?
-LEFT JOIN ppp p_o ON p_o.id = pe_o.id_ppp AND p_o.id_dest = ?
+
+LEFT JOIN ppp_elements pe
+ON pe.id_nomenclature = n.id
+AND pe.id_ppp = ?
+
+LEFT JOIN (
+
+SELECT
+pe1.id_nomenclature,
+pe1.count,
+pe1.updated_time
+
+FROM ppp_elements pe1
+JOIN ppp p1 ON p1.id = pe1.id_ppp
+
+WHERE p1.id_dest = ?
+AND pe1.updated_time =
+(
+SELECT MAX(pe2.updated_time)
+FROM ppp_elements pe2
+JOIN ppp p2 ON p2.id = pe2.id_ppp
+WHERE p2.id_dest = ?
+AND pe2.id_nomenclature = pe1.id_nomenclature
+)
+
+) oldpe ON oldpe.id_nomenclature = n.id
+
 WHERE n.to_arc = 0
-  AND n.is_calc > 0
-  AND n.client_price > 0
-GROUP BY n.nom_code
-ORDER BY orderUnit DESC
+AND n.is_calc > 0
+AND n.client_price > 0
+
+ORDER BY n.name
 LIMIT 1000
 ";
 
 $stmt = $db->prepare($sql);
-$stmt->bind_param("iii", $pppID, $pppID, $objectId);
-//echo $pppID.' / '.$objectId;
+$stmt->bind_param("iii",$pppID,$objectId,$objectId);
 $stmt->execute();
-$stmt->store_result();
 
-if ($stmt->num_rows === 0) {
-    echo '<div class="alert alert-info">НЯМА НАМЕРЕНИ АРТИКУЛИ.</div>';
-} else {
+$stmt->bind_result(
+$nID,
+$nCode,
+$nName,
+$cPrice,
+$sPrice,
+$nCount,
+$nUnit,
+$oQuantity,
+$lOrder,
+$oldQty,
+$oldOrderTime
+);
 
-    $stmt->bind_result(
-        $orderUnit,
-        $lOrder,
-        $oQuantity,
-        $nID,
-        $nCode,
-        $nName,
-        $cPrice,
-        $sPrice,
-        $nCount,
-        $nUnit,
-        $oldQty,
-        $oldOrderTime
-    );
+while($stmt->fetch()):
 
-    while ($stmt->fetch()):
+$nID=(int)$nID;
 
-        $nID       = (int)$nID;
-        $sCode     = htmlspecialchars($nCode ?? '');
-        $sName     = htmlspecialchars($nName ?? '');
-        $sUnit     = htmlspecialchars($nUnit ?? '');
-        $cPriceRaw = (float)$cPrice;
-        $sPriceRaw = (float)$sPrice;
-        $isPromo   = $sPriceRaw > 0 ? 1 : 0;
-        $nPriceRaw = $sPriceRaw > 0 ? $sPriceRaw : $cPriceRaw;
+$sCode=htmlspecialchars($nCode);
+$sName=htmlspecialchars($nName);
+$sUnit=htmlspecialchars($nUnit);
 
-        $cPriceFormatted = number_format($cPriceRaw, 2);
-        $sPriceFormatted = number_format($sPriceRaw, 2);
+$cPriceRaw=(float)$cPrice;
+$sPriceRaw=(float)$sPrice;
 
-        $nCount     = (int)$nCount;
-        $lOrder     = $lOrder ? date('d.m.Y', strtotime($lOrder)) : '-';
-        $oQuantity  = (int)$oQuantity;
+$isPromo=$sPriceRaw>0?1:0;
+$nPriceRaw=$sPriceRaw>0?$sPriceRaw:$cPriceRaw;
 
-        $hasSaved   = $oQuantity > 0;
-        $inputValue = $hasSaved ? $oQuantity : 0;
+$inputValue=(int)$oQuantity;
 
-        $btnClass   = $hasSaved ? 'btn-success' : 'btn-secondary';
+$btnClass=$inputValue>0?'btn-success':'btn-secondary';
 
-        // Стара поръчка
-        $oldOrderTime = $oldOrderTime ? date('d.m.Y', strtotime($oldOrderTime)) : '-';
-        $oldQty     = (int)$oldQty;
 ?>
 
-            <div class="list-group-item px-0 d-flex justify-content-between align-items-center flex-wrap"
-                 data-code="<?= $sCode ?>"
-                 data-name="<?= $sName ?>"
-                 data-promo="<?= $isPromo ?>">
+<div class="list-group-item d-flex justify-content-between align-items-center flex-wrap <?= $lockedClass ?>"
+data-code="<?= $sCode ?>"
+data-name="<?= $sName ?>"
+data-promo="<?= $isPromo ?>">
 
-                <div class="flex-grow-1">
+<div class="flex-grow-1">
 
-                    <div class="fw-semibold">
-                        <?= $sCode ?> - <?= $sName ?>
-                    </div>
+<div class="fw-semibold">
+<?= $sCode ?> - <?= $sName ?>
+</div>
 
-                    <div class="small text-info">
-                        Налично: <?= $nCount .' '.$sUnit ?> / Цена: <?= $cPriceFormatted ?>
+<div class="small text-info">
+Налично: <?= $nCount.' '.$sUnit ?>
+/ Цена: <?= number_format($cPriceRaw,2) ?>
 
-                        <?php if($sPriceRaw > 0): ?>
-                            <span class="badge bg-danger">
-                                ПРОМО: <?= $sPriceFormatted ?>
-                            </span>
-                        <?php endif; ?>
-                    </div>
+<?php if($sPriceRaw>0): ?>
 
-                    <div class="small text-body-secondary">
-                        Последна поръчка: <?= $oldQty .' '.$sUnit ?> - <?= $oldOrderTime ?>
-                    </div>
-                </div>
+<span class="badge bg-danger">
+ПРОМО <?= number_format($sPriceRaw,2) ?>
+</span>
 
-                <div class="d-flex align-items-center gap-2">
+<?php endif; ?>
 
-                    <button class="btn btn-sm btn-outline-secondary qty-minus">
-                        <i class="fa-solid fa-minus"></i>
-                    </button>
+</div>
 
-                    <input type="number"
-                           class="form-control form-control-sm qty-input w-50"
-                           value="<?= $inputValue ?>"
-                           min="0"
-                           max="1000"
-                           data-saved="<?= $inputValue ?>">
+<div class="small text-body-secondary">
+Последна поръчка:
+<?= $oldQty.' '.$sUnit ?> - <?= $oldOrderTime ?: '-' ?>
+</div>
 
-                    <button class="btn btn-sm btn-outline-secondary qty-plus">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
+</div>
 
-                    <button class="btn btn-sm <?= $btnClass ?> save-delivery"
-                            data-ppp="<?= $pppID ?>"
-                            data-id="<?= $nID ?>"
-                            data-price="<?= $nPriceRaw ?>">
-                        <i class="fa-solid fa-circle-check fa-1x"></i>
-                    </button>
+<div class="d-flex align-items-center gap-2">
 
-                </div>
-            </div>
+<button class="btn btn-sm btn-outline-secondary qty-minus" <?= $disabledAttr ?>>
+<i class="fa-solid fa-minus"></i>
+</button>
 
-<?php
-    endwhile;
-}
+<input type="number"
+class="form-control form-control-sm qty-input"
+value="<?= $inputValue ?>"
+min="0"
+max="1000"
+data-saved="<?= $inputValue ?>"
+<?= $disabledAttr ?>>
 
-$stmt->close();
-$db->close();
-?>
+<button class="btn btn-sm btn-outline-secondary qty-plus" <?= $disabledAttr ?>>
+<i class="fa-solid fa-plus"></i>
+</button>
 
-        </div>
-    </div>
+<button class="btn btn-sm <?= $btnClass ?> save-delivery"
+data-ppp="<?= $pppID ?>"
+data-id="<?= $nID ?>"
+data-price="<?= $nPriceRaw ?>"
+<?= $disabledAttr ?>>
+<i class="fa-solid fa-circle-check"></i>
+</button>
+
+</div>
+
+</div>
+
+<?php endwhile; ?>
+
+</div>
+</div>
 </div>
 
 <script>
-let promoActive = false;
 
-/* ================= FILTER ================= */
-function applyFilters() {
-    const searchValue = ($('#deliverySearch').val() || '').toUpperCase().trim();
+const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
 
-    $('#itemsList .list-group-item').each(function() {
+let promoActive=false;
 
-        const code = ($(this).data('code') || '').toString().toUpperCase();
-        const name = ($(this).data('name') || '').toString().toUpperCase();
-        const isPromo = $(this).data('promo') == 1;
+/* FILTER */
 
-        let visible = true;
+function applyFilters(){
 
-        if (searchValue &&
-            !code.includes(searchValue) &&
-            !name.includes(searchValue)) {
-            visible = false;
-        }
+const search=($('#deliverySearch').val()||'').toUpperCase();
 
-        if (promoActive && !isPromo) {
-            visible = false;
-        }
+$('#itemsList .list-group-item').each(function(){
 
-        $(this).toggleClass('d-none', !visible);
-    });
+const code=$(this).data('code');
+const name=$(this).data('name');
+const promo=$(this).data('promo');
+
+let visible=true;
+
+if(search && !code.includes(search) && !name.includes(search))
+visible=false;
+
+if(promoActive && promo!=1)
+visible=false;
+
+$(this).toggleClass('d-none',!visible);
+
+});
+
 }
 
-/* SEARCH */
-$('#deliverySearch').on('input', function() {
-    applyFilters();
+$('#deliverySearch').on('input',applyFilters);
+
+$('#promoFilter').on('click',function(){
+
+promoActive=!promoActive;
+
+$(this)
+.toggleClass('btn-danger btn-secondary')
+.text(promoActive?'ВСИЧКИ':'ПРОМОЦИИ');
+
+applyFilters();
+
 });
 
-/* PROMO BUTTON */
-$('#promoFilter').on('click', function() {
-    promoActive = !promoActive;
+/* QTY + */
 
-    $(this)
-        .toggleClass('btn-danger btn-secondary')
-        .text(promoActive ? 'ВСИЧКИ' : 'ПРОМОЦИИ');
+$(document).on('click','.qty-plus',function(){
 
-    applyFilters();
+if(deliveryConfirmed) return;
+
+const input=$(this).siblings('.qty-input');
+
+let val=parseInt(input.val())||0;
+
+if(val<1000) input.val(val+1).trigger('input');
+
 });
 
-/* QTY PLUS */
-$(document).on('click', '.qty-plus', function(){
-    const input = $(this).siblings('.qty-input');
-    let val = parseInt(input.val()) || 0;
-    let max = parseInt(input.attr('max')) || 1000;
-    if(val < max) input.val(val+1).trigger('input');
+/* QTY - */
+
+$(document).on('click','.qty-minus',function(){
+
+if(deliveryConfirmed) return;
+
+const input=$(this).siblings('.qty-input');
+
+let val=parseInt(input.val())||0;
+
+if(val>0) input.val(val-1).trigger('input');
+
 });
 
-/* QTY MINUS */
-$(document).on('click', '.qty-minus', function(){
-    const input = $(this).siblings('.qty-input');
-    let val = parseInt(input.val()) || 0;
-    if(val > 0) input.val(val-1).trigger('input');
-});
+/* INPUT */
 
-/* INPUT CHANGE */
-$(document).on('input', '.qty-input', function(){
+$(document).on('input','.qty-input',function(){
 
-    let val = parseInt($(this).val()) || 0;
-    let max = parseInt($(this).attr('max')) || 1000;
+if(deliveryConfirmed) return;
 
-    if(val < 0) val = 0;
-    if(val > max) val = max;
+const btn=$(this).siblings('.save-delivery');
 
-    $(this).val(val);
+const val=parseInt($(this).val())||0;
 
-    const btn = $(this).siblings('.save-delivery');
-    const saved = parseInt($(this).data('saved') || 0);
+const saved=parseInt($(this).data('saved'))||0;
 
-    if(val !== saved){
-        btn.removeClass('btn-success')
-           .addClass('btn-secondary');
+if(val!==saved){
 
-//         btn.find('i')
-//            .removeClass('fa-check text-success')
-//            .addClass('fa-circle-check text-secondary');
-    } else {
-        btn.removeClass('btn-secondary')
-           .addClass('btn-success');
+btn.removeClass('btn-success')
+.addClass('btn-secondary');
 
-//         btn.find('i')
-//            .removeClass('fa-circle-check text-secondary')
-//            .addClass('fa-check text-success');
-    }
+}else{
+
+btn.removeClass('btn-secondary')
+.addClass('btn-success');
+
+}
+
 });
 
 /* SAVE */
-$(document).on('click', '.save-delivery', function(){
 
-    const btn = $(this);
-    const row = btn.closest('.list-group-item');
-    const input = row.find('.qty-input');
+$(document).on('click','.save-delivery',function(){
 
-    const qty = parseInt(input.val()) || 1;
-    const id_ppp = btn.data('ppp');
-    const id_n = btn.data('id');
-    const price = btn.data('price');
+if(deliveryConfirmed){
 
-    if(!id_ppp || !id_n || qty <= 0){
-        alert('Липсват данни!');
-        return;
-    }
+alert('Заявката е потвърдена.');
 
-    $.post('includes/save_ppp_element.php', {
-        id_ppp: id_ppp,
-        id_nomenclature: id_n,
-        count: qty,
-        single_price: price
-    }, function(resp){
+return;
 
-        if(resp.success){
+}
 
-            input.data('saved', qty);
+const btn=$(this);
+const row=btn.closest('.list-group-item');
 
-            btn.removeClass('btn-secondary')
-               .addClass('btn-success');
+const input=row.find('.qty-input');
 
-//             btn.find('i')
-//                .removeClass('fa-circle-check text-secondary')
-//                .addClass('fa-check text-success');
+const qty=parseInt(input.val())||0;
 
-        } else {
-            alert('Грешка: ' + resp.message);
-        }
+const id_ppp=btn.data('ppp');
+const id_n=btn.data('id');
+const price=btn.data('price');
 
-    }, 'json');
+if(qty<=0) return;
+
+$.post('includes/save_ppp_element.php',{
+
+id_ppp:id_ppp,
+id_nomenclature:id_n,
+count:qty,
+single_price:price
+
+},function(resp){
+
+if(resp.success){
+
+input.data('saved',qty);
+
+btn.removeClass('btn-secondary')
+.addClass('btn-success');
+
+}else{
+
+alert('Грешка');
+
+}
+
+},'json');
+
 });
+
 </script>

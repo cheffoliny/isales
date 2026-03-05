@@ -22,10 +22,16 @@ $currentPage = $_GET['page'] ?? 'routes';
         <span>Импорт</span>
     </a>
 
+    <a href="dashboard.php?page=items"
+       class="nav-item <?= $currentPage === 'items' ? 'active' : '' ?>">
+        <i class="fa-solid fa-tags"></i>
+        <span>Артикули</span>
+    </a>
+<!--
     <a href="dashboard.php?page=import_sales"
        class="nav-item <?= $currentPage === 'import_sales' ? 'active' : '' ?>">
         <i class="fa-solid fa-cart-plus"></i>
         <span>Продажби</span>
     </a>
-
+-->
 </nav>

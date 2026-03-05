@@ -3,6 +3,7 @@
 $allowedPages = [
     'routes',
     'orders',
+    'items',
     'object_order',
     'route_objects',
     'import_nomenclatures',

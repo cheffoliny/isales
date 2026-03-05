@@ -71,10 +71,19 @@ while ($row = $result->fetch_assoc()):
     $mapModalId  = "mapModal{$oID}";
 
     /* ===== STATUS COLOR ===== */
+
     $statusClass = 'bg-info';
+    $disabled = '';
+
     if ($oStatus === 'wait') {
         $statusClass = 'bg-warning';
     }
+
+    if ($oStatus === 'confirm') {
+        $statusClass = 'bg-success';
+        $disabled = 'disabled';
+    }
+
 ?>
 
 <!-- ================= OBJECT CARD ================= -->
@@ -103,13 +112,16 @@ while ($row = $result->fetch_assoc()):
         <div class="d-flex gap-2">
 
             <?php if ($pppID > 0): ?>
+
                 <!-- STATUS BUTTON -->
                 <button class="btn text-white rounded-circle d-flex align-items-center justify-content-center status-btn <?= $statusClass ?>"
                         style="width:42px;height:42px;"
                         data-ppp="<?= $pppID ?>"
-                        data-status="<?= $oStatus ?>">
+                        data-status="<?= $oStatus ?>"
+                        <?= $disabled ?>>
                     <i class="fa-solid fa-clock"></i>
                 </button>
+
             <?php endif; ?>
 
             <!-- INFO BUTTON -->
@@ -129,13 +141,16 @@ while ($row = $result->fetch_assoc()):
 <div class="modal fade" id="<?= $infoModalId ?>" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
+
             <div class="modal-header">
                 <h5 class="modal-title"><?= $oNum ?> - <?= $oName ?></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+
             <div class="modal-body">
                 <?= nl2br($oInfo) ?>
             </div>
+
         </div>
     </div>
 </div>
@@ -172,10 +187,18 @@ $db->close();
 $(document).on('click', '.status-btn', function(){
 
     const btn = $(this);
+
+    if(btn.prop('disabled')){
+        return;
+    }
+
     const pppID = btn.data('ppp');
     let currentStatus = btn.data('status');
 
-    // Toggle logic
+    if(currentStatus === 'confirm'){
+        return;
+    }
+
     let newStatus = (currentStatus === 'open') ? 'wait' : 'open';
 
     $.post('includes/update_ppp_status.php', {
@@ -187,7 +210,7 @@ $(document).on('click', '.status-btn', function(){
 
             btn.data('status', newStatus);
 
-            btn.removeClass('bg-info bg-warning');
+            btn.removeClass('bg-info bg-warning bg-success');
 
             if(newStatus === 'wait'){
                 btn.addClass('bg-warning');

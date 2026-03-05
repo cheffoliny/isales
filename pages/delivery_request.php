@@ -90,6 +90,7 @@ $db = db_connect('storage');
 
 $sql = "
 SELECT
+    COALESCE(pe.id_ppp, pe_o.id_ppp) AS orderUnit,
     DATE_FORMAT(pe.updated_time, '%d.%m.%Y') AS lOrder,
     COALESCE(ROUND(pe.`count`,0),0) AS oQuantity,
     n.id AS nID,
@@ -98,20 +99,24 @@ SELECT
     n.client_price AS cPrice,
     n.sales_price AS sPrice,
     n.is_calc AS nCount,
+    n.unit AS nUnit,
     COALESCE(ROUND(pe_o.`count`,0),0) AS oldQty,
     DATE_FORMAT(pe_o.updated_time, '%d.%m.%Y') AS oldOrderTime
 FROM nomenclatures n
 LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp = ?
 LEFT JOIN ppp_elements pe_o ON pe_o.id_nomenclature = n.id AND pe_o.id_ppp != ?
+LEFT JOIN ppp p_o ON p_o.id = pe_o.id_ppp AND p_o.id_dest = ?
 WHERE n.to_arc = 0
   AND n.is_calc > 0
   AND n.client_price > 0
-ORDER BY n.name, n.sales_price, pe.id_ppp, pe_o.id_ppp DESC
+GROUP BY n.nom_code
+ORDER BY orderUnit DESC
 LIMIT 1000
 ";
 
 $stmt = $db->prepare($sql);
-$stmt->bind_param("ii", $pppID, $pppID);
+$stmt->bind_param("iii", $pppID, $pppID, $objectId);
+//echo $pppID.' / '.$objectId;
 $stmt->execute();
 $stmt->store_result();
 
@@ -120,6 +125,7 @@ if ($stmt->num_rows === 0) {
 } else {
 
     $stmt->bind_result(
+        $orderUnit,
         $lOrder,
         $oQuantity,
         $nID,
@@ -128,6 +134,7 @@ if ($stmt->num_rows === 0) {
         $cPrice,
         $sPrice,
         $nCount,
+        $nUnit,
         $oldQty,
         $oldOrderTime
     );
@@ -137,6 +144,7 @@ if ($stmt->num_rows === 0) {
         $nID       = (int)$nID;
         $sCode     = htmlspecialchars($nCode ?? '');
         $sName     = htmlspecialchars($nName ?? '');
+        $sUnit     = htmlspecialchars($nUnit ?? '');
         $cPriceRaw = (float)$cPrice;
         $sPriceRaw = (float)$sPrice;
         $isPromo   = $sPriceRaw > 0 ? 1 : 0;
@@ -170,8 +178,8 @@ if ($stmt->num_rows === 0) {
                         <?= $sCode ?> - <?= $sName ?>
                     </div>
 
-                    <div class="small text-body-success">
-                        Налично: <?= $nCount ?> / Цена: <?= $cPriceFormatted ?>
+                    <div class="small text-info">
+                        Налично: <?= $nCount .' '.$sUnit ?> / Цена: <?= $cPriceFormatted ?>
 
                         <?php if($sPriceRaw > 0): ?>
                             <span class="badge bg-danger">
@@ -181,7 +189,7 @@ if ($stmt->num_rows === 0) {
                     </div>
 
                     <div class="small text-body-secondary">
-                        Последна поръчка: <?= $oldQty ?> - <?= $oldOrderTime ?>
+                        Последна поръчка: <?= $oldQty .' '.$sUnit ?> - <?= $oldOrderTime ?>
                     </div>
                 </div>
 

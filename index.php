@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    sa.username AS username,
                    p.fname AS first_name,
                    p.lname AS last_name,
-                   sa.has_debug AS admin
+                   sa.id_profile AS admin
             FROM access_account sa
             LEFT JOIN ". DB_NAMES['personnel'] .".personnel p ON p.id = sa.id_person
             WHERE sa.to_arc = 0
@@ -59,6 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Успешен login
             $_SESSION['user_id'] = $user['id'];
+            $_SESSION['is_admin'] = $user['admin'];
             $_SESSION['username'] = $user['username'];
             $_SESSION['first_name'] = $user['first_name'];
             $_SESSION['last_name']  = $user['last_name'];

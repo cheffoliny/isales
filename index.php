@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="text-center mb-4">
             <img src="./assets/images/isales_logo.svg" class="login-logo mb-3">
-            <h5 class="fw-semibold">iSales System</h5>
+<!--            <h5 class="fw-semibold">iSales System</h5>-->
         </div>
 
         <?php if ($error): ?>

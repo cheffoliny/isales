@@ -396,41 +396,29 @@ function drawFallbackLine(el, fromLatLng, toLatLng) {
 /* ------------------------
    openMapModal(modalId, oLat, oLan, idUser)
    ------------------------ */
-  window.openMapModal = function(modalId, oLat, oLan, idUser) {
+    window.openMapModal = function(modalId, oLat, oLan, idUser) {
 
-      console.log('openMapModal called:', modalId, oLat, oLan, idUser);
+        const modalEl = document.getElementById(modalId);
 
-      const modalEl = document.getElementById(modalId);
+        if (!modalEl) {
+            console.error('Modal not found:', modalId);
+            return;
+        }
 
-      if (!modalEl) {
-          console.error('Modal not found:', modalId);
-          return;
-      }
+        const suffix = modalId.replace(/^mapModal/i, '');
+        const containerId = 'mapContainer_' + suffix;
 
-      const bsModal = new bootstrap.Modal(modalEl);
-      bsModal.show();
+        const bsModal = new bootstrap.Modal(modalEl);
 
-      const suffix = modalId.replace(/^mapModal/i, '');
-      const containerId = 'mapContainer_' + suffix;
+        modalEl.addEventListener('shown.bs.modal', function handler(){
+            //console.log('Modal opened → init map', containerId);
+            initMapUnique(containerId, oLat, oLan, idUser);
+            modalEl.removeEventListener('shown.bs.modal', handler);
+        });
 
-      console.log('suffix:', suffix);
-      console.log('containerId:', containerId);
+        bsModal.show();
 
-      setTimeout(() => {
-
-          const container = document.getElementById(containerId);
-
-          if(!container){
-              console.error('Map container not found:', containerId);
-              return;
-          }
-
-          console.log('Initializing map...');
-
-          initMapUnique(containerId, oLat, oLan, idUser);
-
-      }, 300);
-  };
+    };
 //function openMapModal(modalId, oLat, oLan, idUser) {
 //    const modalEl = document.getElementById(modalId);
 //    if (!modalEl) {

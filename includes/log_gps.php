@@ -1,12 +1,11 @@
 <?php
-define('INCLUDE_CHECK', true);
-require_once '../session_init.php';
-require_once '../config.php';
 
-// Проверка за сесия
-if (empty($_SESSION["user_id"])) {
-    http_response_code(403);
-    exit("Not authorized");
+include_once __DIR__ . '/../core/init.php';
+include_once __DIR__ . '/../config/config.php';
+
+if (empty($_SESSION['user_id'])) {
+    echo '<div class="alert alert-danger m-3">Нямате достъп.</div>';
+    return;
 }
 
 global $db_sod;

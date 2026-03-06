@@ -7,8 +7,8 @@ $(document).on("click", ".openMapBtn", function(){
 
     let modalID = $(this).data("modal");
     let mapID = $(this).data("map");
-    let lat = parseFloat($(this).data("lat")) || 42.6977;
-    let lng = parseFloat($(this).data("lng")) || 23.3219;
+    let lat = parseFloat($(this).data("lat")) || 43.2712398;
+    let lng = parseFloat($(this).data("lng")) || 26.9361286;
     let objID = $(this).data("id");
 
     activeObjectID = objID;

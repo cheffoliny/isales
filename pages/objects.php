@@ -41,8 +41,13 @@ while($r = $resOff->fetch_assoc()){
                placeholder="Търси обект..."
                value="<?= htmlspecialchars($search) ?>">
 
-        <button class="btn btn-primary">
+        <button type="submit" class="btn btn-primary">
             <i class="fa fa-search"></i>
+        </button>
+
+        <!-- ADD OBJECT BUTTON -->
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addObjectModal">
+            <i class="fa fa-plus"></i> Добави обект
         </button>
     </form>
 </div>
@@ -52,7 +57,7 @@ while($r = $resOff->fetch_assoc()){
 $sql = "
 SELECT
     o.id AS oID,
-    o.id_office AS offsID,    
+    o.id_office AS offsID,
     o.num AS oNum,
     o.name AS oName,
     COALESCE(o.address,'...') AS oAddress,
@@ -121,7 +126,7 @@ while ($row = $result->fetch_assoc()):
 
             <!-- MAP BUTTON -->
             <div>
-                <button
+                <button type="button"
                         class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center openMapBtn"
                         data-modal="<?= $mapModalId ?>"
                         data-map="mapContainer_<?= $oID ?>"
@@ -134,7 +139,7 @@ while ($row = $result->fetch_assoc()):
 
             <!-- TEXT -->
             <div class="flex-grow-1 px-2">
-                <button
+                <button type="button"
                         class="btn p-0 text-start w-100 openEditObject"
                         data-id="<?= $oID ?>"
                         data-name="<?= htmlspecialchars($oName) ?>"
@@ -147,7 +152,7 @@ while ($row = $result->fetch_assoc()):
 
             <!-- ACTION BUTTONS -->
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
+                <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                         style="width:42px;height:42px;"
                         data-bs-toggle="modal"
                         data-bs-target="#<?= $infoModalId ?>">
@@ -178,7 +183,7 @@ while ($row = $result->fetch_assoc()):
                     <div id="mapContainer_<?= $oID ?>" style="height:400px;width:100%"></div>
                 </div>
                 <div class="p-3 text-center">
-                    <button class="btn btn-success saveObjectCoords" data-id="<?= $oID ?>">Запиши координати</button>
+                    <button type="button" class="btn btn-success saveObjectCoords" data-id="<?= $oID ?>">Запиши координати</button>
                 </div>
             </div>
         </div>
@@ -186,7 +191,7 @@ while ($row = $result->fetch_assoc()):
 
 <?php endwhile; ?>
 
-<!-- ================= ЕДИТ MODAL ================= -->
+<!-- ================= EDIT MODAL ================= -->
 <div class="modal fade" id="editObjectModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -216,12 +221,81 @@ while ($row = $result->fetch_assoc()):
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
-                <button class="btn btn-success" id="saveObjectBtn">Запиши</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+                <button type="button" class="btn btn-success" id="saveObjectBtn">Запиши</button>
             </div>
         </div>
     </div>
 </div>
+
+<!-- ================= ADD OBJECT MODAL ================= -->
+<div class="modal fade" id="addObjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавяне на нов обект</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Име на обект <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="add_object_name" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Офис <span class="text-danger">*</span></label>
+                    <select class="form-select" id="add_object_office" required>
+                        <option value="">Избери офис</option>
+                        <?php foreach($offices as $off): ?>
+                            <option value="<?= $off['id'] ?>"><?= htmlspecialchars($off['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Оперативна информация</label>
+                    <textarea class="form-control" rows="4" id="add_object_info"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+                <button type="button" class="btn btn-success" id="saveNewObjectBtn">Добави</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('saveNewObjectBtn').addEventListener('click', function() {
+    const name = document.getElementById('add_object_name').value.trim();
+    const office = document.getElementById('add_object_office').value;
+    const info = document.getElementById('add_object_info').value.trim();
+
+    if (!name || !office) {
+        alert('Моля, попълнете задължителните полета!');
+        return;
+    }
+
+    fetch('includes/objects_add.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, office, info})
+    })
+    .then(res => res.json())
+    .then(data => {
+        if(data.success){
+            alert('Обектът е добавен успешно!');
+            const addModal = bootstrap.Modal.getInstance(document.getElementById('addObjectModal'));
+            if(addModal) addModal.hide();
+            location.reload();
+        } else {
+            alert('Грешка: ' + data.message);
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        alert('Възникна грешка при добавянето на обекта.');
+    });
+});
+</script>
 
 <?php
 $stmt->close();

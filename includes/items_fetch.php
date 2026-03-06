@@ -40,7 +40,15 @@ if($search!=''){
             n.client_price,
             n.sales_price,
             n.is_calc,
-            n.unit
+            n.unit,
+            COALESCE(
+                        (
+                        SELECT SUM(pe.`count`)
+                        FROM ppp_elements pe
+                        JOIN ppp p ON p.id = pe.id_ppp AND DATE(p.source_date) = DATE(NOW())
+                        WHERE pe.id_nomenclature = n.id
+                        )
+            , 0) AS ordered_count
         FROM nomenclatures n
         $where
         ORDER BY n.name
@@ -57,7 +65,7 @@ if($search!=''){
     <tr data-id="'.$r['id'].'">
     <td>'.$r['nom_code'].'</td>
     <td>'.$r['name'].'</td>
-    <td><input type="number" class="form-control form-control-sm is_calc" value="'.$r['is_calc'].'"></td>
+    <td><input type="number" class="form-control form-control-sm is_calc" value="'.$r['is_calc'].'"> / '.$r['ordered_count.']'</td>
     <td><input type="number" step="0.01" class="form-control form-control-sm client_price" value="'.$r['client_price'].'"></td>
     <td><input type="number" step="0.01" class="form-control form-control-sm sales_price" value="'.$r['sales_price'].'"></td>
 

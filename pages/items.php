@@ -41,29 +41,24 @@ $db = db_connect('storage');
 </div>
 
 
-
 <script>
 
-let page=0;
-let search='';
-let promo=false;
-let zero=false;
-let loading=false;
+    let page=0;
+    let search='';
+    let promo=false;
+    let zero=false;
+    let loading=false;
 
+    function loadItems(reset=false){
 
+        if(loading) return;
 
-function loadItems(reset=false){
+        loading=true;
 
-if(loading) return;
-
-loading=true;
-
-if(reset){
-
-page=0;
-$('#itemsTable').html('');
-
-}
+        if(reset){
+            page=0;
+            $('#itemsTable').html('');
+        }
 
 $.get('includes/items_fetch.php',{
 

@@ -10,7 +10,7 @@ $idUser   = (int) $_SESSION['user_id'];
 $officeId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
 if ($officeId <= 0) {
-    echo '<div class="alert alert-danger m-3">Невалиден офис.</div>';
+    echo '<div class="alert alert-danger m-3">Невалиден маршрут!</div>';
     return;
 }
 ?>
@@ -166,7 +166,6 @@ while ($row = $result->fetch_assoc()):
 
             <div class="p-3 text-center">
                 <button class="btn btn-success"
-                        onclick="openMapModal('mapContainer_<?= $oID ?>', '<?= $oLat ?>', '<?= $oLan ?>')">
                     ГЕО КООРДИНАТИ
                 </button>
             </div>

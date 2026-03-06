@@ -1,177 +1,107 @@
-$(document).on('click', '.menu-link', function(e){
-    e.preventDefault();
+let mapInstance = null;
+let mapMarker = null;
+let activeObjectID = null;
 
-    const page = $(this).data('page');
+// Отваряне на модал карта
+$(document).on("click", ".openMapBtn", function(){
 
-    $('.menu-link').removeClass('active');
-    $(this).addClass('active');
+    let modalID = $(this).data("modal");
+    let mapID = $(this).data("map");
+    let lat = parseFloat($(this).data("lat")) || 42.6977;
+    let lng = parseFloat($(this).data("lng")) || 23.3219;
+    let objID = $(this).data("id");
 
-    $('#main-content').html(`
-        <div class="text-center text-white py-5">
-            <div class="spinner-border"></div>
-            <div class="mt-2">Зареждане...</div>
-        </div>
-    `);
+    activeObjectID = objID;
 
-    $.ajax({
-        url: 'system/load_content.php',
-        method: 'GET',
-        data: { page: page },
-        success: function(response){
-            $('#main-content').html(response);
-        },
-        error: function(){
-            $('#main-content').html(`
-                <div class="alert alert-danger">
-                    Грешка при зареждане на модула.
-                </div>
-            `);
-        }
-    });
+    let modalEl = document.getElementById(modalID);
+    let modal = new bootstrap.Modal(modalEl);
+    modal.show();
+
+    modalEl.addEventListener('shown.bs.modal', function(){
+
+        setTimeout(function(){
+
+            if(mapInstance){
+                mapInstance.remove();
+                mapInstance = null;
+            }
+
+            mapInstance = L.map(mapID).setView([lat, lng], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(mapInstance);
+
+            mapMarker = L.marker([lat, lng], {draggable:true}).addTo(mapInstance);
+
+            setTimeout(function(){
+                mapInstance.invalidateSize();
+            }, 200);
+
+        }, 200);
+
+    }, {once:true});
+
 });
 
+// Запис на координати
+$(document).on("click", ".saveObjectCoords", function(){
 
-$(document).on('click', '.ajax-office-row', function(){
+    if(!mapMarker) return;
 
-    const page = $(this).data('page');
-    const id   = $(this).data('id');
+    let coords = mapMarker.getLatLng();
 
-    $('#main-content').html(`
-        <div class="text-center text-white py-5">
-            <div class="spinner-border"></div>
-            <div class="mt-2">Зареждане...</div>
-        </div>
-    `);
-
-    $.ajax({
-        url: 'system/load_content.php',
-        method: 'GET',
-        data: { page: page, id: id },
-        success: function(response){
-            $('#main-content').html(response);
-        },
-        error: function(){
-            $('#main-content').html(`
-                <div class="alert alert-danger">
-                    Грешка при зареждане.
-                </div>
-            `);
-        }
-    });
-});
-
-$(document).on('click', '.ajax-delivery-request', function(){
-
-    const page = $(this).data('page');
-    const id   = $(this).data('id');
-
-    $('#main-content').html(`
-        <div class="text-center text-white py-5">
-            <div class="spinner-border"></div>
-            <div class="mt-2">Зареждане на заявка...</div>
-        </div>
-    `);
-
-    $.ajax({
-        url: 'system/load_content.php',
-        method: 'GET',
-        data: { page: page, id: id },
-        success: function(response){
-            $('#main-content').html(response);
-        },
-        error: function(){
-            $('#main-content').html(`
-                <div class="alert alert-danger">
-                    Грешка при зареждане на заявката.
-                </div>
-            `);
-        }
-    });
-});
-
-function showToast(msg, type = "success") {
-
-	let toastEl = document.getElementById('toastMsg');
-	let body = toastEl.querySelector('.toast-body');
-
-	body.innerHTML = msg;
-
-	if (type === "error") {
-		toastEl.classList.remove('text-bg-dark');
-		toastEl.classList.add('text-bg-danger');
-	} else {
-		toastEl.classList.remove('text-bg-danger');
-		toastEl.classList.add('text-bg-dark');
-	}
-
-	let toast = new bootstrap.Toast(toastEl);
-	toast.show();
-}
-
-// Зарежда unknown.php с избрания cityID
-// Работи и за динамично заредени елементи
-$(document).on('change', '#cities', function () {
-	allowAlarmAutoRefresh = false;
-
-	let citieID = this.value;
-	//alert(citieID + "ТУК");
-	$("#main-content").load('content/unknown.php?citieID=' + citieID);
-});
-
-// Оригиналната функция без промяна
-function confirmUnknownMap(oID, tVisit) {
-
-    $.post('api/unknown_confirm.php', {
-        oID: oID,
-        type_visit: tVisit
-    })
-    .done(function (res) {
-
-        if (res.status === "success") {
-
-            let row = $(".object-row-" + oID);
-
-            row.addClass("fade-out");
-
-            setTimeout(() => row.remove(), 400);
-
-            showToast("Обектът е успешно добавен в опознати!");
-
+    $.post("includes/update_object_coords.php", {
+        id: activeObjectID,
+        lat: coords.lat,
+        lan: coords.lng
+    }, function(resp){
+        if(resp.success){
+            alert("Координатите са записани");
         } else {
-            showToast("⚠️ Грешка: " + res.message, "error");
+            alert("Грешка при запис");
         }
+    }, "json");
 
-    })
-    .fail(function () {
-        showToast("⚠️ Грешка при заявката към сървъра!", "error");
-    });
-}
+});
 
-// Функцията за потвърждение на обекта
-function confirmUnknown(oID, tVisit) {
+// Отваряне на модал за редакция
+$(document).on("click", ".openEditObject", function(){
 
-    $.post('api/unknown_confirm.php', {
-        oID: oID,
-        type_visit: tVisit
-    })
-    .done(function (res) {
+    let id = $(this).data("id");
+    let name = $(this).data("name");
+    let office = $(this).data("office");
+    let info = $(this).data("info");
 
-        if (res.status === "success") {
+    $("#edit_object_id").val(id);
+    $("#edit_object_name").val(name);
+    $("#edit_object_office").val(office);
+    $("#edit_object_info").val(info);
 
-            let row = $(".object-row-" + oID);
+    let modal = new bootstrap.Modal(document.getElementById("editObjectModal"));
+    modal.show();
 
-            row.addClass("fade-out");
+});
 
-            setTimeout(() => row.remove(), 400);
+// Запис на редакция
+$("#saveObjectBtn").click(function(){
 
-            showToast("Обектът е успешно добавен в опознати!");
+    let id = $("#edit_object_id").val();
+    let name = $("#edit_object_name").val();
+    let office = $("#edit_object_office").val();
+    let info = $("#edit_object_info").val();
 
+    $.post("includes/update_object.php", {
+        id: id,
+        name: name,
+        office: office,
+        info: info
+    }, function(resp){
+        if(resp.success){
+            location.reload();
         } else {
-            showToast("⚠️ Грешка: " + res.message, "error");
+            alert("Грешка при запис");
         }
+    }, "json");
 
-    })
-    .fail(function () {
-        showToast("⚠️ Грешка при заявката към сървъра!", "error");
-    });
-}
+});

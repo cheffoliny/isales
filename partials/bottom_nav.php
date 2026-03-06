@@ -22,11 +22,18 @@ $currentPage = $_GET['page'] ?? 'routes';
         <span>Импорт</span>
     </a>
 
+    <a href="dashboard.php?page=objects"
+       class="nav-item <?= $currentPage === 'objects' ? 'active' : '' ?>">
+        <i class="fa-solid fa-home"></i>
+        <span>Обекти</span>
+    </a>
+
     <a href="dashboard.php?page=items"
        class="nav-item <?= $currentPage === 'items' ? 'active' : '' ?>">
         <i class="fa-solid fa-tags"></i>
         <span>Артикули</span>
     </a>
+
 <!--
     <a href="dashboard.php?page=import_sales"
        class="nav-item <?= $currentPage === 'import_sales' ? 'active' : '' ?>">

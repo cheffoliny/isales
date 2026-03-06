@@ -20,16 +20,16 @@ if($search!=''){
         $where.=" AND (
             n.nom_code LIKE '%$s%'
             OR n.name LIKE '%$s%'
-        )";
+        )  AND n.is_calc > 0 OR n.client_price > 0";
 
     }
 
     if($promo){
-        $where.=" AND n.sales_price>0";
+        $where.=" AND n.sales_price > 0  AND n.is_calc > 0 OR n.client_price > 0 ";
     }
 
     if($zero){
-        $where.=" AND n.is_calc=0 OR n.client_price=0";
+        $where.=" AND n.is_calc = 0 OR n.client_price = 0";
     }
 
     $sql="
@@ -41,17 +41,21 @@ if($search!=''){
             n.sales_price,
             n.is_calc,
             n.unit,
-            COALESCE(
+            ROUND(COALESCE(
                         (
                         SELECT SUM(pe.`count`)
                         FROM ppp_elements pe
                         JOIN ppp p ON p.id = pe.id_ppp AND DATE(p.source_date) = DATE(NOW())
                         WHERE pe.id_nomenclature = n.id
                         )
-            , 0) AS ordered_count
+            , 0),0) AS ordered_count,
+            ROUND((n.is_calc - COALESCE(
+                        (SELECT SUM(pe.`count`) FROM ppp_elements pe JOIN ppp p ON p.id = pe.id_ppp AND DATE(p.source_date) = DATE(NOW()) WHERE pe.id_nomenclature = n.id)
+                        , 0)
+            ),0) AS calcDiff
         FROM nomenclatures n
         $where
-        ORDER BY n.name
+        ORDER BY ordered_count DESC, calcDiff ASC
         LIMIT $limit
         OFFSET $offset
     ";
@@ -60,27 +64,15 @@ if($search!=''){
     $html='';
     while($r=$res->fetch_assoc()){
 
-    $html.='
-
-    <tr data-id="'.$r['id'].'">
-    <td>'.$r['nom_code'].'</td>
-    <td>'.$r['name'].'</td>
-    <td><input type="number" class="form-control form-control-sm is_calc" value="'.$r['is_calc'].'"> / '.$r['ordered_count.']'</td>
-    <td><input type="number" step="0.01" class="form-control form-control-sm client_price" value="'.$r['client_price'].'"></td>
-    <td><input type="number" step="0.01" class="form-control form-control-sm sales_price" value="'.$r['sales_price'].'"></td>
-
-    <td>
-
-    <button class="btn btn-sm btn-success save-item">
-
-    <i class="fa-solid fa-check"></i>
-
-    </button>
-
-    </td>
-
-    </tr>
-
+    $html.=' 
+        <tr data-id="'.$r['id'].'">
+            <td>'.$r['nom_code'].'</td>
+            <td>'.$r['name'].'</td>
+            <td> '.$r['is_calc'].' / '.$r['ordered_count'].' = '.$r['calcDiff'].'</td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm client_price" value="'.$r['client_price'].'"></td>
+            <td><input type="number" step="0.01" class="form-control form-control-sm sales_price" value="'.$r['sales_price'].'"></td>
+            <td><button class="btn btn-sm btn-success save-item"><i class="fa-solid fa-check"></i></button></td>
+        </tr>
     ';
 
 }

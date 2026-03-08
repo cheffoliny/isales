@@ -154,13 +154,13 @@ $result = getObjects($db, $officeId, $search);
 
                 <div class="mb-1">
                     <label class="form-label">Име на обект <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control form-control-sm py-2" id="modal_object_name">
+                    <input type="text" class="form-control form-control-sm py-1" id="modal_object_name">
                 </div>
 
                 <div class="mb-1">
-                    <label class="form-label">Офис <span class="text-danger">*</span></label>
+                    <label class="form-label">Маршрут <span class="text-danger">*</span></label>
                     <select class="form-select form-select-sm" id="modal_object_office">
-                        <option value="">Избери офис</option>
+                        <option value="">Избери маршрут</option>
                         <?php foreach($offices as $off): ?>
                             <option value="<?= $off['id'] ?>"><?= htmlspecialchars($off['name']) ?></option>
                         <?php endforeach; ?>
@@ -173,7 +173,6 @@ $result = getObjects($db, $officeId, $search);
                 </div>
 
                 <div class="mb-1">
-                    <label class="form-label">Координати</label>
                     <div id="objectMapContainer" style="height:400px;width:100%"></div>
                 </div>
 

@@ -1,67 +1,77 @@
 /* ===============================
    GLOBAL MAP VARIABLES
 =============================== */
-
 let mapInstance = null;
 let mapMarker = null;
 let activeObjectID = null;
-let activeMapBtn = null;
-
 
 /* ===============================
    OPEN MAP MODAL
 =============================== */
-
 $(document).on("click", ".openMapBtn", function(){
 
     const btn = $(this);
-
     activeObjectID = btn.data("id");
-    activeMapBtn = btn;
 
-    let lat = parseFloat(btn.attr("data-lat")) || 43.2712398;
-    let lng = parseFloat(btn.attr("data-lng")) || 26.9361286;
+    const lat = parseFloat(btn.data("lat")) || 43.2728759;
+    const lng = parseFloat(btn.data("lng")) || 26.9266601;
 
-    const modalEl = document.getElementById("objectMapModal");
+    // Създаваме един общ модал за картата
+    if($('#objectMapModal').length === 0){
+        $('body').append(`
+            <div class="modal fade" id="objectMapModal" tabindex="-1">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-body p-0">
+                            <div id="objectMapContainer" style="height:400px;width:100%"></div>
+                        </div>
+                        <div class="p-3 text-center">
+                            <button type="button" class="btn btn-success saveObjectCoords">Запиши координати</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+
+    const modalEl = document.getElementById('objectMapModal');
     const modal = new bootstrap.Modal(modalEl);
-
     modal.show();
 
     setTimeout(function(){
 
         if(!mapInstance){
-
             mapInstance = L.map("objectMapContainer").setView([lat, lng], 16);
-
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-                maxZoom: 19
-            }).addTo(mapInstance);
-
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(mapInstance);
         } else {
-
             mapInstance.setView([lat, lng], 16);
-
         }
 
         if(mapMarker){
             mapInstance.removeLayer(mapMarker);
         }
-
         mapMarker = L.marker([lat, lng], {draggable:true}).addTo(mapInstance);
 
-        setTimeout(function(){
-            mapInstance.invalidateSize();
-        },200);
+        setTimeout(()=>mapInstance.invalidateSize(), 200);
 
     },200);
-
 });
 
+// FIX backdrop и body класове
+$('#objectMapModal').on('hidden.bs.modal', function () {
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open');
+    $('body').css('padding-right','');
+
+    if(mapMarker){
+        mapInstance.removeLayer(mapMarker);
+        mapMarker = null;
+    }
+});
 
 /* ===============================
    SAVE OBJECT COORDS
 =============================== */
-
 $(document).on("click", ".saveObjectCoords", function(){
 
     if(!mapMarker) return;
@@ -78,43 +88,14 @@ $(document).on("click", ".saveObjectCoords", function(){
     }, function(resp){
 
         if(resp.success){
-
             showToast("Координатите са записани", "success");
 
-            if(activeMapBtn){
+            const mapBtn = $('.openMapBtn[data-id="'+activeObjectID+'"]');
+            mapBtn.attr("data-lat", coords.lat);
+            mapBtn.attr("data-lng", coords.lng);
 
-                /* UPDATE BUTTON DATA + CACHE */
-
-                activeMapBtn
-                    .attr("data-lat", coords.lat)
-                    .attr("data-lng", coords.lng)
-                    .data("lat", coords.lat)
-                    .data("lng", coords.lng);
-
-            }
-
-            /* затваряне на модала */
-            const modalEl = document.getElementById("objectMapModal");
-            const modal = bootstrap.Modal.getInstance(modalEl);
-
-            if(modal){
-                modal.hide();
-            }
-
-            /* FIX BOOTSTRAP BACKDROP BUG */
-
-            setTimeout(function(){
-
-                $('.modal-backdrop').remove();
-                $('body').removeClass('modal-open');
-                $('body').css('padding-right','');
-
-            },200);
-
-        }else{
-
+        } else {
             showToast("Грешка при запис", "danger");
-
         }
 
         btn.prop("disabled", false).text("Запиши координати");
@@ -123,16 +104,13 @@ $(document).on("click", ".saveObjectCoords", function(){
 
 });
 
-
 /* ===============================
    TOAST MESSAGE
 =============================== */
-
 function showToast(message,type="success"){
 
     const toast = $(`
-        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3"
-             style="z-index:9999">
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" style="z-index:9999">
             <div class="d-flex">
                 <div class="toast-body">${message}</div>
                 <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -142,20 +120,15 @@ function showToast(message,type="success"){
 
     $("body").append(toast);
 
-    const t = new bootstrap.Toast(toast[0],{delay:2500});
+    const t = new bootstrap.Toast(toast[0], {delay:2500});
     t.show();
-
-    toast.on("hidden.bs.toast",()=>toast.remove());
-
+    toast.on("hidden.bs.toast", ()=>toast.remove());
 }
-
 
 /* ===============================
    OPEN EDIT OBJECT MODAL
 =============================== */
-
 $(document).on("click", ".openEditObject", function(){
-
     const btn = $(this);
 
     $("#edit_object_id").val(btn.data("id"));
@@ -165,14 +138,11 @@ $(document).on("click", ".openEditObject", function(){
 
     const modal = new bootstrap.Modal(document.getElementById("editObjectModal"));
     modal.show();
-
 });
-
 
 /* ===============================
    SAVE EDIT OBJECT
 =============================== */
-
 $(document).on("click", "#saveObjectBtn", function(){
 
     const id = $("#edit_object_id").val();
@@ -189,24 +159,10 @@ $(document).on("click", "#saveObjectBtn", function(){
 
         if(resp.success){
             location.reload();
-        }else{
+        } else {
             showToast("Грешка при запис", "danger");
         }
 
     }, "json");
 
-});
-
-
-// FIX: премахване на backdrop, когато модалът се затваря без запис
-$('#objectMapModal').on('hidden.bs.modal', function () {
-    $('.modal-backdrop').remove();
-    $('body').removeClass('modal-open');
-    $('body').css('padding-right','');
-
-    // премахваме marker, за да се инициализира свежо следващия път
-    if(mapMarker){
-        mapInstance.removeLayer(mapMarker);
-        mapMarker = null;
-    }
 });

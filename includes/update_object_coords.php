@@ -1,30 +1,98 @@
 <?php
 
-include_once __DIR__.'/functions.php';
+include_once __DIR__ . '/functions.php';
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
-if(empty($_SESSION['user_id'])){
-    echo json_encode(['success'=>false]);
+/* ================= SESSION CHECK ================= */
+
+if (empty($_SESSION['user_id'])) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Нямате достъп.'
+    ]);
     exit;
 }
 
-$id=(int)$_POST['id'];
-$lat=(float)$_POST['lat'];
-$lan=(float)$_POST['lan'];
+/* ================= INPUT ================= */
 
-$db=db_connect('sod');
+$id  = isset($_POST['id'])  ? (int)$_POST['id']  : 0;
+$lat = isset($_POST['lat']) ? (float)$_POST['lat'] : 0;
+$lan = isset($_POST['lan']) ? (float)$_POST['lan'] : 0;
 
-$stmt=$db->prepare("
-UPDATE objects
-SET geo_lat=?, geo_lan=?
-WHERE id=?
+/* ================= VALIDATION ================= */
+
+if ($id <= 0) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Невалиден ID.'
+    ]);
+    exit;
+}
+
+if ($lat == 0 || $lan == 0) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Невалидни координати.'
+    ]);
+    exit;
+}
+
+/* ================= DB ================= */
+
+$db = db_connect('sod');
+
+if (!$db) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'DB връзката е неуспешна.'
+    ]);
+    exit;
+}
+
+/* ================= QUERY ================= */
+
+$stmt = $db->prepare("
+    UPDATE objects
+    SET geo_lat = ?, geo_lan = ?
+    WHERE id = ?
 ");
 
-$stmt->bind_param("ddi",$lat,$lan,$id);
+if (!$stmt) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Prepare error: ' . $db->error
+    ]);
+    exit;
+}
 
-$ok=$stmt->execute();
+/* ================= EXECUTE ================= */
 
-echo json_encode([
-    "success"=>$ok
-]);
+$stmt->bind_param("ddi", $lat, $lan, $id);
+
+$ok = $stmt->execute();
+
+/* ================= RESPONSE ================= */
+
+if ($ok) {
+
+    echo json_encode([
+        "success" => true,
+        "message" => "Координатите са записани успешно.",
+        "id" => $id,
+        "lat" => $lat,
+        "lan" => $lan
+    ]);
+
+} else {
+
+    echo json_encode([
+        "success" => false,
+        "message" => "Грешка при запис: " . $stmt->error
+    ]);
+}
+
+/* ================= CLEANUP ================= */
+
+$stmt->close();
+$db->close();

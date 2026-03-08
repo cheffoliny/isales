@@ -1,95 +1,184 @@
+/* ===============================
+   GLOBAL MAP VARIABLES
+=============================== */
+
 let mapInstance = null;
 let mapMarker = null;
 let activeObjectID = null;
+let activeMapBtn = null;
 
-// Отваряне на модал карта
+
+/* ===============================
+   OPEN MAP MODAL
+=============================== */
+
 $(document).on("click", ".openMapBtn", function(){
 
-    let modalID = $(this).data("modal");
-    let mapID = $(this).data("map");
-    let lat = parseFloat($(this).data("lat")) || 43.2712398;
-    let lng = parseFloat($(this).data("lng")) || 26.9361286;
-    let objID = $(this).data("id");
+    const btn = $(this);
 
-    activeObjectID = objID;
+    activeObjectID = btn.data("id");
+    activeMapBtn = btn;
 
-    let modalEl = document.getElementById(modalID);
-    let modal = new bootstrap.Modal(modalEl);
+    let lat = parseFloat(btn.attr("data-lat")) || 43.2712398;
+    let lng = parseFloat(btn.attr("data-lng")) || 26.9361286;
+
+    const modalEl = document.getElementById("objectMapModal");
+    const modal = new bootstrap.Modal(modalEl);
+
     modal.show();
 
-    modalEl.addEventListener('shown.bs.modal', function(){
+    setTimeout(function(){
 
-        setTimeout(function(){
+        if(!mapInstance){
 
-            if(mapInstance){
-                mapInstance.remove();
-                mapInstance = null;
-            }
+            mapInstance = L.map("objectMapContainer").setView([lat, lng], 16);
 
-            mapInstance = L.map(mapID).setView([lat, lng], 16);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                 maxZoom: 19
             }).addTo(mapInstance);
 
-            mapMarker = L.marker([lat, lng], {draggable:true}).addTo(mapInstance);
+        } else {
 
-            setTimeout(function(){
-                mapInstance.invalidateSize();
-            }, 200);
+            mapInstance.setView([lat, lng], 16);
 
-        }, 200);
+        }
 
-    }, {once:true});
+        if(mapMarker){
+            mapInstance.removeLayer(mapMarker);
+        }
+
+        mapMarker = L.marker([lat, lng], {draggable:true}).addTo(mapInstance);
+
+        setTimeout(function(){
+            mapInstance.invalidateSize();
+        },200);
+
+    },200);
 
 });
 
-// Запис на координати
+
+/* ===============================
+   SAVE OBJECT COORDS
+=============================== */
+
 $(document).on("click", ".saveObjectCoords", function(){
 
     if(!mapMarker) return;
 
-    let coords = mapMarker.getLatLng();
+    const coords = mapMarker.getLatLng();
+    const btn = $(this);
+
+    btn.prop("disabled", true).text("Запис...");
 
     $.post("includes/update_object_coords.php", {
         id: activeObjectID,
         lat: coords.lat,
         lan: coords.lng
     }, function(resp){
+
         if(resp.success){
-            alert("Координатите са записани");
-        } else {
-            alert("Грешка при запис");
+
+            showToast("Координатите са записани", "success");
+
+            if(activeMapBtn){
+
+                /* UPDATE BUTTON DATA + CACHE */
+
+                activeMapBtn
+                    .attr("data-lat", coords.lat)
+                    .attr("data-lng", coords.lng)
+                    .data("lat", coords.lat)
+                    .data("lng", coords.lng);
+
+            }
+
+            /* затваряне на модала */
+            const modalEl = document.getElementById("objectMapModal");
+            const modal = bootstrap.Modal.getInstance(modalEl);
+
+            if(modal){
+                modal.hide();
+            }
+
+            /* FIX BOOTSTRAP BACKDROP BUG */
+
+            setTimeout(function(){
+
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+                $('body').css('padding-right','');
+
+            },200);
+
+        }else{
+
+            showToast("Грешка при запис", "danger");
+
         }
+
+        btn.prop("disabled", false).text("Запиши координати");
+
     }, "json");
 
 });
 
-// Отваряне на модал за редакция
+
+/* ===============================
+   TOAST MESSAGE
+=============================== */
+
+function showToast(message,type="success"){
+
+    const toast = $(`
+        <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3"
+             style="z-index:9999">
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    `);
+
+    $("body").append(toast);
+
+    const t = new bootstrap.Toast(toast[0],{delay:2500});
+    t.show();
+
+    toast.on("hidden.bs.toast",()=>toast.remove());
+
+}
+
+
+/* ===============================
+   OPEN EDIT OBJECT MODAL
+=============================== */
+
 $(document).on("click", ".openEditObject", function(){
 
-    let id = $(this).data("id");
-    let name = $(this).data("name");
-    let office = $(this).data("office");
-    let info = $(this).data("info");
+    const btn = $(this);
 
-    $("#edit_object_id").val(id);
-    $("#edit_object_name").val(name);
-    $("#edit_object_office").val(office);
-    $("#edit_object_info").val(info);
+    $("#edit_object_id").val(btn.data("id"));
+    $("#edit_object_name").val(btn.data("name"));
+    $("#edit_object_office").val(btn.data("office"));
+    $("#edit_object_info").val(btn.data("info"));
 
-    let modal = new bootstrap.Modal(document.getElementById("editObjectModal"));
+    const modal = new bootstrap.Modal(document.getElementById("editObjectModal"));
     modal.show();
 
 });
 
-// Запис на редакция
-$("#saveObjectBtn").click(function(){
 
-    let id = $("#edit_object_id").val();
-    let name = $("#edit_object_name").val();
-    let office = $("#edit_object_office").val();
-    let info = $("#edit_object_info").val();
+/* ===============================
+   SAVE EDIT OBJECT
+=============================== */
+
+$(document).on("click", "#saveObjectBtn", function(){
+
+    const id = $("#edit_object_id").val();
+    const name = $("#edit_object_name").val();
+    const office = $("#edit_object_office").val();
+    const info = $("#edit_object_info").val();
 
     $.post("includes/update_object.php", {
         id: id,
@@ -97,11 +186,13 @@ $("#saveObjectBtn").click(function(){
         office: office,
         info: info
     }, function(resp){
+
         if(resp.success){
             location.reload();
-        } else {
-            alert("Грешка при запис");
+        }else{
+            showToast("Грешка при запис", "danger");
         }
+
     }, "json");
 
 });

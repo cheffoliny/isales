@@ -7,6 +7,8 @@ if (empty($_SESSION['user_id'])) {
 }
 
 $idUser   = (int)$_SESSION['user_id'];
+$firstName = trim($_SESSION['first_name'] ?? '');
+$lastName  = trim($_SESSION['last_name'] ?? '');
 $officeId = isset($_GET['office_id']) ? (int)$_GET['office_id'] : 0;
 $objectId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
@@ -41,7 +43,7 @@ if ($existingID) {
 
 } else {
 
-    $sourceUser = trim($_SESSION['first_name'].' '.$_SESSION['last_name']);
+    $sourceUser = $firstName.' '. $lastName;
     $status = 'open';
     $pppStatus = $status;
 

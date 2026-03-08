@@ -1,12 +1,11 @@
 <?php
 
-define('INCLUDE_CHECK', true);
-require_once '../session_init.php';
-require_once '../config.php';
+include_once __DIR__ . '/../core/init.php';
+include_once __DIR__ . '/../config/config.php';
 
-if (!$_SESSION['user_id']) {
-    http_response_code(403);
-    exit('Access denied.');
+if(empty($_SESSION['user_id'])){
+    echo json_encode(['success'=>false]);
+    exit;
 }
 
 $idUser = intval($_GET['idUser'] ?? 0);

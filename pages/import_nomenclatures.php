@@ -144,7 +144,7 @@ function insertBatch($pdo, $data) {
     <form method="post" enctype="multipart/form-data">
         <div class="row mb-3">
             <div class="col-12 d-flex gap-2">
-                <input type="file" class="form-control form-control-sm" name="file" accept=".txt" required><br>
+                <input type="file" class="form-control form-control-sm py-2 " name="file" accept=".txt" required><br>
                 <button type="submit"  class="btn btn-sm btn-danger">
                     <i class="fa-solid fa-plus"></i>
                     Импортирай

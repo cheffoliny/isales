@@ -101,7 +101,7 @@ class="btn btn-outline-secondary btn-sm">
 
 <input type="text"
 id="deliverySearch"
-class="form-control form-control-sm"
+class="form-control form-control-sm py-2 "
 placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
 
 <button id="promoFilter"
@@ -247,7 +247,7 @@ data-promo="<?= $isPromo ?>">
 </button>
 
 <input type="number"
-class="form-control form-control-sm qty-input"
+class="form-control form-control-sm py-2 qty-input"
 value="<?= $inputValue ?>"
 min="0"
 max="1000"

@@ -20,36 +20,35 @@ while($r = $resOff->fetch_assoc()){
 }
 ?>
 
-<div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <form class="d-flex gap-2" method="get" action="dashboard.php">
-        <input type="hidden" name="page" value="objects">
+<div class="card shadow mb-3 border-0">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-        <!-- OFFICE FILTER -->
-        <select name="id" class="form-select">
-            <option value="0">Всички офиси</option>
-            <?php foreach($offices as $off): ?>
-                <option value="<?= $off['id'] ?>" <?= ($officeId == $off['id']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($off['name']) ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+        <!-- SEARCH + FILTER + ADD OBJECT -->
+        <div class="d-flex gap-2 w-100">
+            <select id="objectOfficeFilter" class="form-select form-select-sm">
+                <option value="0">Всички офиси</option>
+                <?php foreach($offices as $off): ?>
+                    <option value="<?= $off['id'] ?>" <?= ($officeId == $off['id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($off['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
 
-        <!-- SEARCH -->
-        <input type="text"
-               name="search"
-               class="form-control"
-               placeholder="Търси обект..."
-               value="<?= htmlspecialchars($search) ?>">
+            <input type="text"
+                   id="objectSearch"
+                   class="form-control form-control-sm py-2 "
+                   placeholder="Търси обект..."
+                   value="<?= htmlspecialchars($search) ?>">
 
-        <button type="submit" class="btn btn-primary">
-            <i class="fa fa-search"></i>
-        </button>
+            <button type="button" id="searchObjectsBtn" class="btn btn-primary btn-sm">
+                <i class="fa fa-search"></i>
+            </button>
 
-        <!-- ADD OBJECT BUTTON -->
-        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addObjectModal">
-            <i class="fa fa-plus"></i> Добави обект
-        </button>
-    </form>
+            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#addObjectModal">
+                <i class="fa fa-plus"></i>
+            </button>
+        </div>
+    </div>
 </div>
 
 <?php
@@ -73,14 +72,12 @@ WHERE o.id_status <> 4
 $params = [];
 $types  = "";
 
-/* FILTER OFFICE */
 if ($officeId > 0) {
     $sql .= " AND o.id_office = ?";
     $params[] = $officeId;
     $types .= "i";
 }
 
-/* FILTER NAME */
 if ($search !== '') {
     $sql .= " AND o.name LIKE ?";
     $params[] = "%{$search}%";
@@ -191,43 +188,6 @@ while ($row = $result->fetch_assoc()):
 
 <?php endwhile; ?>
 
-<!-- ================= EDIT MODAL ================= -->
-<div class="modal fade" id="editObjectModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Редакция на обект</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="edit_object_id">
-                <div class="mb-3">
-                    <label class="form-label">Име на обект</label>
-                    <input type="text" class="form-control" id="edit_object_name">
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Офис</label>
-                    <select class="form-select" id="edit_object_office">
-                        <?php foreach($offices as $off): ?>
-                            <option value="<?= $off['id'] ?>" <?php if($off['id'] == $offsID) echo 'selected'; ?>>
-                                <?= htmlspecialchars($off['name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Оперативна информация</label>
-                    <textarea class="form-control" rows="4" id="edit_object_info"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
-                <button type="button" class="btn btn-success" id="saveObjectBtn">Запиши</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- ================= ADD OBJECT MODAL ================= -->
 <div class="modal fade" id="addObjectModal" tabindex="-1">
     <div class="modal-dialog">
@@ -239,11 +199,11 @@ while ($row = $result->fetch_assoc()):
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label">Име на обект <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" id="add_object_name" required>
+                    <input type="text" class="form-control form-control-sm py-2 " id="add_object_name" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Офис <span class="text-danger">*</span></label>
-                    <select class="form-select" id="add_object_office" required>
+                    <select class="form-select form-select-sm" id="add_object_office" required>
                         <option value="">Избери офис</option>
                         <?php foreach($offices as $off): ?>
                             <option value="<?= $off['id'] ?>"><?= htmlspecialchars($off['name']) ?></option>
@@ -252,18 +212,26 @@ while ($row = $result->fetch_assoc()):
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Оперативна информация</label>
-                    <textarea class="form-control" rows="4" id="add_object_info"></textarea>
+                    <textarea class="form-control form-control-sm py-2 " rows="4" id="add_object_info"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
-                <button type="button" class="btn btn-success" id="saveNewObjectBtn">Добави</button>
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Затвори</button>
+                <button type="button" class="btn btn-success btn-sm" id="saveNewObjectBtn">Добави</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+// SEARCH BUTTON
+document.getElementById('searchObjectsBtn').addEventListener('click', function(){
+    const office = document.getElementById('objectOfficeFilter').value;
+    const search = document.getElementById('objectSearch').value;
+    window.location.href = `dashboard.php?page=objects&id=${office}&search=${encodeURIComponent(search)}`;
+});
+
+// SAVE NEW OBJECT
 document.getElementById('saveNewObjectBtn').addEventListener('click', function() {
     const name = document.getElementById('add_object_name').value.trim();
     const office = document.getElementById('add_object_office').value;

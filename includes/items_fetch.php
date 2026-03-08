@@ -55,27 +55,33 @@ if($search!=''){
             ),0) AS calcDiff
         FROM nomenclatures n
         $where
-        ORDER BY ordered_count DESC, calcDiff ASC
+        ORDER BY ordered_count DESC, calcDiff DESC
         LIMIT $limit
         OFFSET $offset
     ";
 
     $res=$db->query($sql);
     $html='';
+
     while($r=$res->fetch_assoc()){
 
-    $html.=' 
-        <tr data-id="'.$r['id'].'">
-            <td>'.$r['nom_code'].'</td>
-            <td>'.$r['name'].'</td>
-            <td> '.$r['is_calc'].' / '.$r['ordered_count'].' = '.$r['calcDiff'].'</td>
-            <td><input type="number" step="0.01" class="form-control form-control-sm client_price" value="'.$r['client_price'].'"></td>
-            <td><input type="number" step="0.01" class="form-control form-control-sm sales_price" value="'.$r['sales_price'].'"></td>
-            <td><button class="btn btn-sm btn-success save-item"><i class="fa-solid fa-check"></i></button></td>
-        </tr>
-    ';
+        $txtInstockColor = 'text-success';
+        if( $r['is_calc'] <= 10 ) {
+            $txtInstockColor = 'text-warning';
+        }
 
-}
+        $html.='
+            <tr data-id="'.$r['id'].'">
+                <td>'.$r['nom_code'].'</td>
+                <td>'.$r['name'].'</td>
+                <td>Н:<span class="'.$txtInstockColor.'">'.$r['is_calc'].'</span> / П:<span class="text-info">'.$r['ordered_count'].'</span> / '.$r['calcDiff'].'</td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm py-2 client_price" value="'.$r['client_price'].'"></td>
+                <td><input type="number" step="0.01" class="form-control form-control-sm py-2 sales_price" value="'.$r['sales_price'].'"></td>
+                <td><button class="btn btn-sm btn-success save-item"><i class="fa-solid fa-check"></i></button></td>
+            </tr>
+        ';
+
+    }
 
 echo json_encode([
 'success'=>true,

@@ -39,7 +39,7 @@ if (!$pppID) {
                 </a>
                 <input type="text"
                        id="deliverySearch"
-                       class="form-control form-control-sm"
+                       class="form-control form-control-sm py-2 "
                        style="text-transform: uppercase"
                        placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
 

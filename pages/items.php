@@ -10,14 +10,20 @@ $db = db_connect('storage');
 ?>
 
 <div class="card shadow border-0">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <div class="d-flex gap-2">
-            <input type="text" id="search" class="form-control form-control-sm" placeholder="КОД / ИМЕ">
-            <button id="promoFilter" class="btn btn-sm btn-danger"> ПРОМО </button>
-            <button id="zeroFilter" class="btn btn-sm btn-warning"> НУЛЕВИ </button>
+
+    <!-- HEADER: SEARCH + FILTERS -->
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex gap-2 w-100">
+
+            <input type="text" id="search" class="form-control form-control-sm py-2 " placeholder="КОД / ИМЕ">
+
+            <button id="promoFilter" class="btn btn-sm btn-danger">ПРОМО</button>
+            <button id="zeroFilter" class="btn btn-sm btn-warning">НУЛЕВИ</button>
+
         </div>
     </div>
 
+    <!-- BODY: TABLE -->
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle mb-0">
@@ -35,157 +41,95 @@ $db = db_connect('storage');
             </table>
         </div>
     </div>
+
+    <!-- FOOTER: LOAD MORE -->
     <div class="card-footer text-center">
-        <button id="loadMore" class="btn btn-sm btn-outline-secondary"> Зареди още... </button>
+        <button id="loadMore" class="btn btn-sm btn-outline-secondary">Зареди още...</button>
     </div>
 </div>
 
-
 <script>
+let page = 0;
+let searchVal = '';
+let promo = false;
+let zero = false;
+let loading = false;
 
-    let page=0;
-    let search='';
-    let promo=false;
-    let zero=false;
-    let loading=false;
+function loadItems(reset=false){
+    if(loading) return;
+    loading = true;
 
-    function loadItems(reset=false){
+    if(reset){
+        page = 0;
+        $('#itemsTable').html('');
+    }
 
-        if(loading) return;
-
-        loading=true;
-
-        if(reset){
-            page=0;
-            $('#itemsTable').html('');
+    $.get('includes/items_fetch.php',{
+        page: page,
+        search: searchVal,
+        promo: promo ? 1 : 0,
+        zero: zero ? 1 : 0
+    }, function(resp){
+        if(resp.success){
+            $('#itemsTable').append(resp.html);
+            page++;
         }
-
-$.get('includes/items_fetch.php',{
-
-page:page,
-search:search,
-promo:promo?1:0,
-zero:zero?1:0
-
-},function(resp){
-
-if(resp.success){
-
-$('#itemsTable').append(resp.html);
-
-page++;
-
+        loading = false;
+    }, 'json');
 }
 
-loading=false;
-
-},'json');
-
-}
-
-
-
+// initial load
 loadItems();
-
-
 
 /* SEARCH */
-
 let searchTimer;
-
-$('#search').on('input',function(){
-
-clearTimeout(searchTimer);
-
-searchTimer=setTimeout(()=>{
-
-search=$(this).val();
-
-loadItems(true);
-
-},400);
-
+$('#search').on('input', function(){
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        searchVal = $(this).val();
+        loadItems(true);
+    }, 400);
 });
 
-
-
-/* PROMO */
-
-$('#promoFilter').on('click',function(){
-
-promo=!promo;
-
-$(this).toggleClass('btn-danger btn-secondary');
-
-loadItems(true);
-
+/* PROMO FILTER */
+$('#promoFilter').on('click', function(){
+    promo = !promo;
+    $(this).toggleClass('btn-danger btn-secondary');
+    loadItems(true);
 });
 
-
-
-/* ZERO */
-
-$('#zeroFilter').on('click',function(){
-
-zero=!zero;
-
-$(this).toggleClass('btn-warning btn-secondary');
-
-loadItems(true);
-
+/* ZERO FILTER */
+$('#zeroFilter').on('click', function(){
+    zero = !zero;
+    $(this).toggleClass('btn-warning btn-secondary');
+    loadItems(true);
 });
-
-
 
 /* LOAD MORE */
-
-$('#loadMore').on('click',function(){
-
-loadItems();
-
+$('#loadMore').on('click', function(){
+    loadItems();
 });
 
+/* SAVE ITEM */
+$(document).on('click', '.save-item', function(){
+    const row = $(this).closest('tr');
+    const id = row.data('id');
+    const client = row.find('.client_price').val();
+    const sales = row.find('.sales_price').val();
+    const calc = row.find('.is_calc').val();
 
-
-/* SAVE */
-
-$(document).on('click','.save-item',function(){
-
-const row=$(this).closest('tr');
-
-const id=row.data('id');
-
-const client=row.find('.client_price').val();
-const sales=row.find('.sales_price').val();
-const calc=row.find('.is_calc').val();
-
-$.post('includes/item_save.php',{
-
-id:id,
-client_price:client,
-sales_price:sales,
-is_calc:calc
-
-},function(resp){
-
-if(resp.success){
-
-row.addClass('table-success');
-
-setTimeout(()=>{
-
-row.removeClass('table-success');
-
-},800);
-
-}else{
-
-alert('Грешка');
-
-}
-
-},'json');
-
+    $.post('includes/item_save.php', {
+        id: id,
+        client_price: client,
+        sales_price: sales,
+        is_calc: calc
+    }, function(resp){
+        if(resp.success){
+            row.addClass('table-success');
+            setTimeout(() => row.removeClass('table-success'), 800);
+        } else {
+            alert('Грешка');
+        }
+    }, 'json');
 });
-
 </script>

@@ -196,3 +196,17 @@ $(document).on("click", "#saveObjectBtn", function(){
     }, "json");
 
 });
+
+
+// FIX: премахване на backdrop, когато модалът се затваря без запис
+$('#objectMapModal').on('hidden.bs.modal', function () {
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open');
+    $('body').css('padding-right','');
+
+    // премахваме marker, за да се инициализира свежо следващия път
+    if(mapMarker){
+        mapInstance.removeLayer(mapMarker);
+        mapMarker = null;
+    }
+});

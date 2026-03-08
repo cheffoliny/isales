@@ -152,12 +152,12 @@ $result = getObjects($db, $officeId, $search);
             <div class="modal-body">
                 <input type="hidden" id="modal_object_id">
 
-                <div class="mb-3">
+                <div class="mb-1">
                     <label class="form-label">Име на обект <span class="text-danger">*</span></label>
                     <input type="text" class="form-control form-control-sm py-2" id="modal_object_name">
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-1">
                     <label class="form-label">Офис <span class="text-danger">*</span></label>
                     <select class="form-select form-select-sm" id="modal_object_office">
                         <option value="">Избери офис</option>
@@ -167,12 +167,12 @@ $result = getObjects($db, $officeId, $search);
                     </select>
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-1">
                     <label class="form-label">Оперативна информация</label>
-                    <textarea class="form-control form-control-sm py-2" rows="4" id="modal_object_info"></textarea>
+                    <textarea class="form-control form-control-sm py-2" rows="2" id="modal_object_info"></textarea>
                 </div>
 
-                <div class="mb-3">
+                <div class="mb-1">
                     <label class="form-label">Координати</label>
                     <div id="objectMapContainer" style="height:400px;width:100%"></div>
                 </div>

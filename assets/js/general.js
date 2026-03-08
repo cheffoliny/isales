@@ -1,114 +1,105 @@
 /* ===============================
-   GLOBAL MAP VARIABLES
+   GLOBAL VARIABLES
 =============================== */
 let mapInstance = null;
 let mapMarker = null;
-let activeObjectID = null;
 
 /* ===============================
-   OPEN MAP MODAL
+   DEBOUNCE FUNCTION
 =============================== */
-$(document).on("click", ".openMapBtn", function(){
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
 
+/* ===============================
+   LOAD OBJECT MODAL
+=============================== */
+$(document).on("click", ".openObjectModal", function(){
     const btn = $(this);
-    activeObjectID = btn.data("id");
 
-    const lat = parseFloat(btn.data("lat")) || 43.2728759;
-    const lng = parseFloat(btn.data("lng")) || 26.9266601;
+    const id   = btn.data("id");
+    const name = btn.data("name");
+    const office = btn.data("office");
+    const info   = btn.data("info");
+    const lat    = parseFloat(btn.data("lat")) || 43.2728759;
+    const lng    = parseFloat(btn.data("lng")) || 26.9266601;
 
-    // Създаваме един общ модал за картата
-    if($('#objectMapModal').length === 0){
-        $('body').append(`
-            <div class="modal fade" id="objectMapModal" tabindex="-1">
-                <div class="modal-dialog modal-lg modal-dialog-centered">
-                    <div class="modal-content">
-                        <div class="modal-body p-0">
-                            <div id="objectMapContainer" style="height:400px;width:100%"></div>
-                        </div>
-                        <div class="p-3 text-center">
-                            <button type="button" class="btn btn-success saveObjectCoords">Запиши координати</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-    }
+    $("#modal_object_id").val(id);
+    $("#modal_object_name").val(name);
+    $("#modal_object_office").val(office);
+    $("#modal_object_info").val(info);
 
-    const modalEl = document.getElementById('objectMapModal');
-    const modal = new bootstrap.Modal(modalEl);
+    const modal = new bootstrap.Modal(document.getElementById("objectModal"));
     modal.show();
 
-    setTimeout(function(){
-
+    setTimeout(()=>{
         if(!mapInstance){
-            mapInstance = L.map("objectMapContainer").setView([lat, lng], 16);
-            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(mapInstance);
+            mapInstance = L.map("objectMapContainer").setView([lat,lng],16);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(mapInstance);
         } else {
-            mapInstance.setView([lat, lng], 16);
+            mapInstance.setView([lat,lng],16);
         }
 
         if(mapMarker){
             mapInstance.removeLayer(mapMarker);
         }
-        mapMarker = L.marker([lat, lng], {draggable:true}).addTo(mapInstance);
+        mapMarker = L.marker([lat,lng], {draggable:true}).addTo(mapInstance);
 
-        setTimeout(()=>mapInstance.invalidateSize(), 200);
-
+        setTimeout(()=>mapInstance.invalidateSize(),200);
     },200);
 });
 
-// FIX backdrop и body класове
-$('#objectMapModal').on('hidden.bs.modal', function () {
+// FIX modal backdrop and body class
+$('#objectModal').on('hidden.bs.modal', function () {
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open');
     $('body').css('padding-right','');
-
-    if(mapMarker){
-        mapInstance.removeLayer(mapMarker);
-        mapMarker = null;
-    }
 });
 
 /* ===============================
-   SAVE OBJECT COORDS
+   SAVE OBJECT (DATA + COORDS)
 =============================== */
-$(document).on("click", ".saveObjectCoords", function(){
+$(document).on("click", "#saveObjectBtnModal", function(){
+    const id     = $("#modal_object_id").val();
+    const name   = $("#modal_object_name").val().trim();
+    const office = $("#modal_object_office").val();
+    const info   = $("#modal_object_info").val().trim();
 
-    if(!mapMarker) return;
+    if(!name || !office){
+        alert("Попълнете задължителните полета!");
+        return;
+    }
 
-    const coords = mapMarker.getLatLng();
-    const btn = $(this);
+    const lat = mapMarker ? mapMarker.getLatLng().lat : null;
+    const lng = mapMarker ? mapMarker.getLatLng().lng : null;
 
-    btn.prop("disabled", true).text("Запис...");
-
-    $.post("includes/update_object_coords.php", {
-        id: activeObjectID,
-        lat: coords.lat,
-        lan: coords.lng
+    $.post("includes/update_objects.php", {
+        id:id,
+        name:name,
+        office:office,
+        info:info,
+        lat:lat,
+        lng:lng
     }, function(resp){
-
         if(resp.success){
-            showToast("Координатите са записани", "success");
-
-            const mapBtn = $('.openMapBtn[data-id="'+activeObjectID+'"]');
-            mapBtn.attr("data-lat", coords.lat);
-            mapBtn.attr("data-lng", coords.lng);
-
+            showToast("Данните са записани успешно","success");
+            // Обнови данните в card
+            const btns = $(`.openObjectModal[data-id='${id}']`);
+            btns.data("name",name).data("office",office).data("info",info).data("lat",lat).data("lng",lng);
         } else {
-            showToast("Грешка при запис", "danger");
+            showToast("Грешка при запис","danger");
         }
-
-        btn.prop("disabled", false).text("Запиши координати");
-
-    }, "json");
-
+    },"json");
 });
 
 /* ===============================
    TOAST MESSAGE
 =============================== */
 function showToast(message,type="success"){
-
     const toast = $(`
         <div class="toast align-items-center text-bg-${type} border-0 position-fixed bottom-0 end-0 m-3" style="z-index:9999">
             <div class="d-flex">
@@ -117,52 +108,25 @@ function showToast(message,type="success"){
             </div>
         </div>
     `);
-
     $("body").append(toast);
-
-    const t = new bootstrap.Toast(toast[0], {delay:2500});
+    const t = new bootstrap.Toast(toast[0],{delay:2500});
     t.show();
-    toast.on("hidden.bs.toast", ()=>toast.remove());
+    toast.on("hidden.bs.toast",()=>toast.remove());
 }
 
 /* ===============================
-   OPEN EDIT OBJECT MODAL
+   SEARCH FILTER
 =============================== */
-$(document).on("click", ".openEditObject", function(){
-    const btn = $(this);
+function reloadObjects(){
+    const office = $("#objectOfficeFilter").val();
+    const search = $("#objectSearch").val().trim();
+    window.location.href = `dashboard.php?page=objects&id=${office}&search=${encodeURIComponent(search)}`;
+}
 
-    $("#edit_object_id").val(btn.data("id"));
-    $("#edit_object_name").val(btn.data("name"));
-    $("#edit_object_office").val(btn.data("office"));
-    $("#edit_object_info").val(btn.data("info"));
+$("#objectOfficeFilter").on("change", reloadObjects);
 
-    const modal = new bootstrap.Modal(document.getElementById("editObjectModal"));
-    modal.show();
-});
-
-/* ===============================
-   SAVE EDIT OBJECT
-=============================== */
-$(document).on("click", "#saveObjectBtn", function(){
-
-    const id = $("#edit_object_id").val();
-    const name = $("#edit_object_name").val();
-    const office = $("#edit_object_office").val();
-    const info = $("#edit_object_info").val();
-
-    $.post("includes/update_object.php", {
-        id: id,
-        name: name,
-        office: office,
-        info: info
-    }, function(resp){
-
-        if(resp.success){
-            location.reload();
-        } else {
-            showToast("Грешка при запис", "danger");
-        }
-
-    }, "json");
-
-});
+$("#objectSearch").on("keyup", debounce(function(){
+    if($(this).val().trim().length>=2 || $(this).val().trim().length===0){
+        reloadObjects();
+    }
+},500));

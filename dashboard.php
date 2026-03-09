@@ -17,7 +17,7 @@ $page = require 'core/router.php';
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
 
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js" defer></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
 
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>

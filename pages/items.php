@@ -148,12 +148,21 @@ if(empty($_SESSION['user_id'])){
 
     // image modal
     let currentItem=0;
+
     $(document).on('click','.item-thumb', function(){
+
         currentItem=$(this).data('id');
+
+        // винаги отваряме модала
+        new bootstrap.Modal('#imageModal').show();
+
+        // проверка за картинка
         const hasImage=$(this).data('hasimage');
 
         if(hasImage){
-            $('#itemImagePreview').attr('src','includes/item_image_get.php?id='+currentItem+'&t='+Date.now()).removeClass('d-none');
+            $('#itemImagePreview')
+                .attr('src','includes/item_image_get.php?id='+currentItem+'&t='+Date.now())
+                .removeClass('d-none');
             $('#deleteImage').removeClass('d-none');
             $('#noImageText').addClass('d-none');
         } else {
@@ -162,7 +171,8 @@ if(empty($_SESSION['user_id'])){
             $('#noImageText').removeClass('d-none');
         }
 
-        new bootstrap.Modal('#imageModal').show();
+        // ресет на input
+        $('#imageUpload').val('');
     });
 
     // upload with compression

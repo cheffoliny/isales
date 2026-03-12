@@ -10,6 +10,407 @@ let isAndroidWebView = false;
     if (/Android/i.test(ua) && (/(wv|Version\/)/i.test(ua) || typeof Android !== 'undefined')){
         isAndroidWebView = true;
     }
+})();
+
+
+// ============================================================
+// GLOBAL GPS CACHE
+// ============================================================
+
+window.__lastGps = null;
+
+
+// ============================================================
+// UTILS
+// ============================================================
+
+function haversine(a,b){
+
+    const toRad = v => v * Math.PI / 180;
+    const R = 6371000;
+
+    const dLat = toRad(b.lat-a.lat);
+    const dLng = toRad(b.lng-a.lng);
+
+    const x =
+        Math.sin(dLat/2)*Math.sin(dLat/2) +
+        Math.cos(toRad(a.lat)) *
+        Math.cos(toRad(b.lat)) *
+        Math.sin(dLng/2)*Math.sin(dLng/2);
+
+    return R * 2 * Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+
+// ============================================================
+// HTML MARKER
+// ============================================================
+
+class HtmlMarker{
+
+    constructor(position,html,map){
+
+        this.map = map;
+
+        this.marker = L.marker(
+            [position.lat,position.lng],
+            {
+                icon: L.divIcon({
+                    html: html,
+                    className: "html-marker",
+                    iconSize:null
+                })
+            }
+        ).addTo(map);
+
+    }
+
+    setPosition(pos){
+        this.marker.setLatLng([pos.lat,pos.lng]);
+    }
+
+    getLatLng(){
+        return this.marker.getLatLng();
+    }
+
+    remove(){
+        if(this.marker){
+            this.map.removeLayer(this.marker);
+        }
+    }
+
+}
+
+
+// ============================================================
+// MAP INIT
+// ============================================================
+
+function initMapUnique(containerId,oLat,oLng,idUser){
+
+    const el = document.getElementById(containerId);
+    if(!el) return;
+
+    if(el._map) {
+        setTimeout(()=>el._map.invalidateSize(),200);
+        return;
+    }
+
+    const objectPos = {
+        lat:parseFloat(oLat),
+        lng:parseFloat(oLng)
+    };
+
+    const map = L.map(el,{
+        zoomControl:true
+    }).setView([objectPos.lat,objectPos.lng],14);
+
+    L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+            maxZoom:19,
+            keepBuffer:8,
+            updateWhenIdle:true
+        }
+    ).addTo(map);
+
+    el._map = map;
+    el._objectPos = objectPos;
+    el._lastRouteOrigin = null;
+    el._lastRouteTs = 0;
+
+    el._routeMinDistance = 80;
+    el._routeMinInterval = 60000;
+
+
+    // OBJECT MARKER
+
+    el._objectMarker = new HtmlMarker(
+        objectPos,
+        `<i class="fa-solid fa-house-signal" style="font-size:32px;color:#dc3545"></i>`,
+        map
+    );
+
+
+    // ROUTING CONTROL
+
+    el._routeControl = L.Routing.control({
+        waypoints:[],
+        router:L.Routing.osrmv1({
+            serviceUrl:'https://router.project-osrm.org/route/v1'
+        }),
+        show:false,
+        addWaypoints:false,
+        draggableWaypoints:false,
+        fitSelectedRoute:false,
+        routeWhileDragging:false,
+        createMarker:()=>null
+    }).addTo(map);
+
+
+
+    // ============================================================
+    // CAR UPDATE
+    // ============================================================
+
+    el._updateCarPosition = function(lat,lng,opts={}){
+
+        const pos = {
+            lat:parseFloat(lat),
+            lng:parseFloat(lng)
+        };
+
+        if(!el._carMarker){
+
+            el._carMarker = new HtmlMarker(
+                pos,
+                `<i class="fa-solid fa-car-on" style="font-size:30px;color:#0d6efd"></i>`,
+                map
+            );
+
+            map.setView([pos.lat,pos.lng],16);
+
+            recalcRoute(pos);
+
+            return;
+        }
+
+        animateMarker(el._carMarker,pos,opts.speed);
+
+        map.panTo([pos.lat,pos.lng],{
+            animate:true,
+            duration:1
+        });
+
+        recalcRoute(pos);
+
+    };
+
+
+    // ============================================================
+    // ROUTE RECALC
+    // ============================================================
+
+    function recalcRoute(origin){
+
+        const now = Date.now();
+
+        if(
+            !el._lastRouteOrigin ||
+            haversine(origin,el._lastRouteOrigin) > el._routeMinDistance &&
+            (now-el._lastRouteTs) > el._routeMinInterval
+        ){
+
+            el._routeControl.setWaypoints([
+                L.latLng(origin.lat,origin.lng),
+                L.latLng(objectPos.lat,objectPos.lng)
+            ]);
+
+            el._lastRouteOrigin = origin;
+            el._lastRouteTs = now;
+
+        }
+
+    }
+
+
+
+    // ============================================================
+    // GPS FALLBACK (WEB)
+    // ============================================================
+
+    if(!isAndroidWebView){
+
+        setInterval(function(){
+
+            $.get(
+                "includes/get_geo_position.php",
+                {idUser:idUser},
+                function(resp){
+
+                    if(!resp) return;
+
+                    const p = resp.split(",");
+
+                    const lat = parseFloat(p[0]);
+                    const lng = parseFloat(p[1]);
+
+                    if(!isNaN(lat) && !isNaN(lng)){
+                        el._updateCarPosition(lat,lng);
+                    }
+
+                }
+            );
+
+        },20000);
+
+    }
+
+
+    // INITIAL GPS
+
+    if(window.__lastGps){
+        el._updateCarPosition(
+            window.__lastGps.lat,
+            window.__lastGps.lng,
+            {speed:window.__lastGps.speed}
+        );
+    }
+
+
+    // FIX FOR BOOTSTRAP MODAL SIZE
+
+    setTimeout(function(){
+        map.invalidateSize();
+    },300);
+
+}
+
+
+
+// ============================================================
+// MARKER ANIMATION
+// ============================================================
+
+function animateMarker(marker,toPos,speed){
+
+    const from = marker.getLatLng();
+
+    const dist = haversine(
+        {lat:from.lat,lng:from.lng},
+        toPos
+    );
+
+    let duration = 1000;
+
+    if(speed){
+        duration = Math.min(5000,(dist/speed)*1000);
+    }
+
+    const start = performance.now();
+
+    function frame(now){
+
+        const t = Math.min(1,(now-start)/duration);
+
+        const lat = from.lat + (toPos.lat-from.lat)*t;
+        const lng = from.lng + (toPos.lng-from.lng)*t;
+
+        marker.setPosition({lat,lng});
+
+        if(t<1){
+            requestAnimationFrame(frame);
+        }
+
+    }
+
+    requestAnimationFrame(frame);
+
+}
+
+
+
+// ============================================================
+// MODAL MAP OPEN
+// ============================================================
+
+window.openMapModal = function(modalId,oLat,oLng,idUser){
+
+    const modalEl = document.getElementById(modalId);
+
+    const suffix = modalId.replace(/^mapModal/i,'');
+
+    const containerId = "mapContainer_"+suffix;
+
+    const modal = new bootstrap.Modal(modalEl);
+
+    modalEl.addEventListener("shown.bs.modal",function(){
+
+        initMapUnique(containerId,oLat,oLng,idUser);
+
+        const el = document.getElementById(containerId);
+
+        if(el && el._map){
+            setTimeout(()=>{
+                el._map.invalidateSize();
+            },200);
+        }
+
+    });
+
+    modal.show();
+
+};
+
+
+
+// ============================================================
+// SCREEN ROTATION FIX
+// ============================================================
+
+window.addEventListener("orientationchange",function(){
+
+    document.querySelectorAll('[id^="mapContainer_"]').forEach(function(el){
+
+        if(el._map){
+            setTimeout(function(){
+                el._map.invalidateSize();
+            },400);
+        }
+
+    });
+
+});
+
+
+
+// ============================================================
+// WEBVIEW GPS FUNCTION (НЕ ПИПАМЕ ИМЕТО)
+// ============================================================
+
+window.updateCarFromWebView = function(lat,lng,speed,bearing,accuracy,altitude){
+
+    const gps = {
+        lat,
+        lng,
+        speed,
+        bearing,
+        accuracy,
+        altitude,
+        ts:Date.now()
+    };
+
+    window.__lastGps = gps;
+
+    document.querySelectorAll('[id^="mapContainer_"]').forEach(function(el){
+
+        if(typeof el._updateCarPosition === "function"){
+
+            el._updateCarPosition(
+                gps.lat,
+                gps.lng,
+                {speed:gps.speed}
+            );
+
+        }
+
+    });
+
+};
+
+/*
+// ============================================================
+// ENVIRONMENT DETECTION
+// ============================================================
+
+let isAndroidWebView = false;
+
+(function detectEnvironment(){
+    const ua = navigator.userAgent || "";
+
+    if (/Android/i.test(ua) && (/(wv|Version\/)/i.test(ua) || typeof Android !== 'undefined')){
+        isAndroidWebView = true;
+    }
 
 })();
 
@@ -370,6 +771,7 @@ window.updateCarFromWebView = function(lat,lng,speed,bearing,accuracy,altitude){
     });
 
 };
+*/
 //// --- Глобални променливи ---
 //let isAndroidWebView = false;
 //let isDesktopBrowser = false;

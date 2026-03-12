@@ -69,41 +69,34 @@ if(empty($_SESSION['user_id'])){
     let loading = false;
     let endReached = false;
 
-    // load items function
+    // load items
     function loadItems(reset=false){
         if(loading || endReached) return;
         loading = true;
-
         if(reset){
             page=0;
             $('#itemsTable').html('');
             endReached=false;
         }
 
-        $.get('includes/items_fetch.php', {
-            page: page,
-            search: searchVal,
-            promo: promo ? 1 : 0,
-            zero: zero ? 1 : 0
+        $.get('includes/items_fetch.php',{
+            page:page,
+            search:searchVal,
+            promo: promo?1:0,
+            zero: zero?1:0
         }, function(resp){
             if(resp.success){
-                if(resp.html.trim() === '') {
-                    endReached = true;
-                } else {
-                    $('#itemsTable').append(resp.html);
-                    page++;
-                }
-            } else {
-                console.log(resp);
+                if(resp.html.trim()===''){ endReached=true; }
+                else{ $('#itemsTable').append(resp.html); page++; }
             }
             loading=false;
-        }, 'json');
+        },'json');
     }
 
     // initial load
     loadItems();
 
-    // search filter
+    // search
     let searchTimer;
     $('#search').on('input', function(){
         clearTimeout(searchTimer);
@@ -113,15 +106,14 @@ if(empty($_SESSION['user_id'])){
         },400);
     });
 
-    // promo/zero filters
+    // filters
     $('#promoFilter').on('click', function(){
-        promo = !promo;
+        promo=!promo;
         $(this).toggleClass('btn-danger btn-secondary');
         loadItems(true);
     });
-
     $('#zeroFilter').on('click', function(){
-        zero = !zero;
+        zero=!zero;
         $(this).toggleClass('btn-warning btn-secondary');
         loadItems(true);
     });
@@ -151,12 +143,12 @@ if(empty($_SESSION['user_id'])){
             } else {
                 alert('Грешка при запазване на данни!');
             }
-        }, 'json');
+        },'json');
     });
 
     // image modal
     let currentItem=0;
-    $(document).on('click','.item-image', function(){
+    $(document).on('click','.item-thumb', function(){
         currentItem=$(this).data('id');
         const hasImage=$(this).data('hasimage');
 
@@ -169,6 +161,7 @@ if(empty($_SESSION['user_id'])){
             $('#deleteImage').addClass('d-none');
             $('#noImageText').removeClass('d-none');
         }
+
         new bootstrap.Modal('#imageModal').show();
     });
 

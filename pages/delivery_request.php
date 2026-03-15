@@ -74,52 +74,52 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
 <div class="card shadow mb-3 border-0">
 
-<div class="card-header d-flex justify-content-between align-items-center">
+    <div class="card-header d-flex justify-content-between align-items-center">
 
-<a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
-class="btn btn-outline-secondary btn-sm">
-<i class="fa-solid fa-angles-left"></i>
-</a>
+        <a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-angles-left"></i>
+        </a>
 
-<h5 class="mb-0">
-Заявка за: <?= htmlspecialchars($objName) ?>
-</h5>
+        <h5 class="mb-0">
+            Заявка за: <?= htmlspecialchars($objName) ?>
+        </h5>
 
-</div>
+    </div>
 
-<?php if($isConfirmed): ?>
+    <?php if($isConfirmed): ?>
 
-<div class="alert alert-success text-center mb-0">
-Заявката е потвърдена
-</div>
+        <div class="alert alert-success text-center mb-0">
+            Заявката е потвърдена
+        </div>
 
-<?php endif; ?>
+    <?php endif; ?>
 
-<div class="card-body">
+    <div class="card-body">
 
-<!-- SEARCH + PROMO -->
+        <!-- SEARCH + PROMO -->
 
-<div class="d-flex gap-2 mb-3">
+        <div class="d-flex gap-2 mb-3">
 
-<input type="text"
-id="deliverySearch"
-class="form-control form-control-sm py-2 "
-placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
+            <input type="text"
+                   id="deliverySearch"
+                   class="form-control form-control-sm py-2"
+                   placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
 
-<button id="promoFilter"
-class="btn btn-sm btn-danger">
-ПРОМОЦИИ
-</button>
+            <button id="promoFilter"
+                    class="btn btn-sm btn-danger">
+                ПРОМОЦИИ
+            </button>
 
-</div>
+        </div>
 
-<div class="list-group list-group-flush" id="itemsList">
+        <div class="list-group list-group-flush" id="itemsList">
 
-<?php
+            <?php
 
-$db = db_connect('storage');
+            $db = db_connect('storage');
 
-$sql = "
+            $sql = "
 SELECT
 
 n.id,
@@ -172,261 +172,270 @@ ORDER BY n.name
 LIMIT 1000
 ";
 
-$stmt = $db->prepare($sql);
-$stmt->bind_param("iii",$pppID,$objectId,$objectId);
-$stmt->execute();
+            $stmt = $db->prepare($sql);
+            $stmt->bind_param("iii",$pppID,$objectId,$objectId);
+            $stmt->execute();
 
-$stmt->bind_result(
-$nID,
-$nCode,
-$nName,
-$cPrice,
-$sPrice,
-$nCount,
-$nUnit,
-$oQuantity,
-$lOrder,
-$oldQty,
-$oldOrderTime
-);
+            $stmt->bind_result(
+                $nID,
+                $nCode,
+                $nName,
+                $cPrice,
+                $sPrice,
+                $nCount,
+                $nUnit,
+                $oQuantity,
+                $lOrder,
+                $oldQty,
+                $oldOrderTime
+            );
 
-while($stmt->fetch()):
+            while($stmt->fetch()):
 
-$nID=(int)$nID;
+                $nID=(int)$nID;
 
-$sCode=htmlspecialchars($nCode);
-$sName=htmlspecialchars($nName);
-$sUnit=htmlspecialchars($nUnit);
+                $sCode=htmlspecialchars($nCode);
+                $sName=htmlspecialchars($nName);
+                $sUnit=htmlspecialchars($nUnit);
 
-$cPriceRaw=(float)$cPrice;
-$sPriceRaw=(float)$sPrice;
+                $cPriceRaw=(float)$cPrice;
+                $sPriceRaw=(float)$sPrice;
 
-$isPromo=$sPriceRaw>0?1:0;
-$nPriceRaw=$sPriceRaw>0?$sPriceRaw:$cPriceRaw;
+                $isPromo=$sPriceRaw>0?1:0;
+                $nPriceRaw=$sPriceRaw>0?$sPriceRaw:$cPriceRaw;
 
-$inputValue=(int)$oQuantity;
+                $inputValue=(int)$oQuantity;
 
-$btnClass=$inputValue>0?'btn-success':'btn-secondary';
+                $btnClass=$inputValue>0?'btn-success':'btn-secondary';
 
-?>
+                ?>
 
-<div class="list-group-item d-flex justify-content-between align-items-center flex-wrap <?= $lockedClass ?>"
-data-code="<?= $sCode ?>"
-data-name="<?= $sName ?>"
-data-promo="<?= $isPromo ?>">
+                <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap <?= $lockedClass ?>"
+                     data-code="<?= $sCode ?>"
+                     data-name="<?= $sName ?>"
+                     data-promo="<?= $isPromo ?>">
 
-<div class="flex-grow-1">
+                    <div class="flex-grow-1">
 
-<div class="fw-semibold">
-<?= $sCode ?> - <?= $sName ?>
-</div>
+                        <div class="fw-semibold">
+                            <?= $sCode ?> - <?= $sName ?>
+                        </div>
 
-<div class="small text-info">
-Налично: <?= $nCount.' '.$sUnit ?>
-/ Цена: <?= number_format($cPriceRaw,2) ?>
+                        <div class="small text-info">
+                            Налично: <?= $nCount.' '.$sUnit ?>
+                            / Цена: <?= number_format($cPriceRaw,2) ?>
 
-<?php if($sPriceRaw>0): ?>
+                            <?php if($sPriceRaw>0): ?>
 
-<span class="badge bg-danger">
+                                <span class="badge bg-danger">
 ПРОМО <?= number_format($sPriceRaw,2) ?>
 </span>
 
-<?php endif; ?>
+                            <?php endif; ?>
 
-</div>
+                        </div>
 
-<div class="small text-body-secondary">
-Последна поръчка:
-<?= $oldQty.' '.$sUnit ?> - <?= $oldOrderTime ?: '-' ?>
-</div>
+                        <div class="small text-body-secondary">
+                            Последна поръчка:
+                            <?= $oldQty.' '.$sUnit ?> - <?= $oldOrderTime ?: '-' ?>
+                        </div>
 
-</div>
+                    </div>
 
-<div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2">
 
-<button class="btn btn-sm btn-outline-secondary qty-minus" <?= $disabledAttr ?>>
-<i class="fa-solid fa-minus"></i>
-</button>
+                        <button class="btn btn-sm btn-outline-secondary qty-minus" <?= $disabledAttr ?>>
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
 
-<input type="number"
-class="form-control form-control-sm py-2 qty-input"
-value="<?= $inputValue ?>"
-min="0"
-max="1000"
-data-saved="<?= $inputValue ?>"
-<?= $disabledAttr ?>>
+                        <input type="number"
+                               class="form-control form-control-sm py-2 qty-input"
+                               value="<?= $inputValue ?>"
+                               min="0"
+                               max="1000"
+                               data-saved="<?= $inputValue ?>"
+                            <?= $disabledAttr ?>>
 
-<button class="btn btn-sm btn-outline-secondary qty-plus" <?= $disabledAttr ?>>
-<i class="fa-solid fa-plus"></i>
-</button>
+                        <button class="btn btn-sm btn-outline-secondary qty-plus" <?= $disabledAttr ?>>
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
 
-<button class="btn btn-sm <?= $btnClass ?> save-delivery"
-data-ppp="<?= $pppID ?>"
-data-id="<?= $nID ?>"
-data-price="<?= $nPriceRaw ?>"
-<?= $disabledAttr ?>>
-<i class="fa-solid fa-circle-check"></i>
-</button>
+                        <button class="btn btn-sm <?= $btnClass ?> save-delivery"
+                                data-ppp="<?= $pppID ?>"
+                                data-id="<?= $nID ?>"
+                                data-price="<?= $nPriceRaw ?>"
+                            <?= $disabledAttr ?>>
+                            <i class="fa-solid fa-circle-check"></i>
+                        </button>
 
-</div>
+                    </div>
 
-</div>
+                </div>
 
-<?php endwhile; ?>
+            <?php endwhile; ?>
 
-</div>
-</div>
+        </div>
+    </div>
 </div>
 
 <script>
 
-const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
+    const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
 
-let promoActive=false;
+    let promoActive=false;
 
-/* FILTER */
+    /* FILTER */
 
-function applyFilters(){
+    function applyFilters(){
 
-const search=($('#deliverySearch').val()||'').toUpperCase();
+        const search = ($('#deliverySearch').val() || '')
+            .trim()
+            .toUpperCase();
 
-$('#itemsList .list-group-item').each(function(){
+        $('#itemsList .list-group-item').each(function(){
 
-const code=$(this).data('code');
-const name=$(this).data('name');
-const promo=$(this).data('promo');
+            const code = ($(this).attr('data-code') || '').toUpperCase();
+            const name = ($(this).attr('data-name') || '').toUpperCase();
+            const promo = parseInt($(this).attr('data-promo')) || 0;
 
-let visible=true;
+            let visible = true;
 
-if(search && !code.includes(search) && !name.includes(search))
-visible=false;
+            if(search){
+                if(code.indexOf(search) === -1 && name.indexOf(search) === -1)
+                    visible=false;
+            }
 
-if(promoActive && promo!=1)
-visible=false;
+            if(promoActive && promo !== 1)
+                visible=false;
 
-$(this).toggleClass('d-none',!visible);
+            $(this).toggleClass('d-none',!visible);
 
-});
+        });
 
-}
+    }
 
-$('#deliverySearch').on('input',applyFilters);
+    let searchTimer;
 
-$('#promoFilter').on('click',function(){
+    $('#deliverySearch').on('input',function(){
 
-promoActive=!promoActive;
+        clearTimeout(searchTimer);
+        searchTimer=setTimeout(applyFilters,200);
 
-$(this)
-.toggleClass('btn-danger btn-secondary')
-.text(promoActive?'ВСИЧКИ':'ПРОМОЦИИ');
+    });
 
-applyFilters();
+    $('#promoFilter').on('click',function(){
 
-});
+        promoActive=!promoActive;
 
-/* QTY + */
+        $(this)
+            .toggleClass('btn-danger btn-secondary')
+            .text(promoActive?'ВСИЧКИ':'ПРОМОЦИИ');
 
-$(document).on('click','.qty-plus',function(){
+        applyFilters();
 
-if(deliveryConfirmed) return;
+    });
 
-const input=$(this).siblings('.qty-input');
+    /* QTY + */
 
-let val=parseInt(input.val())||0;
+    $(document).on('click','.qty-plus',function(){
 
-if(val<1000) input.val(val+1).trigger('input');
+        if(deliveryConfirmed) return;
 
-});
+        const input=$(this).siblings('.qty-input');
 
-/* QTY - */
+        let val=parseInt(input.val())||0;
 
-$(document).on('click','.qty-minus',function(){
+        if(val<1000) input.val(val+1).trigger('input');
 
-if(deliveryConfirmed) return;
+    });
 
-const input=$(this).siblings('.qty-input');
+    /* QTY - */
 
-let val=parseInt(input.val())||0;
+    $(document).on('click','.qty-minus',function(){
 
-if(val>0) input.val(val-1).trigger('input');
+        if(deliveryConfirmed) return;
 
-});
+        const input=$(this).siblings('.qty-input');
 
-/* INPUT */
+        let val=parseInt(input.val())||0;
 
-$(document).on('input','.qty-input',function(){
+        if(val>0) input.val(val-1).trigger('input');
 
-if(deliveryConfirmed) return;
+    });
 
-const btn=$(this).siblings('.save-delivery');
+    /* INPUT */
 
-const val=parseInt($(this).val())||0;
+    $(document).on('input','.qty-input',function(){
 
-const saved=parseInt($(this).data('saved'))||0;
+        if(deliveryConfirmed) return;
 
-if(val!==saved){
+        const btn=$(this).siblings('.save-delivery');
 
-btn.removeClass('btn-success')
-.addClass('btn-secondary');
+        const val=parseInt($(this).val())||0;
+        const saved=parseInt($(this).data('saved'))||0;
 
-}else{
+        if(val!==saved){
 
-btn.removeClass('btn-secondary')
-.addClass('btn-success');
+            btn.removeClass('btn-success')
+                .addClass('btn-secondary');
 
-}
+        }else{
 
-});
+            btn.removeClass('btn-secondary')
+                .addClass('btn-success');
 
-/* SAVE */
+        }
 
-$(document).on('click','.save-delivery',function(){
+    });
 
-if(deliveryConfirmed){
+    /* SAVE */
 
-alert('Заявката е потвърдена.');
+    $(document).on('click','.save-delivery',function(){
 
-return;
+        if(deliveryConfirmed){
 
-}
+            alert('Заявката е потвърдена.');
+            return;
 
-const btn=$(this);
-const row=btn.closest('.list-group-item');
+        }
 
-const input=row.find('.qty-input');
+        const btn=$(this);
+        const row=btn.closest('.list-group-item');
 
-const qty=parseInt(input.val())||0;
+        const input=row.find('.qty-input');
 
-const id_ppp=btn.data('ppp');
-const id_n=btn.data('id');
-const price=btn.data('price');
+        const qty=parseInt(input.val())||0;
 
-if(qty<=0) return;
+        const id_ppp=btn.data('ppp');
+        const id_n=btn.data('id');
+        const price=btn.data('price');
 
-$.post('includes/save_ppp_element.php',{
+        if(qty<=0) return;
 
-id_ppp:id_ppp,
-id_nomenclature:id_n,
-count:qty,
-single_price:price
+        $.post('includes/save_ppp_element.php',{
 
-},function(resp){
+            id_ppp:id_ppp,
+            id_nomenclature:id_n,
+            count:qty,
+            single_price:price
 
-if(resp.success){
+        },function(resp){
 
-input.data('saved',qty);
+            if(resp.success){
 
-btn.removeClass('btn-secondary')
-.addClass('btn-success');
+                input.data('saved',qty);
 
-}else{
+                btn.removeClass('btn-secondary')
+                    .addClass('btn-success');
 
-alert('Грешка');
+            }else{
 
-}
+                alert('Грешка');
 
-},'json');
+            }
 
-});
+        },'json');
+
+    });
 
 </script>

@@ -93,7 +93,8 @@ if ($stmt->num_rows === 0) {
 
 <div class="list-group-item d-flex justify-content-between align-items-center">
 
-    <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
+
+    <a href="dashboard.php?page=object_order&preparе=1&pppID=<?= $pID ?>&id=<?= $oID ?>"
        class="text-decoration-none text-body flex-grow-1">
 
         <div class="fw-semibold">

@@ -13,7 +13,7 @@ $currentPage = $_GET['page'] ?? 'routes';
     <a href="dashboard.php?page=orders"
        class="nav-item <?= $currentPage === 'orders' ? 'active' : '' ?>">
         <i class="fa-solid fa-file-lines"></i>
-        <span>Reports</span>
+        <span>Заявки</span>
     </a>
 
     <a href="dashboard.php?page=import_nomenclatures"

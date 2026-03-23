@@ -14,12 +14,8 @@ COUNT(o.id) AS obj_count,
 SUM(IF(pe.id > 0, 1, 0)) AS obj_visited
 FROM objects o
 INNER JOIN offices offs ON offs.id = o.id_office
-LEFT JOIN alaska_storage.ppp p
-ON p.id_dest = o.id
-AND DATE(p.source_date) = CURDATE()
-LEFT JOIN alaska_storage.ppp_elements pe
-ON pe.id_ppp = p.id
-AND pe.count > 1
+LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON p.id_dest = o.id AND DATE(p.source_date) = CURDATE()
+LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON pe.id_ppp = p.id AND pe.count > 1
 WHERE o.id_status = 1
 GROUP BY offs.id, offs.name
 ORDER BY offs.name ASC

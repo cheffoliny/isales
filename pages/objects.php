@@ -6,10 +6,6 @@ if (empty($_SESSION['user_id'])) {
     return;
 }
 
-$idUser   = (int) $_SESSION['user_id'];
-$officeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$search   = trim($_GET['search'] ?? '');
-
 $db = db_connect('sod');
 
 /* ===== LOAD OFFICES ===== */
@@ -18,173 +14,139 @@ $resOff = $db->query("SELECT id,name FROM offices WHERE to_arc = 0 ORDER BY name
 while($r = $resOff->fetch_assoc()){
     $offices[] = $r;
 }
-?>
 
-<div class="card shadow mb-3 border-0">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div class="d-flex gap-2 w-100">
-            <select id="objectOfficeFilter" class="form-select form-select-sm">
-                <option value="0">Всички офиси</option>
-                <?php foreach($offices as $off): ?>
-                    <option value="<?= $off['id'] ?>" <?= ($officeId == $off['id']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($off['name']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
+/* ===== LOAD OBJECTS ===== */
+$sql = "
+SELECT
+    o.id,
+    o.name,
+    COALESCE(o.operativ_info,'') AS info,
+    COALESCE(o.offices_ids,'[]') AS offices_ids,
+    o.geo_lat,
+    o.geo_lan,
+    COALESCE(GROUP_CONCAT(offs.name SEPARATOR ', '), '—') AS office_name
+FROM objects o
+LEFT JOIN offices offs
+    ON JSON_CONTAINS(o.offices_ids, CAST(offs.id AS JSON), '$')
+WHERE o.id_status <> 4
+GROUP BY o.id
+ORDER BY o.name ASC
+LIMIT 1000
+";
 
-            <input type="text"
-                   id="objectSearch"
-                   class="form-control form-control-sm py-2"
-                   placeholder="Търси обект..."
-                   value="<?= htmlspecialchars($search) ?>">
-        </div>
-    </div>
-</div>
-
-<?php
-/* ===== BUILD QUERY ===== */
-function getObjects($db, $officeId, $search){
-    $sql = "
-    SELECT
-        o.id AS oID,
-        o.id_office AS offsID,
-        o.num AS oNum,
-        o.name AS oName,
-        COALESCE(o.address,'...') AS oAddress,
-        COALESCE(REPLACE(o.operativ_info,'\"',' '),'...') AS oInfo,
-        o.geo_lat AS oLat,
-        o.geo_lan AS oLan,
-        offs.name AS offs_name
-    FROM objects o
-    LEFT JOIN offices offs ON offs.id = o.id_office
-    WHERE o.id_status <> 4
-    ";
-
-    $params = [];
-    $types  = "";
-
-    if ($officeId > 0) {
-        $sql .= " AND o.id_office = ?";
-        $params[] = $officeId;
-        $types .= "i";
-    }
-
-    if ($search !== '') {
-        $sql .= " AND o.name LIKE ?";
-        $params[] = "%{$search}%";
-        $types .= "s";
-    }
-
-    $sql .= " ORDER BY o.name ASC LIMIT 1000";
-
-    $stmt = $db->prepare($sql);
-    if(!empty($params)){
-        $stmt->bind_param($types, ...$params);
-    }
-    $stmt->execute();
-    return $stmt->get_result();
-}
-
-$result = getObjects($db, $officeId, $search);
+$result = $db->query($sql);
 ?>
 
 <div id="objectsContainer">
+
 <?php if (!$result || $result->num_rows === 0): ?>
-    <div class="alert alert-warning text-center m-3">Няма обекти.</div>
+    <div class="alert alert-warning m-3 text-center">Няма обекти</div>
 <?php else: ?>
-    <?php while ($row = $result->fetch_assoc()):
-        $oID      = (int)$row['oID'];
-        $offsID   = (int)$row['offsID'];
 
-        $oNum     = htmlspecialchars($row['oNum']);
-        $oName    = htmlspecialchars($row['oName']);
-        $oInfo    = htmlspecialchars($row['oInfo']);
-        $oAddress = htmlspecialchars($row['oAddress']);
-        $offsName = htmlspecialchars($row['offs_name']);
+<?php while($row = $result->fetch_assoc()):
 
-        $oLat = $row['oLat'] ? (float)$row['oLat'] : 43.2728759;
-        $oLan = $row['oLan'] ? (float)$row['oLan'] : 26.9266601;
-    ?>
+    $id   = (int)$row['id'];
+    $name = htmlspecialchars($row['name']);
+    $info = htmlspecialchars($row['info']);
+    $officesJson = htmlspecialchars($row['offices_ids'], ENT_QUOTES);
 
-    <div class="card mb-3 object-card shadow-sm border-0">
-        <div class="card-body d-flex align-items-center justify-content-between p-2">
-            <div>
-                <button type="button"
-                        class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center openObjectModal"
-                        data-id="<?= $oID ?>"
-                        data-name="<?= $oName ?>"
-                        data-office="<?= $offsID ?>"
-                        data-info="<?= $oInfo ?>"
-                        data-lat="<?= $oLat ?>"
-                        data-lng="<?= $oLan ?>">
-                    <i class="fa-solid fa-home"></i>
-                </button>
-            </div>
+    $lat = $row['geo_lat'] ?: 43.2728759;
+    $lng = $row['geo_lan'] ?: 26.9266601;
+?>
 
-            <div class="flex-grow-1 px-2">
-                <button type="button"
-                        class="btn p-0 text-start w-100 openObjectModal"
-                        data-id="<?= $oID ?>"
-                        data-name="<?= $oName ?>"
-                        data-office="<?= $offsID ?>"
-                        data-info="<?= $oInfo ?>"
-                        data-lat="<?= $oLat ?>"
-                        data-lng="<?= $oLan ?>">
-                    <div class="fw-semibold fs-5"><?= $oName ?></div>
-                    <div class="text-body-secondary small"><?= $offsName ?></div>
-                </button>
-            </div>
+<div class="card mb-2 shadow-sm border-0">
+    <div class="card-body d-flex align-items-center justify-content-between p-2">
+
+        <button class="btn btn-primary openObjectModal"
+                data-id="<?= $id ?>"
+                data-name="<?= $name ?>"
+                data-info="<?= $info ?>"
+                data-offices='<?= $officesJson ?>'
+                data-lat="<?= $lat ?>"
+                data-lng="<?= $lng ?>">
+            <i class="fa fa-home"></i>
+        </button>
+
+        <div class="flex-grow-1 px-2">
+            <button class="btn p-0 text-start w-100 openObjectModal"
+                    data-id="<?= $id ?>"
+                    data-name="<?= $name ?>"
+                    data-info="<?= $info ?>"
+                    data-offices='<?= $officesJson ?>'
+                    data-lat="<?= $lat ?>"
+                    data-lng="<?= $lng ?>">
+
+                <div class="fw-bold"><?= $name ?></div>
+                <div class="small text-muted"><?= htmlspecialchars($row['office_name']) ?></div>
+
+            </button>
         </div>
-    </div>
 
-    <?php endwhile; ?>
-<?php endif; ?>
+    </div>
 </div>
 
-<!-- ================= SINGLE OBJECT MODAL ================= -->
+<?php endwhile; ?>
+<?php endif; ?>
+
+</div>
+
+<!-- MODAL -->
 <div class="modal fade" id="objectModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
+
             <div class="modal-header">
-                <h5 class="modal-title">Редакция на обект</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title">Редакция</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+
             <div class="modal-body">
+
                 <input type="hidden" id="modal_object_id">
 
-                <div class="mb-1">
-                    <label class="form-label">Име на обект <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control form-control-sm py-1" id="modal_object_name">
+                <div class="mb-2">
+                    <label>Име *</label>
+                    <input type="text" id="modal_object_name" class="form-control form-control-sm">
                 </div>
 
-                <div class="mb-1">
-                    <label class="form-label">Маршрут <span class="text-danger">*</span></label>
-                    <select class="form-select form-select-sm" id="modal_object_office">
-                        <option value="">Избери маршрут</option>
-                        <?php foreach($offices as $off): ?>
-                            <option value="<?= $off['id'] ?>"><?= htmlspecialchars($off['name']) ?></option>
-                        <?php endforeach; ?>
-                    </select>
+                <div class="mb-2">
+                    <label>Маршрути (незадължително)</label>
+
+                    <div class="border rounded p-2" style="max-height:150px;overflow:auto;">
+                        <div class="row">
+                            <?php foreach($offices as $off): ?>
+                                <div class="col-6 col-md-4">
+                                    <div class="form-check">
+                                        <input type="checkbox"
+                                               class="form-check-input object-office-checkbox"
+                                               value="<?= $off['id'] ?>"
+                                               id="office_<?= $off['id'] ?>">
+                                        <label class="form-check-label" for="office_<?= $off['id'] ?>">
+                                            <?= htmlspecialchars($off['name']) ?>
+                                        </label>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="mb-1">
-                    <label class="form-label">Оперативна информация</label>
-                    <textarea class="form-control form-control-sm py-2" rows="2" id="modal_object_info"></textarea>
+                <div class="mb-2">
+                    <label>Оперативна информация</label>
+                    <textarea id="modal_object_info" class="form-control form-control-sm"></textarea>
                 </div>
 
-                <div class="mb-1">
-                    <div id="objectMapContainer" style="height:400px;width:100%"></div>
-                </div>
+                <div id="objectMapContainer" style="height:400px;"></div>
 
             </div>
+
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Затвори</button>
-                <button type="button" class="btn btn-success btn-sm" id="saveObjectBtnModal">Запази</button>
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Затвори</button>
+                <button class="btn btn-success btn-sm" id="saveObjectBtnModal">Запази</button>
             </div>
+
         </div>
     </div>
 </div>
 
-<?php
-$db->close();
-?>
+<?php $db->close(); ?>

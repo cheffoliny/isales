@@ -8,15 +8,29 @@ $db = db_connect('sod');
 
 $stmt = $db->prepare("
 SELECT
-offs.id AS offs_id,
-offs.name AS offs_name,
-COUNT(o.id) AS obj_count,
-SUM(IF(pe.id > 0, 1, 0)) AS obj_visited
-FROM objects o
-INNER JOIN offices offs ON offs.id = o.id_office
-LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON p.id_dest = o.id AND DATE(p.source_date) = CURDATE()
-LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON pe.id_ppp = p.id AND pe.count > 1
-WHERE o.id_status = 1
+    offs.id AS offs_id,
+    offs.name AS offs_name,
+
+    COUNT(DISTINCT o.id) AS obj_count,
+
+    COUNT(DISTINCT CASE
+        WHEN pe.id > 0 THEN o.id
+    END) AS obj_visited
+
+FROM offices offs
+
+LEFT JOIN objects o
+    ON JSON_CONTAINS(o.offices_ids, CAST(offs.id AS JSON), '$')
+    AND o.id_status = 1
+
+LEFT JOIN ". DB_NAMES['storage'] .".ppp p
+    ON p.id_dest = o.id
+    AND DATE(p.source_date) = CURDATE()
+
+LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe
+    ON pe.id_ppp = p.id
+    AND pe.count > 1
+
 GROUP BY offs.id, offs.name
 ORDER BY offs.name ASC
 ");

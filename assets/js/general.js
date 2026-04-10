@@ -14,29 +14,134 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
+//
+///* ===============================
+//   LOAD OBJECT MODAL
+//=============================== */
+//$(document).on("click", ".openObjectModal", function(){
+//    const btn = $(this);
+//
+//    const id   = btn.data("id");
+//    const name = btn.data("name");
+//    const office = btn.data("office");
+//    const info   = btn.data("info");
+//    const lat    = parseFloat(btn.data("lat")) || 43.2728759;
+//    const lng    = parseFloat(btn.data("lng")) || 26.9266601;
+//
+//    $("#modal_object_id").val(id);
+//    $("#modal_object_name").val(name);
+//    $("#modal_object_office").val(office);
+//    $("#modal_object_info").val(info);
+//
+//    const modal = new bootstrap.Modal(document.getElementById("objectModal"));
+//    modal.show();
+//
+//    setTimeout(()=>{
+//        if(!mapInstance){
+//            mapInstance = L.map("objectMapContainer").setView([lat,lng],16);
+//            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(mapInstance);
+//        } else {
+//            mapInstance.setView([lat,lng],16);
+//        }
+//
+//        if(mapMarker){
+//            mapInstance.removeLayer(mapMarker);
+//        }
+//        mapMarker = L.marker([lat,lng], {draggable:true}).addTo(mapInstance);
+//
+//        setTimeout(()=>mapInstance.invalidateSize(),200);
+//    },200);
+//});
+//
+//// FIX modal backdrop and body class
+//$('#objectModal').on('hidden.bs.modal', function () {
+//    $('.modal-backdrop').remove();
+//    $('body').removeClass('modal-open');
+//    $('body').css('padding-right','');
+//});
+//
+///* ===============================
+//   SAVE OBJECT (DATA + COORDS)
+//=============================== */
+//$(document).on("click", "#saveObjectBtnModal", function(){
+//    const id     = $("#modal_object_id").val();
+//    const name   = $("#modal_object_name").val().trim();
+//    const office = $("#modal_object_office").val();
+//    const info   = $("#modal_object_info").val().trim();
+//
+//    if(!name || !office){
+//        alert("Попълнете задължителните полета!");
+//        return;
+//    }
+//
+//    const lat = mapMarker ? mapMarker.getLatLng().lat : null;
+//    const lng = mapMarker ? mapMarker.getLatLng().lng : null;
+//
+//    $.post("includes/update_objects.php", {
+//        id:id,
+//        name:name,
+//        office:office,
+//        info:info,
+//        lat:lat,
+//        lng:lng
+//    }, function(resp){
+//        if(resp.success){
+//            showToast("Данните са записани успешно","success");
+//            // Обнови данните в card
+//            const btns = $(`.openObjectModal[data-id='${id}']`);
+//            btns.data("name",name).data("office",office).data("info",info).data("lat",lat).data("lng",lng);
+//        } else {
+//            showToast("Грешка при запис","danger");
+//        }
+//    },"json");
+//});
 
 /* ===============================
    LOAD OBJECT MODAL
 =============================== */
 $(document).on("click", ".openObjectModal", function(){
+
     const btn = $(this);
 
     const id   = btn.data("id");
     const name = btn.data("name");
-    const office = btn.data("office");
-    const info   = btn.data("info");
-    const lat    = parseFloat(btn.data("lat")) || 43.2728759;
-    const lng    = parseFloat(btn.data("lng")) || 26.9266601;
+    const info = btn.data("info");
+
+    // 👇 НОВО - JSON offices
+    let offices = btn.data("offices");
+
+    if(typeof offices === "string"){
+        try {
+            offices = JSON.parse(offices);
+        } catch(e){
+            offices = [];
+        }
+    }
+
+    if(!Array.isArray(offices)){
+        offices = [];
+    }
+
+    const lat = parseFloat(btn.data("lat")) || 43.2728759;
+    const lng = parseFloat(btn.data("lng")) || 26.9266601;
 
     $("#modal_object_id").val(id);
     $("#modal_object_name").val(name);
-    $("#modal_object_office").val(office);
     $("#modal_object_info").val(info);
+
+    // ✅ reset чекбоксове
+    $(".object-office-checkbox").prop("checked", false);
+
+    // ✅ маркираме избраните
+    offices.forEach(function(id){
+        $("#office_" + id).prop("checked", true);
+    });
 
     const modal = new bootstrap.Modal(document.getElementById("objectModal"));
     modal.show();
 
     setTimeout(()=>{
+
         if(!mapInstance){
             mapInstance = L.map("objectMapContainer").setView([lat,lng],16);
             L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19}).addTo(mapInstance);
@@ -47,30 +152,43 @@ $(document).on("click", ".openObjectModal", function(){
         if(mapMarker){
             mapInstance.removeLayer(mapMarker);
         }
+
         mapMarker = L.marker([lat,lng], {draggable:true}).addTo(mapInstance);
 
         setTimeout(()=>mapInstance.invalidateSize(),200);
+
     },200);
 });
 
-// FIX modal backdrop and body class
+
+/* ===============================
+   FIX modal backdrop
+=============================== */
 $('#objectModal').on('hidden.bs.modal', function () {
     $('.modal-backdrop').remove();
     $('body').removeClass('modal-open');
     $('body').css('padding-right','');
 });
 
+
 /* ===============================
    SAVE OBJECT (DATA + COORDS)
 =============================== */
 $(document).on("click", "#saveObjectBtnModal", function(){
-    const id     = $("#modal_object_id").val();
-    const name   = $("#modal_object_name").val().trim();
-    const office = $("#modal_object_office").val();
-    const info   = $("#modal_object_info").val().trim();
 
-    if(!name || !office){
-        alert("Попълнете задължителните полета!");
+    const id   = $("#modal_object_id").val();
+    const name = $("#modal_object_name").val().trim();
+    const info = $("#modal_object_info").val().trim();
+
+    // ✅ събиране на чекбоксове
+    let offices = [];
+    $(".object-office-checkbox:checked").each(function(){
+        offices.push(parseInt($(this).val()));
+    });
+
+    // ❗ само name е задължително
+    if(!name){
+        alert("Попълнете име!");
         return;
     }
 
@@ -78,21 +196,32 @@ $(document).on("click", "#saveObjectBtnModal", function(){
     const lng = mapMarker ? mapMarker.getLatLng().lng : null;
 
     $.post("includes/update_objects.php", {
-        id:id,
-        name:name,
-        office:office,
-        info:info,
-        lat:lat,
-        lng:lng
+        id: id,
+        name: name,
+        info: info,
+        offices_ids: JSON.stringify(offices), // 👈 ключово
+        lat: lat,
+        lng: lng
     }, function(resp){
+
         if(resp.success){
+
             showToast("Данните са записани успешно","success");
-            // Обнови данните в card
+
+            // ✅ update на бутоните
             const btns = $(`.openObjectModal[data-id='${id}']`);
-            btns.data("name",name).data("office",office).data("info",info).data("lat",lat).data("lng",lng);
+
+            btns
+                .data("name", name)
+                .data("info", info)
+                .data("offices", JSON.stringify(offices))
+                .data("lat", lat)
+                .data("lng", lng);
+
         } else {
             showToast("Грешка при запис","danger");
         }
+
     },"json");
 });
 

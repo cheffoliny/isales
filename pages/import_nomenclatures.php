@@ -83,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                $nom_code = (int)$nom_code_raw;
-                $id = 1000000000 + $nom_code;
+                $nom_code = $nom_code_raw;
+                $id = 1000000000 + (int)$nom_code;
 
                 $name = trim($cols[1]);
                 $unit = trim($cols[2]);
@@ -249,7 +249,7 @@ function insertBatch($conn, $data) {
 
     foreach ($data as $row) {
         $placeholders[] = "(?, ?, ?, ?, ?, ?)";
-        $types .= 'iissdd';
+        $types .= 'isssdd';
         $values = array_merge($values, $row);
     }
 

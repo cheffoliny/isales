@@ -253,10 +253,21 @@ function insertBatch($conn, $data) {
         $values = array_merge($values, $row);
     }
 
-    $sql = "
-        REPLACE INTO nomenclatures
-        (id, nom_code, name, unit, is_calc, client_price)
-        VALUES " . implode(',', $placeholders);
+   // $sql = "
+     //   REPLACE INTO nomenclatures
+       // (id, nom_code, name, unit, is_calc, client_price)
+        //VALUES " . implode(',', $placeholders);
+        $sql = "
+            INSERT INTO nomenclatures
+            (id, nom_code, name, unit, is_calc, client_price)
+            VALUES " . implode(',', $placeholders) . "
+            ON DUPLICATE KEY UPDATE
+                nom_code = VALUES(nom_code),
+                name = VALUES(name),
+                unit = VALUES(unit),
+                is_calc = VALUES(is_calc),
+                client_price = VALUES(client_price)
+        ";
 
     $stmt = $conn->prepare($sql);
 

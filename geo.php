@@ -80,5 +80,5 @@ while ($row = $result->fetch_assoc()) {
         echo "MISS $id $addr<br>";
     }
 
-usleep(3100000); // 1.1 секунди
+usleep(10100000); // 1.1 секунди
 }

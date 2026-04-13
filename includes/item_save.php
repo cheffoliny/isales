@@ -9,18 +9,18 @@ $client=(float)$_POST['client_price'];
 $sales=(float)$_POST['sales_price'];
 $calc=(int)$_POST['is_calc'];
 
+//is_calc=?
 $stmt=$db->prepare("
 
 UPDATE nomenclatures
 SET
 client_price=?,
-sales_price=?,
-is_calc=?
+sales_price=?
 WHERE id=?
 
 ");
 
-$stmt->bind_param("ddii",$client,$sales,$calc,$id);
+$stmt->bind_param("ddii",$client,$sales,$id);
 
 $ok=$stmt->execute();
 

@@ -27,7 +27,7 @@ SELECT
     COALESCE(GROUP_CONCAT(offs.name SEPARATOR ', '), '—') AS office_name
 FROM objects o
 LEFT JOIN offices offs
-    ON JSON_CONTAINS(o.offices_ids, CAST(offs.id AS JSON), '$')
+    ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
 WHERE o.id_status <> 4
 GROUP BY o.id
 ORDER BY o.name ASC

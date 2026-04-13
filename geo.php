@@ -38,7 +38,7 @@ function geocode($query)
 $sql = "
     SELECT
         id,
-        SUBSTRING_INDEX(`name`, ' ', -1) AS address
+        SUBSTRING_INDEX(`name`, ' ', -2) AS address
     FROM objects WHERE geo_lan < 1
 ";
 

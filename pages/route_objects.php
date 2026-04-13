@@ -39,7 +39,7 @@ $stmt = $db->prepare("
     LEFT JOIN alaska_storage.ppp p
         ON o.id = p.id_dest
         AND DATE(p.source_date) = CURDATE()
-    WHERE JSON_CONTAINS(o.offices_ids, CAST(? AS JSON))
+    WHERE JSON_CONTAINS(o.offices_ids, JSON_ARRAY(?))
       AND o.id_status <> 4
     ORDER BY o.name ASC
     LIMIT 50

@@ -20,7 +20,7 @@ SELECT
 FROM offices offs
 
 LEFT JOIN objects o
-    ON JSON_CONTAINS(o.offices_ids, CAST(offs.id AS JSON), '$')
+    ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
     AND o.id_status = 1
 
 LEFT JOIN ". DB_NAMES['storage'] .".ppp p

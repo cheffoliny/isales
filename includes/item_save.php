@@ -1,27 +1,37 @@
 <?php
 include_once __DIR__.'/functions.php';
 
-$db=db_connect('storage');
+header('Content-Type: application/json');
 
-$id=(int)$_POST['id'];
+$db = db_connect('storage');
 
-$client=(float)$_POST['client_price'];
-$sales=(float)$_POST['sales_price'];
-$calc=(int)$_POST['is_calc'];
+$id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+$client = isset($_POST['client_price']) ? (float)$_POST['client_price'] : 0;
+$sales = isset($_POST['sales_price']) ? (float)$_POST['sales_price'] : 0;
 
-//is_calc=?
-$stmt=$db->prepare("
+if(!$id){
+    echo json_encode(['success' => false]);
+    exit;
+}
 
-UPDATE nomenclatures
-SET
-client_price=?,
-sales_price=?
-WHERE id=?
-
+$stmt = $db->prepare("
+    UPDATE nomenclatures
+    SET client_price = ?, sales_price = ?
+    WHERE id = ?
 ");
 
-$stmt->bind_param("ddi",$client,$sales,$id);
+if(!$stmt){
+    echo json_encode(['success' => false]);
+    exit;
+}
 
-$ok=$stmt->execute();
+$stmt->bind_param("ddi", $client, $sales, $id);
 
-echo json_encode(['success'=>$ok]);
+$ok = $stmt->execute();
+
+echo json_encode([
+    'success' => $ok ? true : false
+]);
+
+$stmt->close();
+exit;

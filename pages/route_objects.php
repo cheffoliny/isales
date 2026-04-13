@@ -36,7 +36,7 @@ $stmt = $db->prepare("
         p.id AS pppID,
         p.`status` AS order_status
     FROM objects o
-    LEFT JOIN alaska_storage.ppp p
+    LEFT JOIN ". DB_NAMES['storage'] .".ppp p
         ON o.id = p.id_dest
         AND DATE(p.source_date) = CURDATE()
     WHERE JSON_CONTAINS(o.offices_ids, JSON_ARRAY(?))

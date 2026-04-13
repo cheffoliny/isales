@@ -52,7 +52,7 @@ while ($row = $result->fetch_assoc()) {
     if ($addr === '') continue;
 
     // ⚠️ добавяме контекст, за да не гърми геокодинга
-    $query = 'с. ' .$addr . ', Шумен, Bulgaria';
+    $query = 'с. ' .$addr . ', Разград, Bulgaria';
 
     $geo = geocode($query);
 

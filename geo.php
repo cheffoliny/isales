@@ -39,7 +39,7 @@ $sql = "
     SELECT
         id,
         SUBSTRING_INDEX(`name`, ' ', -1) AS address
-    FROM objects WHERE geo_lan = '0.000000000000000'
+    FROM objects WHERE geo_lan = '0.000000000000000' OR geo_lan = '26.926660100000000'
 ";
 
 $result = $db->query($sql);

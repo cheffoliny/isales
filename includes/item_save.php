@@ -20,7 +20,7 @@ WHERE id=?
 
 ");
 
-$stmt->bind_param("ddii",$client,$sales,$id);
+$stmt->bind_param("ddi",$client,$sales,$id);
 
 $ok=$stmt->execute();
 

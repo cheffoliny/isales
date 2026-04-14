@@ -53,6 +53,25 @@ if(empty($_SESSION['user_id'])){
     </div>
 </div>
 
+<!-- ✅ IMAGE MODAL (добавен обратно) -->
+<div class="modal fade" id="imageModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Снимка</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+                <img id="itemImagePreview" class="img-fluid mb-3 d-none" style="max-height:80vh">
+                <div id="noImageText" class="text-muted">Няма снимка</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <script>
 let page = 0;
 let searchVal = '';
@@ -62,6 +81,7 @@ let loading = false;
 let endReached = false;
 let viewMode = 'list';
 
+// LOAD ITEMS
 function loadItems(reset=false){
     if(loading || endReached) return;
     loading = true;
@@ -100,6 +120,7 @@ function loadItems(reset=false){
 
 loadItems();
 
+// SEARCH
 let searchTimer;
 $('#search').on('input', function(){
     clearTimeout(searchTimer);
@@ -109,6 +130,7 @@ $('#search').on('input', function(){
     }, 400);
 });
 
+// FILTERS
 $('#promoFilter').on('click', function(){
     promo = !promo;
     $(this).toggleClass('btn-danger btn-secondary');
@@ -121,13 +143,57 @@ $('#zeroFilter').on('click', function(){
     loadItems(true);
 });
 
+// ✅ VIEW SWITCH (върнато)
+$('#viewListBtn').on('click', function(){
+    if(viewMode !== 'list'){
+        viewMode = 'list';
+
+        $('#viewListBtn')
+            .addClass('btn-primary active')
+            .removeClass('btn-outline-primary');
+
+        $('#viewGridBtn')
+            .removeClass('btn-primary active')
+            .addClass('btn-outline-primary');
+
+        $('#listView').show();
+        $('#gridView').hide();
+
+        if($('#itemsTable').children().length === 0){
+            loadItems(true);
+        }
+    }
+});
+
+$('#viewGridBtn').on('click', function(){
+    if(viewMode !== 'grid'){
+        viewMode = 'grid';
+
+        $('#viewGridBtn')
+            .addClass('btn-primary active')
+            .removeClass('btn-outline-primary');
+
+        $('#viewListBtn')
+            .removeClass('btn-primary active')
+            .addClass('btn-outline-primary');
+
+        $('#gridView').show();
+        $('#listView').hide();
+
+        if($('#gridView').children().length === 0){
+            loadItems(true);
+        }
+    }
+});
+
+// SCROLL LOAD
 $(window).on('scroll', function(){
     if($(window).scrollTop() + $(window).height() > $(document).height() - 200){
         loadItems();
     }
 });
 
-// ✅ SAVE
+// ✅ SAVE (запазен + подобрен)
 $(document).on('click', '.save-item', function(){
 
     const btn = $(this);
@@ -137,7 +203,6 @@ $(document).on('click', '.save-item', function(){
     const client = row.find('.client_price').val();
     const sales = row.find('.sales_price').val();
 
-    // loading
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
 
     $.post('includes/item_save.php', {
@@ -146,20 +211,16 @@ $(document).on('click', '.save-item', function(){
         sales_price: sales
     }, function(resp){
 
-        console.log(resp);
-
         btn.prop('disabled', false).html('<i class="fa fa-save"></i>');
 
         if(resp.success){
 
-            // highlight
             row.addClass('table-success');
 
             setTimeout(() => {
                 row.removeClass('table-success');
             }, 2000);
 
-            // ✔ иконка
             const status = row.find('.save-status');
             status.removeClass('d-none').hide().fadeIn(150);
 
@@ -173,5 +234,29 @@ $(document).on('click', '.save-item', function(){
 
     }, 'json');
 
+});
+
+// ✅ IMAGE MODAL LOGIC (върната)
+let currentItem = 0;
+
+$(document).on('click', '.item-thumb, .card-img-top', function(){
+
+    currentItem = $(this).data('id');
+
+    new bootstrap.Modal('#imageModal').show();
+
+    const hasImage = $(this).data('hasimage');
+
+    if(hasImage){
+        $('#itemImagePreview')
+            .attr('src', 'includes/item_image_get.php?id=' + currentItem + '&t=' + Date.now())
+            .removeClass('d-none');
+
+        $('#noImageText').addClass('d-none');
+
+    } else {
+        $('#itemImagePreview').addClass('d-none');
+        $('#noImageText').removeClass('d-none');
+    }
 });
 </script>

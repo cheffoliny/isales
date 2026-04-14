@@ -169,7 +169,7 @@ AND n.is_calc > 0
 AND n.client_price > 0
 
 ORDER BY n.name
-LIMIT 1000
+LIMIT 3000
 ";
 
             $stmt = $db->prepare($sql);

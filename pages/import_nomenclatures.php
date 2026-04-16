@@ -280,7 +280,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $line = convertToUtf8($line);
                 $line = preg_replace('/[ \t]+/u', ' ', trim($line));
 
-                // split safely
                 $cols = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
 
                 if (!is_array($cols) || count($cols) < 6) {
@@ -288,29 +287,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                // ===========================
-                // 1. code (always first)
-                // ===========================
-                $nom_code_raw = array_shift($cols);
-
-                if (!ctype_digit($nom_code_raw)) {
+                // CODE
+                $code = array_shift($cols);
+                if (!ctype_digit($code)) {
                     $skipped++;
                     continue;
                 }
 
-                $id = 1000000000 + (int)$nom_code_raw;
+                // =======================
+                // FIXED ANCHOR PARSING
+                // =======================
 
-                // ===========================
-                // 2. last columns (ANCHOR SAFE)
-                // ===========================
-                $total        = array_pop($cols); // ignore
-                $client_price = array_pop($cols);
-                $is_calc      = array_pop($cols);
-                $unit         = array_pop($cols);
+                // винаги последните 3 са стабилни
+                $total   = array_pop($cols);   // игнорираме
+                $price   = array_pop($cols);
+                $qty     = array_pop($cols);
+                $unit    = array_pop($cols);
 
-                // ===========================
-                // 3. name (everything between)
-                // ===========================
+                // NAME = всичко между code и unit
                 $name = trim(implode(' ', $cols));
 
                 if ($name === '' || $unit === '') {
@@ -318,21 +312,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                if (!is_numeric(str_replace(',', '.', $client_price))) {
+                $price = str_replace(',', '.', $price);
+                $qty   = str_replace(',', '.', $qty);
+
+                if (!is_numeric($price) || !is_numeric($qty)) {
                     $skipped++;
                     continue;
                 }
 
-                // ===========================
-                // finalize
-                // ===========================
+                $id = 1000000000 + (int)$code;
+
                 $batchData[] = [
                     $id,
-                    $nom_code_raw,
+                    $code,
                     $name,
                     $unit,
-                    (float)str_replace(',', '.', $is_calc),
-                    (float)str_replace(',', '.', $client_price)
+                    (float)$qty,
+                    (float)$price
                 ];
 
                 $officeCounter++;

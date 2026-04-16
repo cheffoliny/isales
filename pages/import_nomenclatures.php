@@ -276,43 +276,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
+                // normalize
                 $line = convertToUtf8($line);
-                $line = trim($line);
+                $line = preg_replace('/[ \t]+/u', ' ', trim($line));
 
-                if ($line === '') continue;
+                // split safely
+                $cols = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
 
-                if (
-                    str_contains($line, 'РЕГИСТЪР') ||
-                    str_contains($line, 'Дата') ||
-                    str_contains($line, 'стр.') ||
-                    preg_match('/^-+$/', $line)
-                ) {
-                    continue;
-                }
-
-                if (!preg_match('/^(.*?)\s+(\d+)$/u', $line, $matches)) {
+                if (!is_array($cols) || count($cols) < 6) {
                     $skipped++;
                     continue;
                 }
 
-                $nameRaw = trim($matches[1]);
-                $num     = (int)$matches[2];
+                // ===========================
+                // 1. code (always first)
+                // ===========================
+                $nom_code_raw = array_shift($cols);
 
-                $name = preg_replace('/^\d+\s+/', '', $nameRaw);
-
-                if ($name === '' || !$num) {
+                if (!ctype_digit($nom_code_raw)) {
                     $skipped++;
                     continue;
                 }
 
-                $id = 100000 + $num;
+                $id = 1000000000 + (int)$nom_code_raw;
 
+                // ===========================
+                // 2. last columns (ANCHOR SAFE)
+                // ===========================
+                $total        = array_pop($cols); // ignore
+                $client_price = array_pop($cols);
+                $is_calc      = array_pop($cols);
+                $unit         = array_pop($cols);
+
+                // ===========================
+                // 3. name (everything between)
+                // ===========================
+                $name = trim(implode(' ', $cols));
+
+                if ($name === '' || $unit === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                if (!is_numeric(str_replace(',', '.', $client_price))) {
+                    $skipped++;
+                    continue;
+                }
+
+                // ===========================
+                // finalize
+                // ===========================
                 $batchData[] = [
                     $id,
+                    $nom_code_raw,
                     $name,
-                    $num,
-                    1,
-                    $officeCounter
+                    $unit,
+                    (float)str_replace(',', '.', $is_calc),
+                    (float)str_replace(',', '.', $client_price)
                 ];
 
                 $officeCounter++;

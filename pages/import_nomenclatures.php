@@ -98,36 +98,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
+                $rawLine = $line; // пазим оригинала
+
                 if (trim($line) === '') {
                     continue;
                 }
 
                 $line = convertToUtf8($line);
 
-                if ($line === '') {
+                if (strpos($line, '010267') !== false) {
+
+                    echo "<pre style='background:#111;color:#0f0;padding:10px;font-size:12px;'>";
+                    echo "================ DEBUG START ================\n";
+
+                    echo "RAW LINE:\n";
+                    var_dump($rawLine);
+
+                    echo "\nUTF8 LINE:\n";
+                    var_dump($line);
+
+                    echo "\nHEX:\n";
+                    echo bin2hex($line) . "\n";
+
+                    echo "\nMB CHECK UTF-8:\n";
+                    var_dump(mb_check_encoding($line, 'UTF-8'));
+
+                    echo "\nNORMALIZED (spaces):\n";
+                    $norm = preg_replace('/[ \t]+/u', ' ', trim($line));
+                    var_dump($norm);
+
+                    echo "\nSPLIT RESULT:\n";
+                    $cols = preg_split('/\s+/u', trim($norm));
+                    var_dump($cols);
+
+                    if (!is_array($cols)) {
+                        echo "❌ SPLIT FAILED (FALSE returned)\n";
+                    } else {
+                        echo "COUNT: " . count($cols) . "\n";
+
+                        echo "\nINDEX CHECK:\n";
+                        foreach ($cols as $i => $c) {
+                            echo "[$i] => " . $c . " (" . bin2hex($c) . ")\n";
+                        }
+                    }
+
+                    echo "================ DEBUG END ================\n</pre>";
+                }
+
+                // ако split е счупен → пропускаме безопасно
+                $line = preg_replace('/[ \t]+/u', ' ', trim($line));
+
+                $cols = preg_split('/\s+/u', $line);
+
+                if (!is_array($cols) || count($cols) < 5) {
                     $skipped++;
                     continue;
                 }
 
-                // нормализирай интервали (важно за split стабилност)
-                $line = preg_replace('/[ \t]+/u', ' ', $line);
-
-                // split (СЪС ЗАЩИТА)
-                $cols = preg_split('/\s+/u', trim($line));
-
-                if (!is_array($cols)) {
-                    $skipped++;
-                    continue;
-                }
-
-                if (count($cols) < 5) {
-                    $skipped++;
-                    continue;
-                }
-
-                // =========================
-                // CODE (първи елемент)
-                // =========================
                 $nom_code_raw = $cols[0];
 
                 if (!ctype_digit($nom_code_raw)) {
@@ -135,12 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                $nom_code = $nom_code_raw;
-                $id = 1000000000 + (int)$nom_code;
+                $id = 1000000000 + (int)$nom_code_raw;
 
-                // =========================
-                // PRICE + IS_CALC (последни 2)
-                // =========================
                 $client_price = str_replace(',', '.', array_pop($cols));
                 $is_calc      = str_replace(',', '.', array_pop($cols));
 
@@ -149,32 +172,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                // =========================
-                // UNIT + NAME
-                // =========================
                 $unit = array_pop($cols);
+                $name = implode(' ', array_slice($cols, 1));
 
-                if ($unit === null || $unit === '') {
+                if ($name === '' || $unit === '') {
                     $skipped++;
                     continue;
                 }
 
-                // name = всичко между code и unit
-                $nameParts = array_slice($cols, 1);
-
-                $name = trim(implode(' ', $nameParts));
-
-                if ($name === '') {
-                    $skipped++;
-                    continue;
-                }
-
-                // =========================
-                // INSERT BATCH
-                // =========================
                 $batchData[] = [
                     $id,
-                    $nom_code,
+                    $nom_code_raw,
                     $name,
                     $unit,
                     (float)$is_calc,

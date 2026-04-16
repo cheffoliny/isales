@@ -69,28 +69,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $line = convertToUtf8($line);
                 $line = trim($line);
 
-                $cols = preg_split('/\s{2,}/u', $line);
+//                 $cols = preg_split('/\s{2,}/u', $line);
+//
+//                 if (count($cols) < 5) {
+//                     $skipped++;
+//                     continue;
+//                 }
+//
+//                 $nom_code_raw = trim($cols[0]);
+//
+//                 if (!is_numeric($nom_code_raw)) {
+//                     $skipped++;
+//                     continue;
+//                 }
+//
+//                 $nom_code = $nom_code_raw;
+//                 $id = 1000000000 + (int)$nom_code;
+//
+//                 $name = trim($cols[1]);
+//                 $unit = trim($cols[2]);
+//
+//                 $is_calc      = str_replace(",", ".", trim($cols[3]));
+//                 $client_price = str_replace(",", ".", trim($cols[4]));
 
-                if (count($cols) < 5) {
-                    $skipped++;
-                    continue;
-                }
+                    $cols = preg_split('/\s+/u', $line);
 
-                $nom_code_raw = trim($cols[0]);
+                    if (count($cols) < 6) {
+                        $skipped++;
+                        continue;
+                    }
 
-                if (!is_numeric($nom_code_raw)) {
-                    $skipped++;
-                    continue;
-                }
+                    // първо поле е код
+                    $nom_code_raw = array_shift($cols);
 
-                $nom_code = $nom_code_raw;
-                $id = 1000000000 + (int)$nom_code;
+                    if (!is_numeric($nom_code_raw)) {
+                        $skipped++;
+                        continue;
+                    }
 
-                $name = trim($cols[1]);
-                $unit = trim($cols[2]);
+                    $nom_code = $nom_code_raw;
+                    $id = 1000000000 + (int)$nom_code;
 
-                $is_calc      = str_replace(",", ".", trim($cols[3]));
-                $client_price = str_replace(",", ".", trim($cols[4]));
+                    // последните 3 са числа
+                    $client_price = str_replace(",", ".", array_pop($cols));
+                    $is_calc      = str_replace(",", ".", array_pop($cols));
+                    $qty          = str_replace(",", ".", array_pop($cols));
+
+                    if (!is_numeric($client_price) || !is_numeric($is_calc)) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    // следващото е unit
+                    $unit = array_pop($cols);
+
+                    // останалото е име
+                    $name = implode(' ', $cols);
 
                 if (!is_numeric($client_price)) {
                     $skipped++;

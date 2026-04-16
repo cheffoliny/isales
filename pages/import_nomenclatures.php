@@ -120,11 +120,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         continue;
                     }
 
-                    // следващото е unit
-                    $unit = array_pop($cols);
+//                     // следващото е unit
+//                     $unit = array_pop($cols);
+//
+//                     // останалото е име
+//                     $name = implode(' ', $cols);
+// търсим unit = дума (само букви), най-близка до края
+$unitIndex = null;
 
-                    // останалото е име
-                    $name = implode(' ', $cols);
+for ($i = count($cols) - 1; $i >= 0; $i--) {
+    if (preg_match('/^[\p{L}]+$/u', $cols[$i])) {
+        $unitIndex = $i;
+        break;
+    }
+}
+
+if ($unitIndex === null) {
+    $skipped++;
+    continue;
+}
+
+$unit = $cols[$unitIndex];
+unset($cols[$unitIndex]);
+
+$name = implode(' ', $cols);
 
                 if (!is_numeric($client_price)) {
                     $skipped++;

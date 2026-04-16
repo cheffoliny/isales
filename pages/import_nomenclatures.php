@@ -140,56 +140,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 /**
                  * =========================
-                 * 2. STRIP NUMBERS FROM END SAFELY
+                 * 2. SAFE BACKWARD PARSE (FIXED STRUCTURE)
                  * =========================
                  */
 
-                $price = null;
-                $qty   = null;
+                // последната винаги е TOTAL (игнорираме я)
+                array_pop($tokens);
 
-                // последните 2 числови стойности
-                for ($i = count($tokens) - 1; $i >= 0; $i--) {
+                // PRICE (предпоследна)
+                $price = array_pop($tokens);
 
-                    $val = str_replace(',', '.', $tokens[$i]);
+                // QTY
+                $qty = array_pop($tokens);
 
-                    if (is_numeric($val)) {
-
-                        if ($price === null) {
-                            $price = $val;
-                            unset($tokens[$i]);
-                            continue;
-                        }
-
-                        if ($qty === null) {
-                            $qty = $val;
-                            unset($tokens[$i]);
-                            break;
-                        }
-                    }
-                }
-
-                $tokens = array_values($tokens);
-
-                if ($price === null || $qty === null) {
-                    $skipped++;
-                    continue;
-                }
-
-                /**
-                 * =========================
-                 * 3. UNIT (last token if text)
-                 * =========================
-                 */
+                // UNIT
                 $unit = array_pop($tokens);
 
-                if ($unit === null) {
+                if ($price === null || $qty === null || $unit === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                // нормализация
+                $price = str_replace(',', '.', $price);
+                $qty   = str_replace(',', '.', $qty);
+
+                if (!is_numeric($price) || !is_numeric($qty)) {
                     $skipped++;
                     continue;
                 }
 
                 /**
                  * =========================
-                 * 4. NAME (everything else)
+                 * 3. NAME (everything left)
                  * =========================
                  */
                 $name = trim(implode(' ', $tokens));

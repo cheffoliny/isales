@@ -109,10 +109,34 @@ if (strpos($line, '010267') !== false) {
                 /**
                  * 🔧 FIX 3: по-стабилен split (НЕ се чупи при нестабилни интервали)
                  */
+                 echo "<pre style='color:red'>";
+
+                 var_dump([
+                     'raw_hex' => bin2hex($line),
+                     'strlen'  => strlen($line),
+                     'mb_check'=> mb_check_encoding($line, 'UTF-8')
+                 ]);
+
+                 echo "</pre>";
+
+
+                $line = trim($line);
+
+                // 1. гаранция че е string
+                if (!is_string($line) || $line === '') {
+                    continue;
+                }
+
+                // 2. safe UTF-8 clean (по-добро от iconv в твоя случай)
+                $line = mb_convert_encoding($line, 'UTF-8', 'auto');
+
+                // 3. махаме control chars safely
+                $line = preg_replace('/[\x00-\x1F\x7F]/u', '', $line);
+
+                // 4. split без риск от FALSE
                 $cols = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
 
                 if (!is_array($cols) || count($cols) < 5) {
-                    $skipped++;
                     continue;
                 }
 

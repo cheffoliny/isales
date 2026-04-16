@@ -64,6 +64,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
+// DEBUG само за проблемния код
+if (strpos($line, '010267') !== false) {
+
+    echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
+
+    echo "ORIGINAL:\n" . $line . "\n\n";
+
+    $testCols = preg_split('/\s+/u', trim($line));
+    echo "SPLIT:\n";
+    print_r($testCols);
+
+    // симулираме твоята логика
+    $tmp = $testCols;
+
+    $code = array_shift($tmp);
+    $cp = array_pop($tmp);
+    $ic = array_pop($tmp);
+    $qty = array_pop($tmp);
+
+    echo "\nAFTER POP:\n";
+    echo "code: $code\n";
+    echo "qty: $qty\n";
+    echo "is_calc: $ic\n";
+    echo "client_price: $cp\n";
+
+    echo "\nREMAINING:\n";
+    print_r($tmp);
+
+    echo "</pre>";
+}
                 if (trim($line) === '') continue;
 
                 $line = convertToUtf8($line);
@@ -222,37 +252,6 @@ $name = implode(' ', $cols);
                 $line = convertToUtf8($line);
                 $line = trim($line);
 
-
-// DEBUG само за проблемния код
-if (strpos($line, '010267') !== false) {
-
-    echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
-
-    echo "ORIGINAL:\n" . $line . "\n\n";
-
-    $testCols = preg_split('/\s+/u', trim($line));
-    echo "SPLIT:\n";
-    print_r($testCols);
-
-    // симулираме твоята логика
-    $tmp = $testCols;
-
-    $code = array_shift($tmp);
-    $cp = array_pop($tmp);
-    $ic = array_pop($tmp);
-    $qty = array_pop($tmp);
-
-    echo "\nAFTER POP:\n";
-    echo "code: $code\n";
-    echo "qty: $qty\n";
-    echo "is_calc: $ic\n";
-    echo "client_price: $cp\n";
-
-    echo "\nREMAINING:\n";
-    print_r($tmp);
-
-    echo "</pre>";
-}
                 if ($line === '') continue;
 
                 if (

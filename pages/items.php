@@ -53,19 +53,26 @@ if(empty($_SESSION['user_id'])){
     </div>
 </div>
 
-<!-- ✅ IMAGE MODAL (добавен обратно) -->
-<div class="modal fade" id="imageModal" tabindex="-1">
+
+<!-- IMAGE MODAL -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
 
             <div class="modal-header">
                 <h5 class="modal-title">Снимка</h5>
-                <button class="btn-close" data-bs-dismiss="modal"></button>
+                <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body text-center">
                 <img id="itemImagePreview" class="img-fluid mb-3 d-none" style="max-height:80vh">
-                <div id="noImageText" class="text-muted">Няма снимка</div>
+                <div id="noImageText" class="text-muted">Няма качена снимка</div>
+                <input type="file" id="imageUpload" class="form-control mt-3">
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-danger btn-sm d-none" id="deleteImage">Изтрий</button>
+                <button class="btn btn-success btn-sm" id="uploadImage">Качи</button>
             </div>
 
         </div>
@@ -239,8 +246,29 @@ $(document).on('click', '.save-item', function(){
 // ✅ IMAGE MODAL LOGIC (върната)
 let currentItem = 0;
 
-$(document).on('click', '.item-thumb, .card-img-top', function(){
+// $(document).on('click', '.item-thumb, .card-img-top', function(){
+//
+//     currentItem = $(this).data('id');
+//
+//     new bootstrap.Modal('#imageModal').show();
+//
+//     const hasImage = $(this).data('hasimage');
+//
+//     if(hasImage){
+//         $('#itemImagePreview')
+//             .attr('src', 'includes/item_image_get.php?id=' + currentItem + '&t=' + Date.now())
+//             .removeClass('d-none');
+//
+//         $('#noImageText').addClass('d-none');
+//
+//     } else {
+//         $('#itemImagePreview').addClass('d-none');
+//         $('#noImageText').removeClass('d-none');
+//     }
+// });
 
+
+$(document).on('click', '.item-thumb, .card-img-top', function(){
     currentItem = $(this).data('id');
 
     new bootstrap.Modal('#imageModal').show();
@@ -251,12 +279,14 @@ $(document).on('click', '.item-thumb, .card-img-top', function(){
         $('#itemImagePreview')
             .attr('src', 'includes/item_image_get.php?id=' + currentItem + '&t=' + Date.now())
             .removeClass('d-none');
-
+        $('#deleteImage').removeClass('d-none');
         $('#noImageText').addClass('d-none');
-
     } else {
         $('#itemImagePreview').addClass('d-none');
+        $('#deleteImage').addClass('d-none');
         $('#noImageText').removeClass('d-none');
     }
+
+    $('#imageUpload').val('');
 });
 </script>

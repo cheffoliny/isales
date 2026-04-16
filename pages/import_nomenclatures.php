@@ -33,11 +33,18 @@ function convertToUtf8($string) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+
+
+
+
+
+
     /**
      * =========================
      * ИМПОРТ НА АРТИКУЛИ
      * =========================
      */
+
     function importObjects($conn)
     {
         if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
@@ -72,12 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  * Взимаме последните 3 числа (qty, is_calc, client_price)
                  * Работи дори при 1 интервал или смесени формати
                  */
-                if (!preg_match('/^(.*\S)\s+([\d]+(?:[.,]\d+)?)\s+([\d]+(?:[.,]\d+)?)\s+([\d]+(?:[.,]\d+)?)$/u', $line, $m)) {
-                    $skipped++;
-                    continue;
-                }
-
-                $leftPart = $m[1];
+ $leftPart = $m[1];
                 $qty = str_replace(",", ".", $m[2]);
                 $is_calc = str_replace(",", ".", $m[3]);
                 $client_price = str_replace(",", ".", $m[4]);

@@ -98,49 +98,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
-                $rawLine = $line;
-
                 if (trim($line) === '') {
                     continue;
                 }
+
+                $rawLine = $line;
 
                 $line = convertToUtf8($line);
                 $line = preg_replace('/[ \t]+/u', ' ', trim($line));
 
                 /**
-                 * =========================
-                 * DEBUG ONLY
-                 * =========================
+                 * DEBUG (optional)
                  */
                 if (strpos($line, '010267') !== false) {
-
-                    echo "<pre style='background:#111;color:#0f0;padding:10px;font-size:12px;'>";
-                    echo "================ DEBUG START ================\n";
-                    echo "RAW:\n";
-                    var_dump($rawLine);
-
-                    echo "\nUTF8:\n";
-                    var_dump($line);
-
-                    echo "\nHEX:\n";
-                    echo bin2hex($line) . "\n";
-
-                    echo "\nLEN:\n" . strlen($line) . "\n";
-
-                    echo "================ DEBUG END ================\n";
+                    echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
+                    echo "LINE:\n" . $line . "\n";
+                    echo "=====================\n";
                     echo "</pre>";
                 }
 
                 /**
-                 * =====================================================
-                 * 🔥 1. FIXED WIDTH PARSER (PRIMARY)
-                 * =====================================================
+                 * =========================
+                 * 1. EXTRACT CODE (FIRST TOKEN ONLY)
+                 * =========================
                  */
+                $tokens = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
 
-                $code = trim(substr($line, 0, 10));
-                $rest = trim(substr($line, 10));
+                if (!$tokens || count($tokens) < 4) {
+                    $skipped++;
+                    continue;
+                }
 
-                if (!ctype_digit($code)) {
+                $code = array_shift($tokens);
+
+                if (!preg_match('/^\d+$/', $code)) {
                     $skipped++;
                     continue;
                 }
@@ -148,72 +139,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id = 1000000000 + (int)$code;
 
                 /**
-                 * split remainder
+                 * =========================
+                 * 2. STRIP NUMBERS FROM END SAFELY
+                 * =========================
                  */
-                $parts = preg_split('/\s+/u', $rest, -1, PREG_SPLIT_NO_EMPTY);
 
-                if (count($parts) < 4) {
+                $price = null;
+                $qty   = null;
+
+                // последните 2 числови стойности
+                for ($i = count($tokens) - 1; $i >= 0; $i--) {
+
+                    $val = str_replace(',', '.', $tokens[$i]);
+
+                    if (is_numeric($val)) {
+
+                        if ($price === null) {
+                            $price = $val;
+                            unset($tokens[$i]);
+                            continue;
+                        }
+
+                        if ($qty === null) {
+                            $qty = $val;
+                            unset($tokens[$i]);
+                            break;
+                        }
+                    }
+                }
+
+                $tokens = array_values($tokens);
+
+                if ($price === null || $qty === null) {
                     $skipped++;
                     continue;
                 }
 
                 /**
-                 * last 2 are numeric
+                 * =========================
+                 * 3. UNIT (last token if text)
+                 * =========================
                  */
-                $client_price = str_replace(',', '.', array_pop($parts));
-                $is_calc      = str_replace(',', '.', array_pop($parts));
+                $unit = array_pop($tokens);
 
-                if (!is_numeric($client_price) || !is_numeric($is_calc)) {
-
-                    /**
-                     * =====================================================
-                     * 🔥 2. FALLBACK PARSER (token alignment fix)
-                     * =====================================================
-                     */
-
-                    $cols = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
-
-                    if (count($cols) < 6) {
-                        $skipped++;
-                        continue;
-                    }
-
-                    $code = $cols[0];
-
-                    if (!ctype_digit($code)) {
-                        $skipped++;
-                        continue;
-                    }
-
-                    $id = 1000000000 + (int)$code;
-
-                    $client_price = str_replace(',', '.', array_pop($cols));
-                    $is_calc      = str_replace(',', '.', array_pop($cols));
-
-                    $unit = array_pop($cols);
-                    $name = implode(' ', array_slice($cols, 1));
-
-                } else {
-
-                    /**
-                     * normal fixed-width path
-                     */
-                    $unit = array_pop($parts);
-                    $name = implode(' ', $parts);
-                }
-
-                if ($name === '' || $unit === '') {
+                if ($unit === null) {
                     $skipped++;
                     continue;
                 }
 
+                /**
+                 * =========================
+                 * 4. NAME (everything else)
+                 * =========================
+                 */
+                $name = trim(implode(' ', $tokens));
+
+                if ($name === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                /**
+                 * =========================
+                 * FINAL PUSH
+                 * =========================
+                 */
                 $batchData[] = [
                     $id,
                     $code,
                     $name,
                     $unit,
-                    (float)$is_calc,
-                    (float)$client_price
+                    (float)$qty,
+                    (float)$price
                 ];
 
                 if (count($batchData) >= $batchSize) {
@@ -289,22 +286,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // CODE
                 $code = array_shift($cols);
+
                 if (!ctype_digit($code)) {
                     $skipped++;
                     continue;
                 }
 
-                // =======================
-                // FIXED ANCHOR PARSING
-                // =======================
+                // =========================
+                // FIXED SAFE BACK PARSING
+                // =========================
 
-                // винаги последните 3 са стабилни
-                $total   = array_pop($cols);   // игнорираме
-                $price   = array_pop($cols);
-                $qty     = array_pop($cols);
-                $unit    = array_pop($cols);
+                // последните 3 винаги са:
+                $total = array_pop($cols);   // игнорираме
+                $price = array_pop($cols);
+                $qty   = array_pop($cols);
+                $unit  = array_pop($cols);
 
-                // NAME = всичко между code и unit
+                // NAME = всичко останало
                 $name = trim(implode(' ', $cols));
 
                 if ($name === '' || $unit === '') {

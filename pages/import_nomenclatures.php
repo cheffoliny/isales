@@ -64,118 +64,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
-// DEBUG само за проблемния код
-if (strpos($line, '010267') !== false) {
-
-    echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
-
-    echo "ORIGINAL:\n" . $line . "\n\n";
-
-    $testCols = preg_split('/\s+/u', trim($line));
-    echo "SPLIT:\n";
-    print_r($testCols);
-
-    // симулираме твоята логика
-    $tmp = $testCols;
-
-    $code = array_shift($tmp);
-    $cp = array_pop($tmp);
-    $ic = array_pop($tmp);
-    $qty = array_pop($tmp);
-
-    echo "\nAFTER POP:\n";
-    echo "code: $code\n";
-    echo "qty: $qty\n";
-    echo "is_calc: $ic\n";
-    echo "client_price: $cp\n";
-
-    echo "\nREMAINING:\n";
-    print_r($tmp);
-
-    echo "</pre>";
-}
                 if (trim($line) === '') continue;
 
                 $line = convertToUtf8($line);
+
+                // 🔧 FIX 1: махаме broken символи (����)
+                $line = iconv('UTF-8', 'UTF-8//IGNORE', $line);
+
+                // 🔧 FIX 2: чистим control chars
+                $line = preg_replace('/[^\P{C}\t\r\n]+/u', '', $line);
+
                 $line = trim($line);
 
-//                 $cols = preg_split('/\s{2,}/u', $line);
-//
-//                 if (count($cols) < 5) {
-//                     $skipped++;
-//                     continue;
-//                 }
-//
-//                 $nom_code_raw = trim($cols[0]);
-//
-//                 if (!is_numeric($nom_code_raw)) {
-//                     $skipped++;
-//                     continue;
-//                 }
-//
-//                 $nom_code = $nom_code_raw;
-//                 $id = 1000000000 + (int)$nom_code;
-//
-//                 $name = trim($cols[1]);
-//                 $unit = trim($cols[2]);
-//
-//                 $is_calc      = str_replace(",", ".", trim($cols[3]));
-//                 $client_price = str_replace(",", ".", trim($cols[4]));
+                /**
+                 * 🔧 FIX 3: по-стабилен split (НЕ се чупи при нестабилни интервали)
+                 */
+                $cols = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
 
-                    $cols = preg_split('/\s+/u', $line);
+                if (!is_array($cols) || count($cols) < 5) {
+                    $skipped++;
+                    continue;
+                }
 
-                    if (count($cols) < 6) {
-                        $skipped++;
-                        continue;
-                    }
+                $nom_code_raw = $cols[0];
 
-                    // първо поле е код
-                    $nom_code_raw = array_shift($cols);
+                if (!is_numeric($nom_code_raw)) {
+                    $skipped++;
+                    continue;
+                }
 
-                    if (!is_numeric($nom_code_raw)) {
-                        $skipped++;
-                        continue;
-                    }
+                $nom_code = $nom_code_raw;
+                $id = 1000000000 + (int)$nom_code;
 
-                    $nom_code = $nom_code_raw;
-                    $id = 1000000000 + (int)$nom_code;
+                /**
+                 * 🔧 FIX 4: безопасно взимане на последните 2 числа
+                 */
+                $client_price = str_replace(',', '.', array_pop($cols));
+                $is_calc      = str_replace(',', '.', array_pop($cols));
 
-                    // последните 3 са числа
-                    $client_price = str_replace(",", ".", array_pop($cols));
-                    $is_calc      = str_replace(",", ".", array_pop($cols));
-                    $qty          = str_replace(",", ".", array_pop($cols));
+                if (!is_numeric($client_price) || !is_numeric($is_calc)) {
+                    $skipped++;
+                    continue;
+                }
 
-                    if (!is_numeric($client_price) || !is_numeric($is_calc)) {
-                        $skipped++;
-                        continue;
-                    }
+                /**
+                 * unit = предходната дума
+                 * name = всичко между код и unit
+                 */
+                $unit = array_pop($cols);
+                $name = implode(' ', array_slice($cols, 1));
 
-//                     // следващото е unit
-//                     $unit = array_pop($cols);
-//
-//                     // останалото е име
-//                     $name = implode(' ', $cols);
-// търсим unit = дума (само букви), най-близка до края
-$unitIndex = null;
-
-for ($i = count($cols) - 1; $i >= 0; $i--) {
-    if (preg_match('/^[\p{L}]+$/u', $cols[$i])) {
-        $unitIndex = $i;
-        break;
-    }
-}
-
-if ($unitIndex === null) {
-    $skipped++;
-    continue;
-}
-
-$unit = $cols[$unitIndex];
-unset($cols[$unitIndex]);
-
-$name = implode(' ', $cols);
-
-                if (!is_numeric($client_price)) {
+                if ($name === '' || $unit === '') {
                     $skipped++;
                     continue;
                 }

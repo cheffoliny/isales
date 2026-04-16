@@ -289,4 +289,45 @@ $(document).on('click', '.item-thumb, .card-img-top', function(){
 
     $('#imageUpload').val('');
 });
+
+    $('#uploadImage').on('click', function(){
+        const file = $('#imageUpload')[0].files[0];
+        if(!file){ alert('Избери файл'); return; }
+
+        const reader = new FileReader();
+        reader.onload = function(e){
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function(){
+                const canvas = document.createElement('canvas');
+                const maxDim = 500;
+                let w = img.width, h = img.height;
+                if(w > h && w > maxDim){ h *= maxDim/w; w = maxDim; }
+                if(h >= w && h > maxDim){ w *= maxDim/h; h = maxDim; }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                canvas.toBlob(function(blob){
+                    let form = new FormData();
+                    form.append('id', currentItem);
+                    form.append('image', blob, 'image.jpg');
+
+                    $.ajax({
+                        url:'includes/item_image_upload.php',
+                        type:'POST',
+                        data:form,
+                        processData:false,
+                        contentType:false,
+                        dataType:'json',
+                        success:function(resp){
+                            if(resp.success){ location.reload(); }
+                            else{ alert('Грешка при качване на снимката!'); }
+                        }
+                    });
+                }, 'image/jpeg', 0.7);
+            };
+        };
+        reader.readAsDataURL(file);
+    });
 </script>

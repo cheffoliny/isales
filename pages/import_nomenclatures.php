@@ -10,26 +10,60 @@ function h($s) {
 /**
  * Разпознаване и конвертиране към UTF-8
  */
+// function convertToUtf8($string) {
+//
+//     $string = preg_replace('/^\xEF\xBB\xBF/', '', $string);
+//
+//     $encoding = mb_detect_encoding(
+//         $string,
+//         ['UTF-8', 'Windows-1251', 'ISO-8859-1'],
+//         true
+//     );
+//
+//     if ($encoding === false) {
+//         $encoding = 'Windows-1251';
+//     }
+//
+//     if ($encoding !== 'UTF-8') {
+//         $string = mb_convert_encoding($string, 'UTF-8', $encoding);
+//     }
+//
+//     return $string;
+// }
+/**
+ * Стабилно разпознаване и конвертиране към UTF-8
+ */
 function convertToUtf8($string) {
 
+    if (!is_string($string)) {
+        return '';
+    }
+
+    // маха BOM
     $string = preg_replace('/^\xEF\xBB\xBF/', '', $string);
 
-    $encoding = mb_detect_encoding(
+    // бърза проверка - ако вече е UTF-8 OK, не пипаме
+    if (mb_check_encoding($string, 'UTF-8')) {
+        return $string;
+    }
+
+    // fallback конверсия (без "auto")
+    $converted = @mb_convert_encoding(
         $string,
-        ['UTF-8', 'Windows-1251', 'ISO-8859-1'],
-        true
+        'UTF-8',
+        'Windows-1251, ISO-8859-1, CP1252'
     );
 
-    if ($encoding === false) {
-        $encoding = 'Windows-1251';
+    if ($converted === false) {
+        return '';
     }
 
-    if ($encoding !== 'UTF-8') {
-        $string = mb_convert_encoding($string, 'UTF-8', $encoding);
-    }
+    // чистим control chars (SAFE)
+    $converted = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $converted);
 
-    return $string;
+    return trim($converted);
 }
+
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -64,94 +98,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             while (($line = fgets($handle)) !== false) {
 
-// DEBUG само за проблемния код
-if (strpos($line, '010267') !== false) {
-
-    echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
-
-    echo "ORIGINAL:\n" . $line . "\n\n";
-
-    $testCols = preg_split('/\s+/u', trim($line));
-    echo "SPLIT:\n";
-    print_r($testCols);
-
-    // симулираме твоята логика
-    $tmp = $testCols;
-
-    $code = array_shift($tmp);
-    $cp = array_pop($tmp);
-    $ic = array_pop($tmp);
-    $qty = array_pop($tmp);
-
-    echo "\nAFTER POP:\n";
-    echo "code: $code\n";
-    echo "qty: $qty\n";
-    echo "is_calc: $ic\n";
-    echo "client_price: $cp\n";
-
-    echo "\nREMAINING:\n";
-    print_r($tmp);
-
-    echo "</pre>";
-}
-                if (trim($line) === '') continue;
-
-                $line = convertToUtf8($line);
-
-                // 🔧 FIX 1: махаме broken символи (����)
-               // $line = iconv('UTF-8', 'UTF-8//IGNORE', $line);
-
-                // 🔧 FIX 2: чистим control chars
-              //  $line = preg_replace('/[^\P{C}\t\r\n]+/u', '', $line);
-
-
-$line = trim($line);
-
-// 1. гарантирай UTF-8 без да го чупиш
-$line = mb_convert_encoding($line, 'UTF-8', 'UTF-8, Windows-1251, ISO-8859-1');
-
-// 2. махни само control chars (SAFE версия)
-$line = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $line);
-
-// 3. махни множествени интервали (НО НЕ split още)
-$line = preg_replace('/[ \t]+/u', ' ', $line);
-                /**
-                 * 🔧 FIX 3: по-стабилен split (НЕ се чупи при нестабилни интервали)
-                 */
-
-
-                $line = trim($line);
-
-                // 1. гаранция че е string
-                if (!is_string($line) || $line === '') {
+                if (trim($line) === '') {
                     continue;
                 }
 
-                // 2. safe UTF-8 clean (по-добро от iconv в твоя случай)
-                $line = mb_convert_encoding($line, 'UTF-8', 'auto');
+                $line = convertToUtf8($line);
 
-                // 3. махаме control chars safely
-                $line = preg_replace('/[\x00-\x1F\x7F]/u', '', $line);
-
-                // 4. split без риск от FALSE
-                $cols = preg_split('/\s+/u', trim($line), -1, PREG_SPLIT_NO_EMPTY);
-
-                if (!is_array($cols) || count($cols) < 5) {
-                    continue; // 🔥 това спасява array_shift crash
+                if ($line === '') {
+                    $skipped++;
+                    continue;
                 }
 
-            if (strpos($line, '010267') !== false) {
-                echo "<pre>";
-                echo "LEN: " . strlen($line) . "\n";
-                echo "HEX: " . bin2hex($line) . "\n";
-                echo "UTF8 OK: " . mb_check_encoding($line, 'UTF-8') . "\n";
-                echo "LINE: " . $line . "\n";
-                echo "</pre>";
-            }
+                // нормализирай интервали (важно за split стабилност)
+                $line = preg_replace('/[ \t]+/u', ' ', $line);
 
+                // split (СЪС ЗАЩИТА)
+                $cols = preg_split('/\s+/u', trim($line));
+
+                if (!is_array($cols)) {
+                    $skipped++;
+                    continue;
+                }
+
+                if (count($cols) < 5) {
+                    $skipped++;
+                    continue;
+                }
+
+                // =========================
+                // CODE (първи елемент)
+                // =========================
                 $nom_code_raw = $cols[0];
 
-                if (!is_numeric($nom_code_raw)) {
+                if (!ctype_digit($nom_code_raw)) {
                     $skipped++;
                     continue;
                 }
@@ -159,9 +138,9 @@ $line = preg_replace('/[ \t]+/u', ' ', $line);
                 $nom_code = $nom_code_raw;
                 $id = 1000000000 + (int)$nom_code;
 
-                /**
-                 * 🔧 FIX 4: безопасно взимане на последните 2 числа
-                 */
+                // =========================
+                // PRICE + IS_CALC (последни 2)
+                // =========================
                 $client_price = str_replace(',', '.', array_pop($cols));
                 $is_calc      = str_replace(',', '.', array_pop($cols));
 
@@ -170,18 +149,29 @@ $line = preg_replace('/[ \t]+/u', ' ', $line);
                     continue;
                 }
 
-                /**
-                 * unit = предходната дума
-                 * name = всичко между код и unit
-                 */
+                // =========================
+                // UNIT + NAME
+                // =========================
                 $unit = array_pop($cols);
-                $name = implode(' ', array_slice($cols, 1));
 
-                if ($name === '' || $unit === '') {
+                if ($unit === null || $unit === '') {
                     $skipped++;
                     continue;
                 }
 
+                // name = всичко между code и unit
+                $nameParts = array_slice($cols, 1);
+
+                $name = trim(implode(' ', $nameParts));
+
+                if ($name === '') {
+                    $skipped++;
+                    continue;
+                }
+
+                // =========================
+                // INSERT BATCH
+                // =========================
                 $batchData[] = [
                     $id,
                     $nom_code,

@@ -99,25 +99,25 @@ if (strpos($line, '010267') !== false) {
                 $line = convertToUtf8($line);
 
                 // 🔧 FIX 1: махаме broken символи (����)
-                $line = iconv('UTF-8', 'UTF-8//IGNORE', $line);
+               // $line = iconv('UTF-8', 'UTF-8//IGNORE', $line);
 
                 // 🔧 FIX 2: чистим control chars
-                $line = preg_replace('/[^\P{C}\t\r\n]+/u', '', $line);
+              //  $line = preg_replace('/[^\P{C}\t\r\n]+/u', '', $line);
 
-                $line = trim($line);
 
+$line = trim($line);
+
+// 1. гарантирай UTF-8 без да го чупиш
+$line = mb_convert_encoding($line, 'UTF-8', 'UTF-8, Windows-1251, ISO-8859-1');
+
+// 2. махни само control chars (SAFE версия)
+$line = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $line);
+
+// 3. махни множествени интервали (НО НЕ split още)
+$line = preg_replace('/[ \t]+/u', ' ', $line);
                 /**
                  * 🔧 FIX 3: по-стабилен split (НЕ се чупи при нестабилни интервали)
                  */
-                 echo "<pre style='color:red'>";
-
-                 var_dump([
-                     'raw_hex' => bin2hex($line),
-                     'strlen'  => strlen($line),
-                     'mb_check'=> mb_check_encoding($line, 'UTF-8')
-                 ]);
-
-                 echo "</pre>";
 
 
                 $line = trim($line);
@@ -134,11 +134,20 @@ if (strpos($line, '010267') !== false) {
                 $line = preg_replace('/[\x00-\x1F\x7F]/u', '', $line);
 
                 // 4. split без риск от FALSE
-                $cols = preg_split('/\s+/u', $line, -1, PREG_SPLIT_NO_EMPTY);
+                $cols = preg_split('/\s+/u', trim($line), -1, PREG_SPLIT_NO_EMPTY);
 
                 if (!is_array($cols) || count($cols) < 5) {
-                    continue;
+                    continue; // 🔥 това спасява array_shift crash
                 }
+
+            if (strpos($line, '010267') !== false) {
+                echo "<pre>";
+                echo "LEN: " . strlen($line) . "\n";
+                echo "HEX: " . bin2hex($line) . "\n";
+                echo "UTF8 OK: " . mb_check_encoding($line, 'UTF-8') . "\n";
+                echo "LINE: " . $line . "\n";
+                echo "</pre>";
+            }
 
                 $nom_code_raw = $cols[0];
 

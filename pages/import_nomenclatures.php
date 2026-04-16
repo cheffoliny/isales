@@ -69,28 +69,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $line = convertToUtf8($line);
 
                 /**
-                 * Взимаме последните 3 числови стойности:
-                 * qty, is_calc, client_price
+                 * Взимаме последните 3 числа (qty, is_calc, client_price)
+                 * Работи дори при 1 интервал или смесени формати
                  */
-                if (!preg_match('/^(.*?)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)$/u', $line, $matches)) {
+                if (!preg_match('/^(.*\S)\s+([\d]+(?:[.,]\d+)?)\s+([\d]+(?:[.,]\d+)?)\s+([\d]+(?:[.,]\d+)?)$/u', $line, $m)) {
                     $skipped++;
                     continue;
                 }
 
-                $leftPart = trim($matches[1]);
-                $qty = str_replace(",", ".", $matches[2]);
-                $is_calc = str_replace(",", ".", $matches[3]);
-                $client_price = str_replace(",", ".", $matches[4]);
+                $leftPart = $m[1];
+                $qty = str_replace(",", ".", $m[2]);
+                $is_calc = str_replace(",", ".", $m[3]);
+                $client_price = str_replace(",", ".", $m[4]);
 
-                if (!is_numeric($client_price) || !is_numeric($is_calc)) {
+                if (!is_numeric($is_calc) || !is_numeric($client_price)) {
                     $skipped++;
                     continue;
                 }
 
                 /**
-                 * Лявата част: код + име + мярка
+                 * Разделяме лявата част
                  */
-                $parts = preg_split('/\s+/u', $leftPart);
+                $parts = preg_split('/\s+/u', trim($leftPart));
 
                 if (count($parts) < 3) {
                     $skipped++;
@@ -104,7 +104,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     continue;
                 }
 
-                $unit = array_pop($parts);
+                /**
+                 * Намери unit (обикновено е дума като БРОЙ, КГ, Л и т.н.)
+                 * Търсим отзад първата дума с букви
+                 */
+                $unitIndex = null;
+                for ($i = count($parts) - 1; $i >= 0; $i--) {
+                    if (preg_match('/^[\p{L}]+$/u', $parts[$i])) {
+                        $unitIndex = $i;
+                        break;
+                    }
+                }
+
+                if ($unitIndex === null) {
+                    $skipped++;
+                    continue;
+                }
+
+                $unit = $parts[$unitIndex];
+                unset($parts[$unitIndex]);
+
                 $name = implode(' ', $parts);
 
                 $nom_code = $nom_code_raw;

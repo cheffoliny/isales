@@ -33,28 +33,21 @@ function convertToUtf8($string) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-
-
-
-
-
-
     /**
      * =========================
      * ИМПОРТ НА АРТИКУЛИ
      * =========================
      */
+    if (!isset($_POST['import_objects'])) {
 
-    function importObjects($conn)
-    {
         if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             echo "<div class='alert alert-danger'>Грешка при качване на файла.</div>";
             return;
         }
 
         $tmpPath = $_FILES['file']['tmp_name'];
-        $handle = fopen($tmpPath, "r");
 
+        $handle = fopen($tmpPath, "r");
         if (!$handle) {
             echo "<div class='alert alert-danger'>Не може да се отвори файлът.</div>";
             return;
@@ -65,71 +58,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $batchSize = 500;
         $batchData = [];
         $imported = 0;
-        $skipped = 0;
+        $skipped  = 0;
 
         try {
+
             while (($line = fgets($handle)) !== false) {
 
-                $line = trim($line);
-                if ($line === '') continue;
+                if (trim($line) === '') continue;
 
                 $line = convertToUtf8($line);
+                $line = trim($line);
 
-                /**
-                 * Взимаме последните 3 числа (qty, is_calc, client_price)
-                 * Работи дори при 1 интервал или смесени формати
-                 */
- $leftPart = $m[1];
-                $qty = str_replace(",", ".", $m[2]);
-                $is_calc = str_replace(",", ".", $m[3]);
-                $client_price = str_replace(",", ".", $m[4]);
+                $cols = preg_split('/\s{2,}/u', $line);
 
-                if (!is_numeric($is_calc) || !is_numeric($client_price)) {
+                if (count($cols) < 5) {
                     $skipped++;
                     continue;
                 }
 
-                /**
-                 * Разделяме лявата част
-                 */
-                $parts = preg_split('/\s+/u', trim($leftPart));
-
-                if (count($parts) < 3) {
-                    $skipped++;
-                    continue;
-                }
-
-                $nom_code_raw = array_shift($parts);
+                $nom_code_raw = trim($cols[0]);
 
                 if (!is_numeric($nom_code_raw)) {
                     $skipped++;
                     continue;
                 }
 
-                /**
-                 * Намери unit (обикновено е дума като БРОЙ, КГ, Л и т.н.)
-                 * Търсим отзад първата дума с букви
-                 */
-                $unitIndex = null;
-                for ($i = count($parts) - 1; $i >= 0; $i--) {
-                    if (preg_match('/^[\p{L}]+$/u', $parts[$i])) {
-                        $unitIndex = $i;
-                        break;
-                    }
-                }
+                $nom_code = $nom_code_raw;
+                $id = 1000000000 + (int)$nom_code;
 
-                if ($unitIndex === null) {
+                $name = trim($cols[1]);
+                $unit = trim($cols[2]);
+
+                $is_calc      = str_replace(",", ".", trim($cols[3]));
+                $client_price = str_replace(",", ".", trim($cols[4]));
+
+                if (!is_numeric($client_price)) {
                     $skipped++;
                     continue;
                 }
-
-                $unit = $parts[$unitIndex];
-                unset($parts[$unitIndex]);
-
-                $name = implode(' ', $parts);
-
-                $nom_code = $nom_code_raw;
-                $id = 1000000000 + (int)$nom_code;
 
                 $batchData[] = [
                     $id,

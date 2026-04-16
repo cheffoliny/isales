@@ -38,16 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
      * ИМПОРТ НА АРТИКУЛИ
      * =========================
      */
-    if (!isset($_POST['import_objects'])) {
-
+    function importObjects($conn)
+    {
         if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
             echo "<div class='alert alert-danger'>Грешка при качване на файла.</div>";
             return;
         }
 
         $tmpPath = $_FILES['file']['tmp_name'];
-
         $handle = fopen($tmpPath, "r");
+
         if (!$handle) {
             echo "<div class='alert alert-danger'>Не може да се отвори файлът.</div>";
             return;
@@ -58,44 +58,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $batchSize = 500;
         $batchData = [];
         $imported = 0;
-        $skipped  = 0;
+        $skipped = 0;
 
         try {
-
             while (($line = fgets($handle)) !== false) {
 
-                if (trim($line) === '') continue;
+                $line = trim($line);
+                if ($line === '') continue;
 
                 $line = convertToUtf8($line);
-                $line = trim($line);
 
-                $cols = preg_split('/\s{2,}/u', $line);
-
-                if (count($cols) < 5) {
+                /**
+                 * Взимаме последните 3 числови стойности:
+                 * qty, is_calc, client_price
+                 */
+                if (!preg_match('/^(.*?)\s+([\d.,]+)\s+([\d.,]+)\s+([\d.,]+)$/u', $line, $matches)) {
                     $skipped++;
                     continue;
                 }
 
-                $nom_code_raw = trim($cols[0]);
+                $leftPart = trim($matches[1]);
+                $qty = str_replace(",", ".", $matches[2]);
+                $is_calc = str_replace(",", ".", $matches[3]);
+                $client_price = str_replace(",", ".", $matches[4]);
+
+                if (!is_numeric($client_price) || !is_numeric($is_calc)) {
+                    $skipped++;
+                    continue;
+                }
+
+                /**
+                 * Лявата част: код + име + мярка
+                 */
+                $parts = preg_split('/\s+/u', $leftPart);
+
+                if (count($parts) < 3) {
+                    $skipped++;
+                    continue;
+                }
+
+                $nom_code_raw = array_shift($parts);
 
                 if (!is_numeric($nom_code_raw)) {
                     $skipped++;
                     continue;
                 }
 
+                $unit = array_pop($parts);
+                $name = implode(' ', $parts);
+
                 $nom_code = $nom_code_raw;
                 $id = 1000000000 + (int)$nom_code;
-
-                $name = trim($cols[1]);
-                $unit = trim($cols[2]);
-
-                $is_calc      = str_replace(",", ".", trim($cols[3]));
-                $client_price = str_replace(",", ".", trim($cols[4]));
-
-                if (!is_numeric($client_price)) {
-                    $skipped++;
-                    continue;
-                }
 
                 $batchData[] = [
                     $id,

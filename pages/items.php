@@ -90,15 +90,19 @@ let viewMode = 'list';
 
 // LOAD ITEMS
 function loadItems(reset=false){
-    if(loading || endReached) return;
-    loading = true;
 
+    // ✅ ПЪРВО reset логиката
     if(reset){
         page = 0;
         $('#itemsTable').html('');
         $('#gridView').html('');
-        endReached = false;
+        endReached = false; // 🔥 преместено тук
     }
+
+    // ✅ СЛЕД това проверката
+    if(loading || endReached) return;
+
+    loading = true;
 
     $.get('includes/items_fetch.php', {
         page: page,
@@ -109,6 +113,17 @@ function loadItems(reset=false){
 
         if(resp.success){
             if(resp.html.trim() === '' && resp.grid.trim() === '') {
+
+                if(page === 0){
+                    $('#itemsTable').html(
+                        '<tr><td colspan="7" class="text-center text-muted">Няма резултати</td></tr>'
+                    );
+
+                    $('#gridView').html(
+                        '<div class="text-center text-muted w-100">Няма резултати</div>'
+                    );
+                }
+
                 endReached = true;
             } else {
                 if(viewMode === 'list'){

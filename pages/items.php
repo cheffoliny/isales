@@ -69,12 +69,12 @@ if(empty($_SESSION['user_id'])){
                 <div id="noImageText" class="text-muted">Няма качена снимка</div>
                 <input type="file" id="imageUpload" class="form-control mt-3">
             </div>
-
+            <?php if($_SESSION['is_admin'] == 1) { ?>
             <div class="modal-footer">
                 <button class="btn btn-danger btn-sm d-none" id="deleteImage">Изтрий</button>
                 <button class="btn btn-success btn-sm" id="uploadImage">Качи</button>
             </div>
-
+            <?php } ?>
         </div>
     </div>
 </div>

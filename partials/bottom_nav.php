@@ -16,12 +16,13 @@ $currentPage = $_GET['page'] ?? 'routes';
         <span>Заявки</span>
     </a>
 
+<?php if($_SESSION['is_admin'] == 1) { ?>
     <a href="dashboard.php?page=import_nomenclatures"
        class="nav-item <?= $currentPage === 'import_nomenclatures' ? 'active' : '' ?>">
         <i class="fa-solid fa-file-import"></i>
         <span>Импорт</span>
     </a>
-
+<?php } ?>
     <a href="dashboard.php?page=objects"
        class="nav-item <?= $currentPage === 'objects' ? 'active' : '' ?>">
         <i class="fa-solid fa-home"></i>

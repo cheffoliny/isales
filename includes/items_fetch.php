@@ -7,8 +7,10 @@ $page = (int)($_GET['page'] ?? 0);
 $search = trim($_GET['search'] ?? '');
 $promo = (int)($_GET['promo'] ?? 0);
 $zero = (int)($_GET['zero'] ?? 0);
-$limit = 50;
+$image = (int)($_GET['image'] ?? NULL);
+$limit = 2000;
 $offset = $page * $limit;
+$offset = $limit;
 
 $where = "WHERE n.to_arc=0";
 
@@ -24,12 +26,16 @@ if ($promo) {
 if ($zero) {
     $where .= " AND n.is_calc = 0";
 }
+if ($image) {
+    $where .= " AND n.image IS NULL ";
+}
 
 $sql = "SELECT n.id, n.nom_code, n.name, n.client_price, n.sales_price, n.is_calc, n.image
         FROM nomenclatures n
         $where
         ORDER BY n.nom_code
-        LIMIT $limit OFFSET $offset";
+        LIMIT $limit 
+        ";
 
 $res = $db->query($sql);
 

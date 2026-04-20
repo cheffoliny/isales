@@ -15,6 +15,7 @@ if(empty($_SESSION['user_id'])){
 
             <button id="promoFilter" class="btn btn-sm btn-danger">ПРОМО</button>
             <button id="zeroFilter" class="btn btn-sm btn-warning">НУЛЕВИ</button>
+            <button id="zeroImage" class="btn btn-sm btn-info">БЕЗ СНИМКА</button>
 
             <div class="btn-group btn-group-sm ms-auto">
                 <button type="button" class="btn btn-primary active" id="viewListBtn">
@@ -84,6 +85,7 @@ let page = 0;
 let searchVal = '';
 let promo = false;
 let zero = false;
+let image = false;
 let loading = false;
 let endReached = false;
 let viewMode = 'list';
@@ -108,7 +110,8 @@ function loadItems(reset=false){
         page: page,
         search: searchVal,
         promo: promo ? 1 : 0,
-        zero: zero ? 1 : 0
+        zero: zero ? 1 : 0,
+        image: image ? 1 : 0
     }, function(resp){
 
         if(resp.success){
@@ -165,6 +168,11 @@ $('#zeroFilter').on('click', function(){
     loadItems(true);
 });
 
+$('#zeroImage').on('click', function(){
+    image = !image;
+    $(this).toggleClass('btn-info btn-secondary');
+    loadItems(true);
+});
 // ✅ VIEW SWITCH (върнато)
 $('#viewListBtn').on('click', function(){
     if(viewMode !== 'list'){

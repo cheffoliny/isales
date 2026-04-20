@@ -110,12 +110,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 /**
                  * DEBUG (optional)
                  */
-                if (strpos($line, '010267') !== false) {
-                    echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
-                    echo "LINE:\n" . $line . "\n";
-                    echo "=====================\n";
-                    echo "</pre>";
-                }
+//                 if (strpos($line, '010267') !== false) {
+//                     echo "<pre style='background:#111;color:#0f0;padding:10px;'>";
+//                     echo "LINE:\n" . $line . "\n";
+//                     echo "=====================\n";
+//                     echo "</pre>";
+//                 }
 
                 /**
                  * =========================

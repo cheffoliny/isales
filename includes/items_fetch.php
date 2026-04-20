@@ -1,6 +1,11 @@
 <?php
 include_once __DIR__.'/functions.php';
 
+$strDisable = 'disabled';
+if($_SESSION['is_admin'] == 1) {
+    $strDisable = '';
+}
+
 $db = db_connect('storage');
 
 $page = (int)($_GET['page'] ?? 0);
@@ -64,12 +69,16 @@ while ($r = $res->fetch_assoc()) {
         <td>'.htmlspecialchars($r['nom_code']).'</td>
         <td>'.htmlspecialchars($r['name']).'</td>
         <td>'.(int)$r['is_calc'].'</td>
-        <td><input type="number" class="form-control form-control-sm client_price" value="'.number_format((float)$r['client_price'], 2, '.', '').'"></td>
-        <td><input type="number" class="form-control form-control-sm sales_price" value="'.number_format((float)$r['sales_price'], 2, '.', '').'"></td>
+        <td><input type="number" class="form-control form-control-sm client_price" value="'.number_format((float)$r['client_price'], 2, '.', '').'"  '.$strDisable.'></td>
+        <td><input type="number" class="form-control form-control-sm sales_price" value="'.number_format((float)$r['sales_price'], 2, '.', '').'" '.$strDisable.'></td>
         <td>'.$thumb.'</td>
-        <td><button class="btn btn-sm btn-success save-item"><i class="fa-solid fa-check"></i></button></td>
+        <td>'.
+            ($_SESSION['is_admin'] == 1
+                ? '<button class="btn btn-sm btn-success save-item"><i class="fa-solid fa-check"></i></button>'
+                : ''
+            ).
+        '</td>
     </tr>';
-
     // Grid card
 
     // Цена и промо текст

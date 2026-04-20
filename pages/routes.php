@@ -13,7 +13,7 @@ $stmt = $db->prepare("
                 COUNT(DISTINCT o.id) AS obj_count,
                 COUNT(DISTINCT CASE
                     WHEN pe.id > 0
-                         AND CAST(RIGHT(offs.name, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
+                         #AND CAST(RIGHT(offs.name, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
                     THEN o.id
                 END) AS obj_visited
             FROM offices offs

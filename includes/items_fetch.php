@@ -30,6 +30,8 @@ if ($promo) {
 }
 if ($zero) {
     $where .= " AND n.is_calc = 0";
+} else {
+    $where .= " AND n.is_calc > 0";
 }
 if ($image) {
     $where .= " AND n.image IS NULL ";

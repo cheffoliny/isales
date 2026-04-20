@@ -7,33 +7,22 @@ if (empty($_SESSION['user_id'])) {
 $db = db_connect('sod');
 
 $stmt = $db->prepare("
-SELECT
-    offs.id AS offs_id,
-    offs.name AS offs_name,
-
-    COUNT(DISTINCT o.id) AS obj_count,
-
-    COUNT(DISTINCT CASE
-        WHEN pe.id > 0 THEN o.id
-    END) AS obj_visited
-
-FROM offices offs
-
-LEFT JOIN objects o
-    ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
-    AND o.id_status = 1
-
-LEFT JOIN ". DB_NAMES['storage'] .".ppp p
-    ON p.id_dest = o.id
-    AND DATE(p.source_date) = CURDATE()
-
-LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe
-    ON pe.id_ppp = p.id
-    AND pe.count > 1
-
-GROUP BY offs.id, offs.name
-ORDER BY offs.name ASC
-");
+            SELECT
+                offs.id AS offs_id,
+                offs.name AS offs_name,
+                COUNT(DISTINCT o.id) AS obj_count,
+                COUNT(DISTINCT CASE
+                    WHEN pe.id > 0
+                         AND CAST(RIGHT(offs.name, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
+                    THEN o.id
+                END) AS obj_visited
+            FROM offices offs
+            LEFT JOIN objects o ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$') AND o.id_status = 1
+            LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON p.id_dest = o.id AND DATE(p.source_date) = CURDATE()
+            LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON pe.id_ppp = p.id AND pe.count > 1
+            GROUP BY offs.id, offs.name
+            ORDER BY offs.name ASC
+            ");
 
 $stmt->execute();
 $result = $stmt->get_result();

@@ -14,26 +14,28 @@ $today = date('Y-m-d');
 
 /* ===== ВАЖНО: взимаме wait И confirm ===== */
 $sql = "
-SELECT
-    o.id AS oID,
-    o.num AS oNum,
-    o.name AS oName,
-    o.address AS oAddress,
-    p.id AS pID,
-    p.status,
-    p.source_user,
-    DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate
-FROM ppp p
-JOIN ". DB_NAMES['sod'] .".objects o
-    ON o.id = p.id_dest
-    AND p.dest_type = 'object'
-WHERE p.status IN ('wait','confirm')
-  AND DATE(p.source_date) = ?
-ORDER BY o.name ASC
-";
+        SELECT
+            o.id AS oID,
+            o.num AS oNum,
+            o.name AS oName,
+            o.address AS oAddress,
+            p.id AS pID,
+            p.status,
+            p.source_user,
+            DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate
+        FROM ppp p
+        JOIN ". DB_NAMES['sod'] .".objects o
+            ON o.id = p.id_dest AND p.dest_type = 'object'
+        WHERE
+        (
+            (p.status = 'confirm' AND DATE(p.source_date) = CURDATE())
+            OR
+            (p.status = 'wait' AND DATE(p.source_date) >= CURDATE() - INTERVAL 10 DAY)
+        )
+        ORDER BY p.`status` DESC p.source_date, o.name ASC ";
 
 $stmt = $db->prepare($sql);
-$stmt->bind_param("s", $today);
+//$stmt->bind_param("s", $today);
 $stmt->execute();
 $stmt->store_result();
 ?>

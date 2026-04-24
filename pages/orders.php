@@ -99,7 +99,7 @@ if ($stmt->num_rows === 0) {
             $currentDateHeader = $dateOnly;
             ?>
 
-            <div class="list-group-item bg-light fw-bold text-center">
+            <div class="list-group-item fw-bold text-center">
                 <?= $currentDateHeader ?>
             </div>
 
@@ -110,7 +110,7 @@ if ($stmt->num_rows === 0) {
         $statusClass = ($status === 'confirm')
                         ? 'bg-success'
                         : 'bg-warning';
-    ?>
+?>
 
 
 <div class="list-group-item d-flex justify-content-between align-items-center">

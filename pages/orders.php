@@ -79,6 +79,8 @@ if ($stmt->num_rows === 0) {
         $sourceDate
     );
 
+    $currentDateHeader = '';
+
     while ($stmt->fetch()):
 
         $oID   = (int)$oID;
@@ -90,11 +92,26 @@ if ($stmt->num_rows === 0) {
         $oAddress = htmlspecialchars($oAddress ?? '');
         $sourceUser = htmlspecialchars($sourceUser ?? '');
 
+        /* ===== ВЗИМАМЕ САМО ДАТАТА (без часа) ===== */
+        $dateOnly = substr($sourceDate, 0, 10); // dd.mm.yyyy
+
+        if ($currentDateHeader !== $dateOnly) {
+            $currentDateHeader = $dateOnly;
+            ?>
+
+            <div class="list-group-item bg-light fw-bold text-center">
+                <?= $currentDateHeader ?>
+            </div>
+
+            <?php
+        }
+
         /* ===== Цветова логика ===== */
         $statusClass = ($status === 'confirm')
                         ? 'bg-success'
                         : 'bg-warning';
-?>
+    ?>
+
 
 <div class="list-group-item d-flex justify-content-between align-items-center">
 

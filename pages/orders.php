@@ -28,9 +28,17 @@ $sql = "
             ON o.id = p.id_dest AND p.dest_type = 'object'
         WHERE
         (
-            (p.status = 'confirm' AND DATE(p.source_date) = CURDATE())
-            OR
-            (p.status = 'wait' AND DATE(p.source_date) >= CURDATE() - INTERVAL 10 DAY)
+            WHERE
+            (
+                (p.status = 'confirm'
+                 AND p.source_date >= CURDATE()
+                 AND p.source_date < CURDATE() + INTERVAL 1 DAY)
+
+                OR
+
+                (p.status = 'wait'
+                 AND p.source_date >= CURDATE() - INTERVAL 10 DAY)
+            )
         )
         ORDER BY p.`status` DESC, p.source_date, o.name ASC ";
 

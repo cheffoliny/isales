@@ -27,16 +27,8 @@ $sql = "
         JOIN ". DB_NAMES['sod'] .".objects o
             ON o.id = p.id_dest AND p.dest_type = 'object'
         WHERE
-        #(
-         #   (p.status = 'confirm'
-          #   AND p.source_date >= CURDATE()
-           #  AND p.source_date < CURDATE() + INTERVAL 1 DAY)
-           # OR
-           # (p.status = 'wait' AND
             p.source_date >= CURDATE() - INTERVAL 10 DAY
-            #)
-        #)
-        ORDER BY p.id, p.`status` DESC ";
+        ORDER BY p.source_date DESC, p.`status` DESC ";
 
 $stmt = $db->prepare($sql);
 //$stmt->bind_param("s", $today);

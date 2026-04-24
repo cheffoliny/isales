@@ -32,7 +32,7 @@ $sql = "
             OR
             (p.status = 'wait' AND DATE(p.source_date) >= CURDATE() - INTERVAL 10 DAY)
         )
-        ORDER BY p.`status` DESC p.source_date, o.name ASC ";
+        ORDER BY p.`status` DESC, p.source_date, o.name ASC ";
 
 $stmt = $db->prepare($sql);
 //$stmt->bind_param("s", $today);

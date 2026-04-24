@@ -36,7 +36,7 @@ $sql = "
             p.source_date >= CURDATE() - INTERVAL 10 DAY
             #)
         #)
-        ORDER BY p.source_date, p.`status` DESC, o.name ASC ";
+        ORDER BY p.id, p.`status` DESC, o.name ASC ";
 
 $stmt = $db->prepare($sql);
 //$stmt->bind_param("s", $today);

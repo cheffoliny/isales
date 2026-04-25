@@ -35,13 +35,12 @@ if(empty($_SESSION['user_id'])){
                 <table class="table table-sm table-hover align-middle mb-0">
                     <thead class="table-light">
                     <tr>
-                        <th class="col-1">Код</th>
+                        <th class="text-center col-1">Код</th>
                         <th class="col">Име</th>
-                        <th class="col-1">Кол.</th>
-                        <th class="col-1">Клиент</th>
+                        <th class="text-center col-1">Кол.</th>
                         <th class="col-1">Промо</th>
-                        <th class="col-1">IMG</th>
-                        <th class="col-1 text-end">✔</th>
+                        <th class="col-1">Клиент</th>
+                        <th class="text-center col-1">IMG</th>
                     </tr>
                     </thead>
                     <tbody id="itemsTable"></tbody>
@@ -226,21 +225,39 @@ $(window).on('scroll', function(){
 });
 
 // ✅ SAVE (запазен + подобрен)
+// $(document).on('click', '.save-item', function(){
+//
+//     const btn = $(this);
+//     const row = btn.closest('tr');
+//
+//     const id = row.data('id');
+//     const client = row.find('.client_price').val();
+//     const sales = row.find('.sales_price').val();
+//
+//     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
+//
+//     $.post('includes/item_save.php', {
+//         id: id,
+//         client_price: client,
+//         sales_price: sales
+//     }, function(resp){
 $(document).on('click', '.save-item', function(){
 
     const btn = $(this);
-    const row = btn.closest('tr');
+    const container = btn.closest('[data-id], tr');
 
-    const id = row.data('id');
-    const client = row.find('.client_price').val();
-    const sales = row.find('.sales_price').val();
+    const id = container.data('id');
+    const client = container.find('.client_price').val();
+    const sales = container.find('.sales_price').val();
+    const promoNote = container.find('.promo_note').val();
 
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
 
     $.post('includes/item_save.php', {
         id: id,
         client_price: client,
-        sales_price: sales
+        sales_price: sales,
+        promo_note: promoNote
     }, function(resp){
 
         btn.prop('disabled', false).html('<i class="fa fa-save"></i>');
@@ -270,28 +287,6 @@ $(document).on('click', '.save-item', function(){
 
 // ✅ IMAGE MODAL LOGIC (върната)
 let currentItem = 0;
-
-// $(document).on('click', '.item-thumb, .card-img-top', function(){
-//
-//     currentItem = $(this).data('id');
-//
-//     new bootstrap.Modal('#imageModal').show();
-//
-//     const hasImage = $(this).data('hasimage');
-//
-//     if(hasImage){
-//         $('#itemImagePreview')
-//             .attr('src', 'includes/item_image_get.php?id=' + currentItem + '&t=' + Date.now())
-//             .removeClass('d-none');
-//
-//         $('#noImageText').addClass('d-none');
-//
-//     } else {
-//         $('#itemImagePreview').addClass('d-none');
-//         $('#noImageText').removeClass('d-none');
-//     }
-// });
-
 
 $(document).on('click', '.item-thumb, .card-img-top', function(){
     currentItem = $(this).data('id');

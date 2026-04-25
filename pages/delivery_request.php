@@ -120,56 +120,41 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
             $db = db_connect('storage');
 
             $sql = "
-SELECT
-
-n.id,
-UPPER(n.nom_code),
-UPPER(n.name),
-n.client_price,
-n.sales_price,
-n.is_calc,
-n.unit,
-
-COALESCE(pe.count,0),
-DATE_FORMAT(pe.updated_time,'%d.%m.%Y'),
-
-COALESCE(oldpe.count,0),
-DATE_FORMAT(oldpe.updated_time,'%d.%m.%Y')
-
-FROM nomenclatures n
-
-LEFT JOIN ppp_elements pe
-ON pe.id_nomenclature = n.id
-AND pe.id_ppp = ?
-
-LEFT JOIN (
-
-SELECT
-pe1.id_nomenclature,
-pe1.count,
-pe1.updated_time
-
-FROM ppp_elements pe1
-JOIN ppp p1 ON p1.id = pe1.id_ppp
-
-WHERE p1.id_dest = ?
-AND pe1.updated_time =
-(
-SELECT MAX(pe2.updated_time)
-FROM ppp_elements pe2
-JOIN ppp p2 ON p2.id = pe2.id_ppp
-WHERE p2.id_dest = ?
-AND pe2.id_nomenclature = pe1.id_nomenclature
-)
-
-) oldpe ON oldpe.id_nomenclature = n.id
-
-WHERE n.to_arc = 0
-AND n.is_calc > 0
-AND n.client_price > 0
-
-ORDER BY n.name
-LIMIT 3000
+                SELECT
+                    n.id,
+                    UPPER(n.nom_code),
+                    UPPER(n.name),
+                    UPPER(n.promo_note),
+                    n.client_price,
+                    n.sales_price,
+                    n.is_calc,
+                    n.unit,
+                    COALESCE(pe.count,0),
+                    DATE_FORMAT(pe.updated_time,'%d.%m.%Y'),
+                    COALESCE(oldpe.count,0),
+                    DATE_FORMAT(oldpe.updated_time,'%d.%m.%Y')
+                FROM nomenclatures n
+                LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp = ?
+                LEFT JOIN (
+                        SELECT
+                            pe1.id_nomenclature,
+                            pe1.count,
+                            pe1.updated_time
+                        FROM ppp_elements pe1
+                        JOIN ppp p1 ON p1.id = pe1.id_ppp
+                        WHERE p1.id_dest = ?
+                            AND pe1.updated_time =
+                            (
+                                SELECT MAX(pe2.updated_time)
+                                FROM ppp_elements pe2
+                                JOIN ppp p2 ON p2.id = pe2.id_ppp
+                                WHERE p2.id_dest = ? AND pe2.id_nomenclature = pe1.id_nomenclature
+                            )
+                ) oldpe ON oldpe.id_nomenclature = n.id
+                WHERE
+                    n.to_arc = 0 AND n.is_calc > 0 AND n.client_price > 0
+                ORDER BY n.name
+                LIMIT 3000
 ";
 
             $stmt = $db->prepare($sql);
@@ -180,6 +165,7 @@ LIMIT 3000
                 $nID,
                 $nCode,
                 $nName,
+                $nPromoNote,
                 $cPrice,
                 $sPrice,
                 $nCount,
@@ -196,6 +182,7 @@ LIMIT 3000
 
                 $sCode=htmlspecialchars($nCode);
                 $sName=htmlspecialchars($nName);
+                $sPromoNote = htmlspecialchars($nPromoNote ?? '', ENT_QUOTES, 'UTF-8');
                 $sUnit=htmlspecialchars($nUnit);
 
                 $cPriceRaw=(float)$cPrice;
@@ -226,11 +213,10 @@ LIMIT 3000
                             / Цена: <?= number_format($cPriceRaw,2) ?>
 
                             <?php if($sPriceRaw>0): ?>
-
                                 <span class="badge bg-danger">
-ПРОМО <?= number_format($sPriceRaw,2) ?>
-</span>
-
+                                    ПРОМО <?= number_format($sPriceRaw,2) ?>
+                                </span>
+                                <span class="text-danger fw-semibold"><?= $sPromoNote ?></span>
                             <?php endif; ?>
 
                         </div>

@@ -55,11 +55,13 @@ while ($r = $res->fetch_assoc()) {
 
     // Thumbnail for table view
     if ($hasImage) {
-        $thumb = '<img src="includes/item_image_get.php?id='.$r['id'].'"
-                        style="max-height:40px;cursor:pointer"
-                        class="item-thumb"
-                        data-id="'.$r['id'].'"
-                        data-hasimage="1">';
+        $thumb = '<div class="item-thumb bg-white text-danger text-center">
+                        <img src="includes/item_image_get.php?id='.$r['id'].'"
+                            style="max-height:40px;cursor:pointer"
+                            class="item-thumb"
+                            data-id="'.$r['id'].'"
+                            data-hasimage="1">
+                  </div>';
     } else {
         $thumb = '<div class="item-thumb bg-white text-danger text-center"
                         style="width:auto;height:40px;line-height:40px;cursor:pointer"

@@ -175,8 +175,7 @@ while ($r = $res->fetch_assoc()) {
                             </button>
                         </div>'
                     : ''
-                    ).'';
-
+                    ).'
                 </div>
             </div>
         </div>';

@@ -174,6 +174,7 @@ $('#zeroImage').on('click', function(){
     $(this).toggleClass('btn-info btn-secondary');
     loadItems(true);
 });
+
 // ✅ VIEW SWITCH (върнато)
 $('#viewListBtn').on('click', function(){
     if(viewMode !== 'list'){
@@ -224,23 +225,7 @@ $(window).on('scroll', function(){
     }
 });
 
-// ✅ SAVE (запазен + подобрен)
-// $(document).on('click', '.save-item', function(){
-//
-//     const btn = $(this);
-//     const row = btn.closest('tr');
-//
-//     const id = row.data('id');
-//     const client = row.find('.client_price').val();
-//     const sales = row.find('.sales_price').val();
-//
-//     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
-//
-//     $.post('includes/item_save.php', {
-//         id: id,
-//         client_price: client,
-//         sales_price: sales
-//     }, function(resp){
+
 $(document).on('click', '.save-item', function(){
 
     const btn = $(this);

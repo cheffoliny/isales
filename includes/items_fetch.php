@@ -150,31 +150,32 @@ while ($r = $res->fetch_assoc()) {
                     </div>
 
                     <!-- ROW 3 (INPUTS) -->
-                    <div class="mt-2">
+                    '.
+                    ($_SESSION['is_admin'] == 1
+                    ?
+                        '<div class="mt-2">
 
-                        <input type="number"
-                               class="form-control form-control-sm mb-1 client_price"
-                               value="'.$clientPrice.'" '.$strDisable.'>
+                            <input type="number"
+                                   class="form-control form-control-sm mb-1 client_price"
+                                   value="'.$clientPrice.'" '.$strDisable.'>
 
-                        <input type="number"
-                               class="form-control form-control-sm mb-1 sales_price"
-                               placeholder="Промо цена"
-                               value="'.($salesPrice > 0 ? $salesFormatted : '').'" '.$strDisable.'>
+                            <input type="number"
+                                   class="form-control form-control-sm mb-1 sales_price"
+                                   placeholder="Промо цена"
+                                   value="'.($salesPrice > 0 ? $salesFormatted : '').'" '.$strDisable.'>
 
-                        <!-- 🆕 ПРОМО ТЕКСТ -->
-                        <input type="text"
-                               class="form-control form-control-sm promo_note"
-                               placeholder="Промо описание..."
-                               value="'.$promoNote.'" '.$strDisable.'>
+                            <!-- 🆕 ПРОМО ТЕКСТ -->
+                            <input type="text"
+                                   class="form-control form-control-sm promo_note"
+                                   placeholder="Промо описание..."
+                                   value="'.$promoNote.'" '.$strDisable.'>
 
-                        '.($_SESSION['is_admin'] == 1
-                            ? '<button class="btn btn-success btn-sm w-100 mt-1 save-item">
+                            <button class="btn btn-success btn-sm w-100 mt-1 save-item">
                                 <i class="fa-solid fa-check"></i>
-                               </button>'
-                            : ''
-                        ).'
-
-                    </div>
+                            </button>
+                        </div>'
+                    : ''
+                    ).'';
 
                 </div>
             </div>

@@ -61,8 +61,8 @@ while ($r = $res->fetch_assoc()) {
                         data-id="'.$r['id'].'"
                         data-hasimage="1">';
     } else {
-        $thumb = '<div class="item-thumb bg-secondary text-white text-center"
-                        style="width:40px;height:40px;line-height:40px;cursor:pointer"
+        $thumb = '<div class="item-thumb bg-white text-danger text-center"
+                        style="width:auto;height:40px;line-height:40px;cursor:pointer"
                         data-id="'.$r['id'].'"
                         data-hasimage="0">-</div>';
     }
@@ -70,7 +70,7 @@ while ($r = $res->fetch_assoc()) {
     // Табличен ред
     $html .= '<tr>
                 <td class="text-center border-0">'.htmlspecialchars($r['nom_code']).'</td>
-                <td class="border-0">'.htmlspecialchars($r['name']).'</td>
+                <td class="px-2 border-0">'.htmlspecialchars($r['name']).'</td>
                 <td class="text-center border-0">'.(int)$r['is_calc'].'</td>
                 <td class="text-danger border-0">'.number_format((float)$r['sales_price'], 2, '.', '').'</td>
                 <td class="border-0">'.number_format((float)$r['client_price'], 2, '.', '').'</td>

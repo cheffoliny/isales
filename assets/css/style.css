@@ -104,7 +104,6 @@ html, body {
 
 .object-card .btn {
     padding: 0;
-    width: 48px;
     height: 48px;
     font-size: 20px;
 }
@@ -121,20 +120,4 @@ html, body {
 
 .list-group-item:hover {
     background-color: var(--bs-tertiary-bg);
-}
-
-
-@media (max-width: 576px) {
-    .card-body {
-        font-size: 12px;
-    }
-
-    .card img {
-        height: 110px !important;
-    }
-
-    .card input {
-        padding: 2px 6px;
-        font-size: 12px;
-    }
 }

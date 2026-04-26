@@ -124,7 +124,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                     n.id,
                     UPPER(n.nom_code),
                     UPPER(n.name),
-                    UPPER(n.promo_note),
+                    COALESCE(UPPER(n.promo_note), '...'),
                     n.client_price,
                     n.sales_price,
                     n.is_calc,
@@ -213,10 +213,9 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                             / Цена: <?= number_format($cPriceRaw,2) ?>
 
                             <?php if($sPriceRaw>0): ?>
-                                <span class="badge bg-danger">
-                                    ПРОМО <?= number_format($sPriceRaw,2) ?>
-                                </span>
-                                <span class="text-danger fw-semibold"><?= $sPromoNote ?></span>
+                                <br/>
+                                <span class="alert bg-alert text-danger fw-semibold px-0">
+                                    ПРОМО <?= number_format($sPriceRaw,2) ?> /<?= $sPromoNote ?>/</span>
                             <?php endif; ?>
 
                         </div>

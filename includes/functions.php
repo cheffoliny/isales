@@ -92,7 +92,8 @@ function update_ppp_status($pppID, $newStatus, $idUser)
         ======================================================= */
         if (
             ($currentStatus === 'wait' && $newStatus === 'open') ||
-            ($currentStatus === 'open' && $newStatus === 'wait')
+            ($currentStatus === 'open' && $newStatus === 'wait') ||
+            ($currentStatus === 'open' && $newStatus === 'cancel')
         ) {
 
             $stmt = $db->prepare("
@@ -110,7 +111,9 @@ function update_ppp_status($pppID, $newStatus, $idUser)
         /* =======================================================
            WAIT → CONFIRM
         ======================================================= */
-        elseif ($currentStatus === 'wait' && $newStatus === 'confirm') {
+        elseif (($currentStatus === 'wait' && $newStatus === 'confirm') ||
+                ($currentStatus === 'wait' && $newStatus === 'cancel')
+            ) {
 
             $stmt = $db->prepare("
                 UPDATE ppp

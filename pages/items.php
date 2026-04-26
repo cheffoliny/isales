@@ -249,13 +249,13 @@ $(document).on('click', '.save-item', function(){
 
         if(resp.success){
 
-            row.addClass('table-success');
+            container.addClass('table-success');
 
             setTimeout(() => {
-                row.removeClass('table-success');
+                container.removeClass('table-success');
             }, 2000);
 
-            const status = row.find('.save-status');
+            const status = container.find('.save-status');
             status.removeClass('d-none').hide().fadeIn(150);
 
             setTimeout(() => {

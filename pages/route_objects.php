@@ -84,10 +84,14 @@ while ($row = $result->fetch_assoc()):
         $disabled = 'disabled';
     }
 
+    if ($oStatus === 'cancel') {
+        $statusClass = 'bg-danger';
+        $disabled = 'disabled';
+    }
 ?>
 
 <!-- ================= OBJECT CARD ================= -->
-<div class="card mb-3 object-card shadow-sm border-0">
+<div class="card mb-3 object-card shadow-sm border-0 <?= $oStatus === 'cancel' ? 'alert alert-danger' : '' ?>">
     <div class="card-body d-flex align-items-center justify-content-between p-2">
 
         <!-- MAP BUTTON -->
@@ -110,6 +114,16 @@ while ($row = $result->fetch_assoc()):
 
         <!-- ACTION BUTTONS -->
         <div class="d-flex gap-2">
+            <?php if ($pppID > 0 && $oStatus !== 'cancel'): ?>
+
+                <!-- CANCEL BUTTON -->
+                <button class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center cancel-btn"
+                        style="width:42px;height:42px;"
+                        data-ppp="<?= $pppID ?>">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            <?php endif; ?>
 
             <?php if ($pppID > 0): ?>
 
@@ -219,6 +233,41 @@ $(document).on('click', '.status-btn', function(){
 
         } else {
             alert('Грешка при обновяване!');
+        }
+
+    }, 'json');
+
+});
+
+$(document).on('click', '.cancel-btn', function(){
+
+    const btn = $(this);
+    const pppID = btn.data('ppp');
+
+    if(!confirm('Сигурни ли сте, че искате да анулирате заявката?')){
+        return;
+    }
+
+    btn.prop('disabled', true);
+
+    $.post('includes/update_ppp_status.php', {
+        pppID: pppID,
+        status: 'cancel'
+    }, function(resp){
+
+        if(resp.success){
+
+            const card = btn.closest('.object-card');
+
+            // визуално задраскване
+            card.addClass('cancelled');
+
+            // махаме бутоните
+            card.find('.status-btn, .cancel-btn').remove();
+
+        } else {
+            alert('Грешка при анулиране!');
+            btn.prop('disabled', false);
         }
 
     }, 'json');

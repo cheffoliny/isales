@@ -101,8 +101,10 @@ if ($stmt->num_rows === 0) {
 
         /* ===== Цветова логика ===== */
         $statusClass = ($status === 'confirm')
-                        ? 'bg-success'
-                        : 'bg-warning';
+            ? 'bg-success'
+            : (($status === 'cancel')
+                ? 'bg-danger'
+                : 'bg-warning');
 ?>
 
 

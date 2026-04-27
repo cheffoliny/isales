@@ -21,11 +21,13 @@ $sql = "
             o.address AS oAddress,
             p.id AS pID,
             p.status,
-            p.source_user,
+            COALESCE(CONCAT(u.fname, ' ', u.lname), p.source_user) AS source_user,
             DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate
         FROM ppp p
         JOIN ". DB_NAMES['sod'] .".objects o
             ON o.id = p.id_dest AND p.dest_type = 'object'
+        LEFT JOIN ". DB_NAMES['personnel'] .".personnel u
+            ON u.id = p.source_user            
         WHERE
             p.source_date >= CURDATE() - INTERVAL 10 DAY
         ORDER BY p.source_date DESC, p.`status` DESC ";

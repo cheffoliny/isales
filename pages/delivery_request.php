@@ -43,7 +43,7 @@ if ($existingID) {
 
 } else {
 
-    $sourceUser = $firstName.' '. $lastName;
+    $sourceUser = $firstName.' '. $lastName. ''.$idUser;
     $status = 'open';
     $pppStatus = $status;
 

@@ -11,7 +11,7 @@ $db = db_connect('storage');
 $page = (int)($_GET['page'] ?? 0);
 $search = trim($_GET['search'] ?? '');
 $promo = (int)($_GET['promo'] ?? 0);
-$promoNote = ($_GET['promo_note'] ?? NULL);
+//$promoNote = ($_GET['promo_note'] ?? NULL);
 $zero = (int)($_GET['zero'] ?? 0);
 $image = (int)($_GET['image'] ?? NULL);
 $limit = 2000;
@@ -77,9 +77,11 @@ while ($r = $res->fetch_assoc()) {
                 <td class="text-danger border-0">'.number_format((float)$r['sales_price'], 2, '.', '').'</td>
                 <td class="border-0">'.number_format((float)$r['client_price'], 2, '.', '').'</td>
                 <td class="text-center border-0">'.$thumb.'</td>
-            </tr>'.
+            </tr>';
+
         ($_SESSION['is_admin'] == 1
-        ? '<tr data-id="'.$r['id'].'">
+        ?
+        $html .= '<tr data-id="'.$r['id'].'">
                 <td class="text-light small"></td>
                 <td><input type="text" class="form-control form-control-sm promo_note text-danger"
                            placeholder="Промо описание..." value="'.$promoNote.'" '.$strDisable.' /></td>

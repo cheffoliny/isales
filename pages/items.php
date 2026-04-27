@@ -73,7 +73,7 @@ if(empty($_SESSION['user_id'])){
             </div>
             <?php if($_SESSION['is_admin'] == 1) { ?>
             <div class="modal-footer">
-                <button class="btn btn-danger btn-sm d-none" id="deleteImage">Изтрий</button>
+                <button class="btn btn-danger btn-sm" id="deleteImage">Изтрий</button>
                 <button class="btn btn-success btn-sm" id="uploadImage">Качи</button>
             </div>
             <?php } ?>
@@ -274,69 +274,179 @@ $(document).on('click', '.save-item', function(){
 
 });
 
-// ✅ IMAGE MODAL LOGIC (върната)
+// =============================
+// IMAGE MODAL STATE
+// =============================
 let currentItem = 0;
+let imageModalInstance = null;
 
-$(document).on('click', '.item-thumb, .card-img-top', function(){
+
+// =============================
+// OPEN IMAGE MODAL
+// =============================
+$(document).on('click', '.item-thumb, .card-img-top', function(e){
+
+    e.preventDefault();
+    e.stopPropagation();
+
     currentItem = $(this).data('id');
 
-    new bootstrap.Modal('#imageModal').show();
+    const raw = $(this).attr('data-hasimage');
 
-    const hasImage = $(this).data('hasimage');
+    const modalEl = document.getElementById('imageModal');
+    imageModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+    const hasImage = parseInt(raw || 0, 10) === 1;
+
+    console.log('OPEN MODAL', { currentItem, raw });
+
+    $('#itemImagePreview')
+        .attr('src','')
+        .addClass('d-none');
+
+    $('#noImageText').addClass('d-none');
+    $('#imageUpload').val('');
+
+    imageModalInstance.show();
 
     if(hasImage){
         $('#itemImagePreview')
-            .attr('src', 'includes/item_image_get.php?id=' + currentItem + '&t=' + Date.now())
-            .removeClass('d-none');
-        $('#deleteImage').removeClass('d-none');
-        $('#noImageText').addClass('d-none');
+            .attr('src','includes/item_image_get.php?id='+currentItem+'&t='+Date.now())
+            .on('load.modalFix', function(){
+                $(this).removeClass('d-none');
+                $('#deleteImage').removeClass('d-none');
+            });
     } else {
-        $('#itemImagePreview').addClass('d-none');
-        $('#deleteImage').addClass('d-none');
         $('#noImageText').removeClass('d-none');
-    }
+        $('#deleteImage').addClass('d-none');
 
-    $('#imageUpload').val('');
+    }
 });
 
-    $('#uploadImage').on('click', function(){
-        const file = $('#imageUpload')[0].files[0];
-        if(!file){ alert('Избери файл'); return; }
+$('#imageModal').on('hidden.bs.modal', function () {
+    $('#itemImagePreview').off('load.modalFix');
+    $('#itemImagePreview').attr('src','');
+});
 
-        const reader = new FileReader();
-        reader.onload = function(e){
-            const img = new Image();
-            img.src = e.target.result;
-            img.onload = function(){
-                const canvas = document.createElement('canvas');
-                const maxDim = 500;
-                let w = img.width, h = img.height;
-                if(w > h && w > maxDim){ h *= maxDim/w; w = maxDim; }
-                if(h >= w && h > maxDim){ w *= maxDim/h; h = maxDim; }
-                canvas.width = w;
-                canvas.height = h;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, w, h);
-                canvas.toBlob(function(blob){
-                    let form = new FormData();
-                    form.append('id', currentItem);
-                    form.append('image', blob, 'image.jpg');
+// =============================
+// UPLOAD IMAGE
+// =============================
+$('#uploadImage').on('click', function(){
 
-                    $.ajax({
-                        url:'includes/item_image_upload.php',
-                        type:'POST',
-                        data:form,
-                        processData:false,
-                        contentType:false,
-                        dataType:'json',
-                        success:function(resp){
-                            if(resp.success){ location.reload(); }
-                            else{ alert('Грешка при качване на снимката!'); }
+    const file = $('#imageUpload')[0].files[0];
+    if(!file){
+        alert('Избери файл');
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function(e){
+
+        const img = new Image();
+        img.src = e.target.result;
+
+        img.onload = function(){
+
+            const canvas = document.createElement('canvas');
+            const maxDim = 500;
+
+            let w = img.width,
+                h = img.height;
+
+            if(w > h && w > maxDim){
+                h *= maxDim / w;
+                w = maxDim;
+            }
+
+            if(h >= w && h > maxDim){
+                w *= maxDim / h;
+                h = maxDim;
+            }
+
+            canvas.width = w;
+            canvas.height = h;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            canvas.toBlob(function(blob){
+
+                let form = new FormData();
+                form.append('id', currentItem);
+                form.append('image', blob, 'image.jpg');
+
+                $.ajax({
+                    url: 'includes/item_image_upload.php',
+                    type: 'POST',
+                    data: form,
+                    processData: false,
+                    contentType: false,
+                    dataType: 'json',
+
+                    success: function(resp){
+
+                        if(resp.success){
+
+                            // =========================
+                            // ✅ FIX: clean modal close
+                            // =========================
+                            if(imageModalInstance){
+                                imageModalInstance.hide();
+                            }
+
+                            setTimeout(() => {
+                                location.reload();
+                            }, 300);
+
+                        } else {
+                            alert('Грешка при качване на снимката!');
                         }
-                    });
-                }, 'image/jpeg', 0.7);
-            };
+                    }
+                });
+
+            }, 'image/jpeg', 0.7);
         };
-        reader.readAsDataURL(file);
-    });
+    };
+
+    reader.readAsDataURL(file);
+});
+
+$(document).on('click', '#deleteImage', function(){
+
+    if(!currentItem){
+        alert('Няма избран артикул');
+        return;
+    }
+
+    if(!confirm('Сигурен ли си, че искаш да изтриеш снимката?')){
+        return;
+    }
+
+    $.post('includes/item_image_delete.php', {
+        id: currentItem
+    }, function(resp){
+
+        if(resp.success){
+
+            // hide modal image state
+            $('#itemImagePreview')
+                .attr('src','')
+                .addClass('d-none');
+
+            $('#deleteImage').addClass('d-none');
+            $('#noImageText').removeClass('d-none');
+
+            // optional: refresh list/grid visuals
+            $('[data-id="'+currentItem+'"]').attr('data-hasimage', 0);
+
+            console.log('IMAGE DELETED OK');
+
+        } else {
+            alert('Грешка при изтриване!');
+        }
+
+    }, 'json');
+
+});
 </script>

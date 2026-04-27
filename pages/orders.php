@@ -92,7 +92,7 @@ if ($stmt->num_rows === 0) {
             $currentDateHeader = $dateOnly;
             ?>
 
-            <div class="list-group-item fw-bold text-center">
+            <div class="list-group-item fw-bold text-center bg-secondary">
                 <?= $currentDateHeader ?>
             </div>
 

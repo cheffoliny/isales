@@ -52,6 +52,7 @@ $grid = '';
 
 while ($r = $res->fetch_assoc()) {
     $hasImage = !empty($r['image']) ? 1 : 0;
+    $promoNote = htmlspecialchars($r['promo_note'] ?? '');
 
     // Thumbnail for table view
     if ($hasImage) {
@@ -126,7 +127,7 @@ while ($r = $res->fetch_assoc()) {
 //             </div>
 //         </div>
 //     </div>';
-        $promoNote = htmlspecialchars($r['promo_note'] ?? '');
+
 
         $grid .= '
         <div class="col-6 col-md-4 col-lg-3">

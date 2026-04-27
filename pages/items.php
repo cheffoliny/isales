@@ -229,12 +229,16 @@ $(window).on('scroll', function(){
 $(document).on('click', '.save-item', function(){
 
     const btn = $(this);
-    const container = btn.closest('[data-id], tr');
+    const container = btn.closest('[data-id]');
 
     const id = container.data('id');
-    const client = container.find('.client_price').val();
-    const sales = container.find('.sales_price').val();
-    const promoNote = container.find('.promo_note').val();
+
+    // ✅ FIX: локален scope
+    const scope = btn.closest('tr, .card');
+
+    const client = scope.find('input.client_price').first().val();
+    const sales = scope.find('input.sales_price').first().val();
+    const promoNote = scope.find('input.promo_note').first().val();
 
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
 

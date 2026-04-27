@@ -124,6 +124,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                     n.id,
                     UPPER(n.nom_code),
                     UPPER(n.name),
+                    n.image,
                     COALESCE(UPPER(n.promo_note), '...'),
                     n.client_price,
                     n.sales_price,
@@ -165,6 +166,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 $nID,
                 $nCode,
                 $nName,
+                $nImage,
                 $nPromoNote,
                 $cPrice,
                 $sPrice,
@@ -182,6 +184,8 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
                 $sCode=htmlspecialchars($nCode);
                 $sName=htmlspecialchars($nName);
+                $hasImage = !empty($nImage) ? 1 : 0;
+
                 $sPromoNote = htmlspecialchars($nPromoNote ?? '', ENT_QUOTES, 'UTF-8');
                 $sUnit=htmlspecialchars($nUnit);
 
@@ -195,6 +199,22 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
                 $btnClass=$inputValue>0?'btn-success':'btn-secondary';
 
+                // Thumbnail for table view
+                if ($hasImage) {
+                    $thumb = '<div class="item-thumb bg-white text-danger text-center">
+                                    <img src="includes/item_image_get.php?id='.$nID.'"
+                                        style="max-height:40px;cursor:pointer"
+                                        class="item-thumb"
+                                        data-id="'.$nID.'"
+                                        data-hasimage="1">
+                              </div>';
+                } else {
+                    $thumb = '<div class="item-thumb bg-white text-danger text-center"
+                                    style="width:auto;height:40px;line-height:40px;cursor:pointer"
+                                    data-id="'.$nID.'"
+                                    data-hasimage="0">-</div>';
+                }
+
                 ?>
 
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap <?= $lockedClass ?>"
@@ -202,27 +222,32 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                      data-name="<?= $sName ?>"
                      data-promo="<?= $isPromo ?>">
 
-                    <div class="flex-grow-1">
+                    <div class="flex-grow-1 d-flex align-items-start gap-2">
 
-                        <div class="fw-semibold">
-                            <?= $sCode ?> - <?= $sName ?>
-                        </div>
+                        <div class="route-icon me-2"><?= $thumb ?></div>
 
-                        <div class="small text-info">
-                            Налично: <?= $nCount.' '.$sUnit ?>
-                            / Цена: <?= number_format($cPriceRaw,2) ?>
+                        <div class="flex-grow-1">
 
-                            <?php if($sPriceRaw>0): ?>
-                                <br/>
-                                <span class="alert bg-alert text-danger fw-semibold px-0">
-                                    ПРОМО <?= number_format($sPriceRaw,2) ?> /<?= $sPromoNote ?>/</span>
-                            <?php endif; ?>
+                            <div class="fw-semibold">
+                                <?= $sCode ?> - <?= $sName ?>
+                            </div>
 
-                        </div>
+                            <div class="small text-info">
+                                Налично: <?= $nCount.' '.$sUnit ?>
+                                / Цена: <?= number_format($cPriceRaw,2) ?>
 
-                        <div class="small text-body-secondary">
-                            Последна поръчка:
-                            <?= $oldQty.' '.$sUnit ?> - <?= $oldOrderTime ?: '-' ?>
+                                <?php if($sPriceRaw>0): ?>
+                                    <br/>
+                                    <span class="alert bg-alert text-danger fw-semibold px-0">
+                                        ПРОМО <?= number_format($sPriceRaw,2) ?> /<?= $sPromoNote ?>/</span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="small text-body-secondary">
+                                Последна поръчка:
+                                <?= $oldQty.' '.$sUnit ?> - <?= $oldOrderTime ?: '-' ?>
+                            </div>
+
                         </div>
 
                     </div>
@@ -257,12 +282,31 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
                 </div>
 
-            <?php endwhile; ?>
+            <?php
+            endwhile; ?>
 
         </div>
     </div>
 </div>
 
+
+<!-- IMAGE MODAL -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Снимка</h5>
+                <button class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body text-center">
+                <img id="itemImagePreview" class="img-fluid mb-3 d-none" style="max-height:80vh">
+                <div id="noImageText" class="text-muted">Няма качена снимка</div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 
     const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
@@ -270,7 +314,6 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
     let promoActive=false;
 
     /* FILTER */
-
     function applyFilters(){
 
         const search = ($('#deliverySearch').val() || '')
@@ -373,54 +416,121 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
     });
 
-    /* SAVE */
+/* SAVE */
+// извън функцията (глобално)
+let resetTimer = null;
 
-    $(document).on('click','.save-delivery',function(){
+$(document).on('click','.save-delivery',function(){
 
-        if(deliveryConfirmed){
+    if(deliveryConfirmed){
+        alert('Заявката е потвърдена.');
+        return;
+    }
 
-            alert('Заявката е потвърдена.');
-            return;
+    const btn=$(this);
+    const row=btn.closest('.list-group-item');
+    const input=row.find('.qty-input');
+
+    const qty=parseInt(input.val())||0;
+
+    const id_ppp=btn.data('ppp');
+    const id_n=btn.data('id');
+    const price=btn.data('price');
+
+    if(qty<=0) return;
+
+    $.post('includes/save_ppp_element.php',{
+        id_ppp:id_ppp,
+        id_nomenclature:id_n,
+        count:qty,
+        single_price:price
+    },function(resp){
+
+        if(resp.success){
+            input.data('saved',qty);
+
+            btn.removeClass('btn-secondary')
+                .addClass('btn-success');
+
+            // ✅ RESET SEARCH + FILTERS
+            $('#deliverySearch').val('');
+
+            promoActive = false;
+
+            $('#promoFilter')
+                .removeClass('btn-secondary')
+                .addClass('btn-danger')
+                .text('ПРОМОЦИИ');
+
+            // ✅ DELAY FILTER
+            clearTimeout(resetTimer);
+            resetTimer = setTimeout(function(){
+              //  applyFilters();
+            }, 450); // можеш да го направиш 150–400ms
+        }else{
+
+            alert('Грешка');
 
         }
 
-        const btn=$(this);
-        const row=btn.closest('.list-group-item');
+    },'json');
 
-        const input=row.find('.qty-input');
+});
 
-        const qty=parseInt(input.val())||0;
 
-        const id_ppp=btn.data('ppp');
-        const id_n=btn.data('id');
-        const price=btn.data('price');
+// =============================
+// IMAGE MODAL STATE
+// =============================
+let currentItem = 0;
+let imageModalInstance = null;
 
-        if(qty<=0) return;
 
-        $.post('includes/save_ppp_element.php',{
+// =============================
+// OPEN IMAGE MODAL
+// =============================
+$(document).on('click', '.item-thumb, .card-img-top', function(e){
 
-            id_ppp:id_ppp,
-            id_nomenclature:id_n,
-            count:qty,
-            single_price:price
+    e.preventDefault();
+    e.stopPropagation();
 
-        },function(resp){
+    currentItem = $(this).data('id');
 
-            if(resp.success){
+    const raw = $(this).attr('data-hasimage');
 
-                input.data('saved',qty);
+    const modalEl = document.getElementById('imageModal');
+    imageModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
 
-                btn.removeClass('btn-secondary')
-                    .addClass('btn-success');
+    const hasImage = parseInt(raw || 0, 10) === 1;
 
-            }else{
+    //console.log('OPEN MODAL', { currentItem, raw });
 
-                alert('Грешка');
+    $('#itemImagePreview')
+        .attr('src','')
+        .addClass('d-none');
 
-            }
+    $('#noImageText').addClass('d-none');
+    $('#imageUpload').val('');
 
-        },'json');
+    imageModalInstance.show();
 
-    });
+    if(hasImage){
+        $('#itemImagePreview')
+            .attr('src','includes/item_image_get.php?id='+currentItem+'&t='+Date.now())
+            .on('load.modalFix', function(){
+                $(this).removeClass('d-none');
+                $('#deleteImage').removeClass('d-none');
+            });
+    } else {
+        $('#noImageText').removeClass('d-none');
+        $('#deleteImage').addClass('d-none');
+
+    }
+});
+
+$('#imageModal').on('hidden.bs.modal', function () {
+    $('#itemImagePreview').off('load.modalFix');
+    $('#itemImagePreview').attr('src','');
+});
+
 
 </script>

@@ -298,7 +298,7 @@ $(document).on('click', '.item-thumb, .card-img-top', function(e){
 
     const hasImage = parseInt(raw || 0, 10) === 1;
 
-    console.log('OPEN MODAL', { currentItem, raw });
+    //console.log('OPEN MODAL', { currentItem, raw });
 
     $('#itemImagePreview')
         .attr('src','')

@@ -615,6 +615,7 @@ $('#imageModal').on('hidden.bs.modal', function () {
 
     $(document).ready(function(){
         calculateTotal();
+        applyFilters(); // 👈 добави това
     });
 
 </script>

@@ -8,29 +8,6 @@ function h($s) {
 }
 
 /**
- * Разпознаване и конвертиране към UTF-8
- */
-// function convertToUtf8($string) {
-//
-//     $string = preg_replace('/^\xEF\xBB\xBF/', '', $string);
-//
-//     $encoding = mb_detect_encoding(
-//         $string,
-//         ['UTF-8', 'Windows-1251', 'ISO-8859-1'],
-//         true
-//     );
-//
-//     if ($encoding === false) {
-//         $encoding = 'Windows-1251';
-//     }
-//
-//     if ($encoding !== 'UTF-8') {
-//         $string = mb_convert_encoding($string, 'UTF-8', $encoding);
-//     }
-//
-//     return $string;
-// }
-/**
  * Стабилно разпознаване и конвертиране към UTF-8
  */
 function convertToUtf8($string) {

@@ -73,7 +73,7 @@ while ($r = $res->fetch_assoc()) {
     // Табличен ред
     $html .= '<tr>
                 <td class="text-center border-0">'.htmlspecialchars($r['nom_code']).'</td>
-                <td class="px-2 border-0">'.htmlspecialchars($r['name']).'</td>
+                <td class="px-2 border-0">'.htmlspecialchars($r['name']).' <span class="text-danger">('.$promoNote.')</span></td>
                 <td class="text-center border-0">'.(int)$r['is_calc'].'</td>
                 <td class="text-danger border-0">'.number_format((float)$r['sales_price'], 2, '.', '').'</td>
                 <td class="border-0">'.number_format((float)$r['client_price'], 2, '.', '').'</td>

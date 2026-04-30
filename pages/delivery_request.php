@@ -83,10 +83,10 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
         <h5 class="mb-0"> Заявка за: <?= htmlspecialchars($objName) ?></h5>
 
         <div class="btn-group">
-            <button id="filterOrdered" class="btn btn-sm btn-primary">
+            <button id="filterOrdered" class="btn btn-sm btn-outline-primary">
                 ЗАЯВЕНИ
             </button>
-            <button id="filterAll" class="btn btn-sm btn-outline-primary">
+            <button id="filterAll" class="btn btn-sm btn-primary">
                 ВСИЧКИ
             </button>
         </div>
@@ -324,7 +324,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
     const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
 
     let promoActive=false;
-    let showOnlyOrdered = true;
+    let showOnlyOrdered = false;
 
     /* FILTER */
     function applyFilters(){

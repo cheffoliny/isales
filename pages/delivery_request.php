@@ -75,15 +75,21 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 <div class="card shadow mb-3 border-0">
 
     <div class="card-header d-flex justify-content-between align-items-center">
-
         <a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
            class="btn btn-outline-secondary btn-sm">
             <i class="fa-solid fa-angles-left"></i>
         </a>
 
-        <h5 class="mb-0">
-            Заявка за: <?= htmlspecialchars($objName) ?>
-        </h5>
+        <h5 class="mb-0"> Заявка за: <?= htmlspecialchars($objName) ?></h5>
+
+        <div class="btn-group">
+            <button id="filterOrdered" class="btn btn-sm btn-primary">
+                ЗАЯВЕНИ
+            </button>
+            <button id="filterAll" class="btn btn-sm btn-outline-primary">
+                ВСИЧКИ
+            </button>
+        </div>
 
     </div>
 
@@ -99,7 +105,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
         <!-- SEARCH + PROMO -->
 
-        <div class="d-flex gap-2 mb-3">
+        <div class="d-flex gap-2 mb-1">
 
             <input type="text"
                    id="deliverySearch"
@@ -111,6 +117,12 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 ПРОМОЦИИ
             </button>
 
+        </div>
+
+        <div class="text-center my-1">
+            <div id="totalPriceBox" class="fw-bold fs-5 bg-success text-white py-1">
+                Обща сума: 0.00 лв.
+            </div>
         </div>
 
         <div class="list-group list-group-flush" id="itemsList">
@@ -220,7 +232,8 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap <?= $lockedClass ?>"
                      data-code="<?= $sCode ?>"
                      data-name="<?= $sName ?>"
-                     data-promo="<?= $isPromo ?>">
+                     data-promo="<?= $isPromo ?>"
+                     data-ordered="<?= $inputValue > 0 ? 1 : 0 ?>">
 
                     <div class="flex-grow-1 d-flex align-items-start gap-2">
 
@@ -264,6 +277,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                                min="0"
                                max="1000"
                                data-saved="<?= $inputValue ?>"
+                               data-price="<?= $nPriceRaw ?>"
                             <?= $disabledAttr ?>>
 
                         <button class="btn btn-sm btn-outline-secondary qty-plus" <?= $disabledAttr ?>>
@@ -312,6 +326,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
     const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
 
     let promoActive=false;
+    let showOnlyOrdered = true;
 
     /* FILTER */
     function applyFilters(){
@@ -325,15 +340,22 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
             const code = ($(this).attr('data-code') || '').toUpperCase();
             const name = ($(this).attr('data-name') || '').toUpperCase();
             const promo = parseInt($(this).attr('data-promo')) || 0;
+            const ordered = parseInt($(this).attr('data-ordered')) || 0;
 
             let visible = true;
 
+            // SEARCH
             if(search){
                 if(code.indexOf(search) === -1 && name.indexOf(search) === -1)
                     visible=false;
             }
 
+            // PROMO
             if(promoActive && promo !== 1)
+                visible=false;
+
+            // ✅ NEW: ORDERED FILTER
+            if(showOnlyOrdered && ordered !== 1)
                 visible=false;
 
             $(this).toggleClass('d-none',!visible);
@@ -341,6 +363,38 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
         });
 
     }
+
+    $('#filterOrdered').on('click', function(){
+
+        showOnlyOrdered = true;
+
+        $(this)
+            .removeClass('btn-outline-primary')
+            .addClass('btn-primary');
+
+        $('#filterAll')
+            .removeClass('btn-primary')
+            .addClass('btn-outline-primary');
+
+        applyFilters();
+
+    });
+
+    $('#filterAll').on('click', function(){
+
+        showOnlyOrdered = false;
+
+        $(this)
+            .removeClass('btn-outline-primary')
+            .addClass('btn-primary');
+
+        $('#filterOrdered')
+            .removeClass('btn-primary')
+            .addClass('btn-outline-primary');
+
+        applyFilters();
+
+    });
 
     let searchTimer;
 
@@ -399,7 +453,12 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
         const btn=$(this).siblings('.save-delivery');
 
-        const val=parseInt($(this).val())||0;
+
+        const row = $(this).closest('.list-group-item');
+        const val = parseInt($(this).val()) || 0;
+        row.attr('data-ordered', val > 0 ? 1 : 0);
+
+
         const saved=parseInt($(this).data('saved'))||0;
 
         if(val!==saved){
@@ -414,6 +473,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
         }
 
+        calculateTotal();
     });
 
 /* SAVE */
@@ -467,6 +527,9 @@ $(document).on('click','.save-delivery',function(){
             resetTimer = setTimeout(function(){
               //  applyFilters();
             }, 450); // можеш да го направиш 150–400ms
+
+            calculateTotal();
+            row.attr('data-ordered', 1);
         }else{
 
             alert('Грешка');
@@ -532,5 +595,28 @@ $('#imageModal').on('hidden.bs.modal', function () {
     $('#itemImagePreview').attr('src','');
 });
 
+    function calculateTotal(){
+
+        let total = 0;
+
+        $('.qty-input').each(function(){
+
+            const qty = parseInt($(this).val()) || 0;
+            const price = parseFloat($(this).data('price')) || 0;
+
+            if(qty > 0){
+                total += qty * price;
+            }
+
+        });
+
+        $('#totalPriceBox').text(
+            'Обща сума: ' + total.toFixed(2) + ' лв.'
+        );
+    }
+
+    $(document).ready(function(){
+        calculateTotal();
+    });
 
 </script>

@@ -46,7 +46,7 @@ $objName = getObjectByID($objectId);
     </div>
     <div class="text-center my-1">
         <div id="totalPriceBox" class="fw-bold fs-5 bg-success text-white py-1">
-            Обща сума: 0.00 лв.
+            Обща сума: 0.00 €
         </div>
     </div>
 <div class="list-group list-group-flush" id="itemsList">

@@ -119,20 +119,20 @@ while ($row = $result->fetch_assoc()):
             <?php if ($pppID > 0 && $oStatus !== 'cancel'): ?>
 
                 <!-- INVOICE BUTTON -->
-                <button class="btn rounded-circle d-flex align-items-center justify-content-center invoice-btn <?= $buyDoc ? 'btn-success' : 'btn-primary' ?>"
+                <button class="btn rounded-circle d-flex align-items-center justify-content-center invoice-btn <?= $buyDoc ? 'btn-success' : 'btn-danger' ?>"
                         style="width:42px;height:42px;"
                         data-ppp="<?= $pppID ?>"
                         data-buydoc="<?= $buyDoc ?>">
                     <i class="fa-solid fa-file-invoice"></i>
                 </button>
-
+                <?php if($_SESSION['is_admin'] == 1) { ?>
                 <!-- CANCEL BUTTON -->
                 <button class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center cancel-btn"
                         style="width:42px;height:42px;"
                         data-ppp="<?= $pppID ?>">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
-
+                <?php } ?>
             <?php endif; ?>
 
             <?php if ($pppID > 0): ?>
@@ -303,12 +303,12 @@ $(document).on('click', '.invoice-btn', function(){
 
             btn.data('buydoc', newValue);
 
-            btn.removeClass('btn-primary btn-success');
+            btn.removeClass('btn-danger btn-success');
 
             if(newValue === 1){
                 btn.addClass('btn-success');
             } else {
-                btn.addClass('btn-primary');
+                btn.addClass('btn-danger');
             }
 
         } else {

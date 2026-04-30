@@ -23,31 +23,21 @@ $objName = getObjectByID($objectId);
 ?>
 
 <div class="card shadow mb-3 border-0">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <a href="dashboard.php?page=orders" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-angles-left"></i>
+        </a>
 
-<div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"> Заявка за: <?= htmlspecialchars($objName) ?></h5>
 
-<a href="dashboard.php?page=orders"
-class="btn btn-outline-secondary btn-sm">
-<i class="fa-solid fa-angles-left"></i>
-</a>
-
-<h5 class="mb-0">
-Заявка за: <?= htmlspecialchars($objName) ?>
-</h5>
-
-<div class="btn-group">
-
-<a href="dashboard.php?page=object_order&id=<?= $objectId ?>&pppID=<?= $pppID ?>"
-class="btn btn-sm <?= !$showAll?'btn-primary':'btn-outline-primary' ?>">
-ЗАЯВЕНО
-</a>
-
-<a href="dashboard.php?page=object_order&id=<?= $objectId ?>&pppID=<?= $pppID ?>&mode=all"
-class="btn btn-sm <?= $showAll?'btn-primary':'btn-outline-primary' ?>">
-ВСИЧКИ
-</a>
-
-</div>
+        <div class="btn-group">
+            <a href="dashboard.php?page=object_order&id=<?= $objectId ?>&pppID=<?= $pppID ?>" class="btn btn-sm <?= !$showAll?'btn-primary':'btn-outline-primary' ?>">
+                ЗАЯВЕНО
+            </a>
+            <a href="dashboard.php?page=object_order&id=<?= $objectId ?>&pppID=<?= $pppID ?>&mode=all" class="btn btn-sm <?= $showAll?'btn-primary':'btn-outline-primary' ?>">
+                ВСИЧКИ
+            </a>
+        </div>
 
 </div>
 
@@ -68,53 +58,44 @@ placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
 
 if(!$showAll){
 
-$sql="
-SELECT
-n.id,
-UPPER(n.nom_code),
-UPPER(n.name),
-n.client_price,
-n.sales_price,
-n.is_calc,
-COALESCE(pe.count,0)
+    $sql="
+        SELECT
+            n.id,
+            UPPER(n.nom_code),
+            UPPER(n.name),
+            n.client_price,
+            n.sales_price,
+            n.is_calc,
+            COALESCE(pe.count,0)
 
-FROM ppp_elements pe
-JOIN nomenclatures n ON n.id=pe.id_nomenclature
+        FROM ppp_elements pe
+        JOIN nomenclatures n ON n.id=pe.id_nomenclature
 
-WHERE
-pe.id_ppp=?
-AND pe.to_arc=0
+        WHERE
+        pe.id_ppp=?
+        AND pe.to_arc=0
 
-ORDER BY n.name
-";
+        ORDER BY n.name
+    ";
 
-}else{
+} else {
 
-$sql="
-SELECT
-n.id,
-UPPER(n.nom_code),
-UPPER(n.name),
-n.client_price,
-n.sales_price,
-n.is_calc,
-COALESCE(pe.count,0)
+    $sql="
+        SELECT
+            n.id,
+            UPPER(n.nom_code),
+            UPPER(n.name),
+            n.client_price,
+            n.sales_price,
+            n.is_calc,
+            COALESCE(pe.count,0)
 
-FROM nomenclatures n
-
-LEFT JOIN ppp_elements pe
-ON pe.id_nomenclature=n.id
-AND pe.id_ppp=?
-AND pe.to_arc=0
-
-WHERE
-n.client_price>0
-AND n.is_calc>0
-
-ORDER BY
-(pe.count>0) DESC,
-n.name
-";
+        FROM nomenclatures n
+        LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp=? AND pe.to_arc = 0
+        WHERE
+            n.client_price > 0 AND n.is_calc > 0
+        ORDER BY (pe.count>0) DESC, n.name
+        ";
 
 }
 
@@ -134,82 +115,82 @@ $oQuantity
 
 while($stmt->fetch()):
 
-$nID=(int)$nID;
+    $nID=(int)$nID;
 
-$sCode=htmlspecialchars($nCode);
-$sName=htmlspecialchars($nName);
+    $sCode=htmlspecialchars($nCode);
+    $sName=htmlspecialchars($nName);
 
-$cPriceRaw=(float)$cPrice;
-$sPriceRaw=(float)$sPrice;
+    $cPriceRaw=(float)$cPrice;
+    $sPriceRaw=(float)$sPrice;
 
-$nPriceRaw=$sPriceRaw>0?$sPriceRaw:$cPriceRaw;
+    $nPriceRaw=$sPriceRaw>0?$sPriceRaw:$cPriceRaw;
 
-$isPromo=$sPriceRaw>0?1:0;
+    $isPromo=$sPriceRaw>0?1:0;
 
-$oQuantity=(int)$oQuantity;
+    $oQuantity=(int)$oQuantity;
 
-$hasSaved=$oQuantity>0;
+    $hasSaved=$oQuantity>0;
 
-$maxQty=max(1,min(100,$nCount));
+    $maxQty=max(1,min(100,$nCount));
 
 ?>
 
-<div class="list-group-item d-flex justify-content-between align-items-center flex-wrap"
-data-code="<?= $sCode ?>"
-data-name="<?= $sName ?>">
+    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap"
+    data-code="<?= $sCode ?>"
+    data-name="<?= $sName ?>">
 
-<div class="flex-grow-1">
+    <div class="flex-grow-1">
 
-<div class="fw-semibold">
-<?= $sCode ?> - <?= $sName ?>
-</div>
+    <div class="fw-semibold">
+    <?= $sCode ?> - <?= $sName ?>
+    </div>
 
-<div class="small text-info">
+    <div class="small text-info">
 
-Налично: <?= $nCount ?>
+    Налично: <?= $nCount ?>
 
-/ Цена: <?= number_format($cPriceRaw,2) ?>
+    / Цена: <?= number_format($cPriceRaw,2) ?>
 
-<?php if($isPromo): ?>
+    <?php if($isPromo): ?>
 
-<span class="badge bg-danger">
-ПРОМО <?= number_format($sPriceRaw,2) ?>
-</span>
+    <span class="badge bg-danger">
+    ПРОМО <?= number_format($sPriceRaw,2) ?>
+    </span>
 
-<?php endif; ?>
+    <?php endif; ?>
 
-</div>
+    </div>
 
-</div>
+    </div>
 
-<div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-items-center gap-2">
 
-<button class="btn btn-sm btn-outline-secondary qty-minus">
-<i class="fa-solid fa-minus"></i>
-</button>
+    <button class="btn btn-sm btn-outline-secondary qty-minus">
+    <i class="fa-solid fa-minus"></i>
+    </button>
 
-<input type="number"
-class="form-control form-control-sm qty-input"
-value="<?= $oQuantity ?>"
-min="0"
-max="<?= $maxQty ?>">
+    <input type="number"
+    class="form-control form-control-sm qty-input"
+    value="<?= $oQuantity ?>"
+    min="0"
+    max="<?= $maxQty ?>">
 
-<button class="btn btn-sm btn-outline-secondary qty-plus">
-<i class="fa-solid fa-plus"></i>
-</button>
+    <button class="btn btn-sm btn-outline-secondary qty-plus">
+    <i class="fa-solid fa-plus"></i>
+    </button>
 
-<button class="btn btn-sm <?= $hasSaved?'btn-success':'btn-secondary' ?> save-delivery"
-data-ppp="<?= $pppID ?>"
-data-id="<?= $nID ?>"
-data-price="<?= $nPriceRaw ?>">
+    <button class="btn btn-sm <?= $hasSaved?'btn-success':'btn-secondary' ?> save-delivery"
+    data-ppp="<?= $pppID ?>"
+    data-id="<?= $nID ?>"
+    data-price="<?= $nPriceRaw ?>">
 
-<i class="fa-solid <?= $hasSaved?'fa-check':'fa-circle-check' ?>"></i>
+    <i class="fa-solid <?= $hasSaved?'fa-check':'fa-circle-check' ?>"></i>
 
-</button>
+    </button>
 
-</div>
+    </div>
 
-</div>
+    </div>
 
 <?php endwhile; ?>
 

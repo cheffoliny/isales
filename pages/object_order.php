@@ -22,7 +22,7 @@ $db = db_connect('storage');
 $objName = getObjectByID($objectId);
 ?>
 
-<div class="card shadow mb-3 border-0">
+<div class="card shadow mb-1 border-0">
     <div class="card-header d-flex justify-content-between align-items-center">
         <a href="dashboard.php?page=orders" class="btn btn-outline-secondary btn-sm">
             <i class="fa-solid fa-angles-left"></i>
@@ -38,20 +38,17 @@ $objName = getObjectByID($objectId);
                 ВСИЧКИ
             </a>
         </div>
-
-</div>
+    </div>
 
 <div class="card-body">
-
-<div class="mb-3">
-
-<input type="text"
-id="deliverySearch"
-class="form-control form-control-sm"
-placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
-
-</div>
-
+    <div class="d-flex gap-2 mb-1">
+        <input type="text" id="deliverySearch" class="form-control form-control-sm" placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
+    </div>
+    <div class="text-center my-1">
+        <div id="totalPriceBox" class="fw-bold fs-5 bg-success text-white py-1">
+            Обща сума: 0.00 лв.
+        </div>
+    </div>
 <div class="list-group list-group-flush" id="itemsList">
 
 <?php
@@ -165,15 +162,16 @@ while($stmt->fetch()):
 
     <div class="d-flex align-items-center gap-2">
 
-    <button class="btn btn-sm btn-outline-secondary qty-minus">
-    <i class="fa-solid fa-minus"></i>
-    </button>
+        <button class="btn btn-sm btn-outline-secondary qty-minus">
+            <i class="fa-solid fa-minus"></i>
+        </button>
 
-    <input type="number"
-    class="form-control form-control-sm qty-input"
-    value="<?= $oQuantity ?>"
-    min="0"
-    max="<?= $maxQty ?>">
+        <input type="number"
+               class="form-control form-control-sm qty-input"
+               value="<?= $oQuantity ?>"
+               min="0"
+               max="<?= $maxQty ?>"
+               data-price="<?= $nPriceRaw ?>">
 
     <button class="btn btn-sm btn-outline-secondary qty-plus">
     <i class="fa-solid fa-plus"></i>
@@ -229,46 +227,47 @@ $(document)
 .off('input','#deliverySearch')
 .on('input','#deliverySearch',function(){
 
-clearTimeout(searchTimer);
-
-const value = $(this).val();
-
-searchTimer = setTimeout(function(){
-    applyFilters();
-},120);
-
+    clearTimeout(searchTimer);
+    const value = $(this).val();
+    searchTimer = setTimeout(function(){
+        applyFilters();
+    },120);
 });
 
-$(document)
-.off('input','#deliverySearch')
-.on('input','#deliverySearch',applyFilters);
+// $(document)
+//     .off('input','#deliverySearch')
+//     .on('input','#deliverySearch',function(){
+//
+//         clearTimeout(searchTimer);
+//
+//         searchTimer = setTimeout(function(){
+//             applyFilters();
+//         },120);
+//
+//     });
+
+// $(document)
+// .off('input','#deliverySearch')
+// .on('input','#deliverySearch',applyFilters);
 
 
+$(document).on('input','.qty-input',function(){
+    calculateTotal();
+});
 /* ================= QTY + ================= */
-
 $(document).on('click','.qty-plus',function(){
-
-const input=$(this).siblings('.qty-input');
-
-let val=parseInt(input.val())||0;
-
-const max=parseInt(input.attr('max'));
-
-if(val<max) input.val(val+1);
-
+    const input=$(this).siblings('.qty-input');
+    let val=parseInt(input.val())||0;
+    const max=parseInt(input.attr('max'));
+    if(val<max) input.val(val+1).trigger('input');
 });
 
 
 /* ================= QTY - ================= */
-
 $(document).on('click','.qty-minus',function(){
-
-const input=$(this).siblings('.qty-input');
-
-let val=parseInt(input.val())||0;
-
-if(val>0) input.val(val-1);
-
+    const input=$(this).siblings('.qty-input');
+    let val=parseInt(input.val())||0;
+    if(val>0) input.val(val-1).trigger('input');
 });
 
 
@@ -297,19 +296,42 @@ single_price:price
 
 },function(resp){
 
-if(resp.success){
+    if(resp.success){
+        btn.removeClass('btn-secondary')
+        .addClass('btn-success');
 
-btn.removeClass('btn-secondary')
-.addClass('btn-success');
+        btn.find('i')
+        .removeClass('fa-circle-check')
+        .addClass('fa-check');
 
-btn.find('i')
-.removeClass('fa-circle-check')
-.addClass('fa-check');
-
-}
+        calculateTotal();
+    }
 
 },'json');
 
 });
 
+function calculateTotal(){
+
+    let total = 0;
+
+    $('.qty-input').each(function(){
+
+        const qty = parseInt($(this).val()) || 0;
+        const price = parseFloat($(this).data('price')) || 0;
+
+        if(qty > 0){
+            total += qty * price;
+        }
+
+    });
+
+    $('#totalPriceBox').text(
+        'Обща сума: ' + total.toFixed(2) + ' лв.'
+    );
+}
+
+$(document).ready(function(){
+    calculateTotal();
+});
 </script>

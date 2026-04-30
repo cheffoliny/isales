@@ -104,9 +104,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
     <div class="card-body">
 
         <!-- SEARCH + PROMO -->
-
         <div class="d-flex gap-2 mb-1">
-
             <input type="text"
                    id="deliverySearch"
                    class="form-control form-control-sm py-2"

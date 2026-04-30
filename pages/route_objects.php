@@ -34,7 +34,8 @@ $stmt = $db->prepare("
         o.geo_lat AS oLat,
         o.geo_lan AS oLan,
         p.id AS pppID,
-        p.`status` AS order_status
+        p.`status` AS order_status,
+        p.id_buy_doc AS buy_doc
     FROM objects o
     LEFT JOIN ". DB_NAMES['storage'] .".ppp p
         ON o.id = p.id_dest
@@ -59,6 +60,7 @@ while ($row = $result->fetch_assoc()):
     $oID      = (int) $row['oID'];
     $pppID    = (int) $row['pppID'];
     $oStatus  = $row['order_status'] ?? 'open';
+    $buyDoc = (int) ($row['buy_doc'] ?? 0);
 
     $oNum     = htmlspecialchars($row['oNum']);
     $oName    = htmlspecialchars($row['oName']);
@@ -115,6 +117,14 @@ while ($row = $result->fetch_assoc()):
         <!-- ACTION BUTTONS -->
         <div class="d-flex gap-2">
             <?php if ($pppID > 0 && $oStatus !== 'cancel'): ?>
+
+                <!-- INVOICE BUTTON -->
+                <button class="btn rounded-circle d-flex align-items-center justify-content-center invoice-btn <?= $buyDoc ? 'btn-success' : 'btn-primary' ?>"
+                        style="width:42px;height:42px;"
+                        data-ppp="<?= $pppID ?>"
+                        data-buydoc="<?= $buyDoc ?>">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </button>
 
                 <!-- CANCEL BUTTON -->
                 <button class="btn btn-danger rounded-circle d-flex align-items-center justify-content-center cancel-btn"
@@ -269,6 +279,43 @@ $(document).on('click', '.cancel-btn', function(){
             alert('Грешка при анулиране!');
             btn.prop('disabled', false);
         }
+
+    }, 'json');
+
+});
+
+$(document).on('click', '.invoice-btn', function(){
+
+    const btn = $(this);
+    const pppID = btn.data('ppp');
+    let current = parseInt(btn.data('buydoc')) || 0;
+
+    let newValue = current === 1 ? 0 : 1;
+
+    btn.prop('disabled', true);
+
+    $.post('includes/update_ppp_buydoc.php', {
+        pppID: pppID,
+        value: newValue
+    }, function(resp){
+
+        if(resp.success){
+
+            btn.data('buydoc', newValue);
+
+            btn.removeClass('btn-primary btn-success');
+
+            if(newValue === 1){
+                btn.addClass('btn-success');
+            } else {
+                btn.addClass('btn-primary');
+            }
+
+        } else {
+            alert('Грешка при обновяване!');
+        }
+
+        btn.prop('disabled', false);
 
     }, 'json');
 

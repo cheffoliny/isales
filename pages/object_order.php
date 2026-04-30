@@ -327,7 +327,7 @@ function calculateTotal(){
     });
 
     $('#totalPriceBox').text(
-        'Обща сума: ' + total.toFixed(2) + ' лв.'
+        'Обща сума: ' + total.toFixed(2) + ' €'
     );
 }
 

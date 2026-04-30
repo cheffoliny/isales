@@ -103,11 +103,11 @@ while ($r = $res->fetch_assoc()) {
     $clientPrice = number_format((float)$r['client_price'], 2, '.', '');
     $salesPrice = (float)$r['sales_price'];
     $promoBadge = '';
-    $priceDisplay = '<div class="fw-bold">'.$clientPrice.' лв</div>';
+    $priceDisplay = '<div class="fw-bold">'.$clientPrice.' €</div>';
     if ($salesPrice > 0) {
         $salesFormatted = number_format($salesPrice, 2, '.', '');
         $promoBadge = '<span class="badge bg-danger position-absolute top-0 start-0 m-2">ПРОМО</span>';
-        $priceDisplay = '<div class="fw-bold text-danger"><del class="text-muted me-2">'.$clientPrice.' лв</del>'.$salesFormatted.' лв</div>';
+        $priceDisplay = '<div class="fw-bold text-danger"><del class="text-muted me-2">'.$clientPrice.' €</del>'.$salesFormatted.' €</div>';
     }
 
     // Image HTML for grid

@@ -609,7 +609,7 @@ $('#imageModal').on('hidden.bs.modal', function () {
         });
 
         $('#totalPriceBox').text(
-            'Обща сума: ' + total.toFixed(2) + ' лв.'
+            'Обща сума: ' + total.toFixed(2) + ' €'
         );
     }
 

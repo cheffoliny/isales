@@ -33,7 +33,7 @@ $stmt = $db->prepare("
         COALESCE(REPLACE(o.operativ_info , '\"', ' '), '...') AS oInfo,
         o.geo_lat AS oLat,
         o.geo_lan AS oLan,
-        p.id AS pppID,
+        COALESCE(p.id, 0) AS pppID,
         p.`status` AS order_status,
         p.id_buy_doc AS buy_doc,
         SUM(COALESCE(pe.`count`, 0)) AS ordered_quantity
@@ -43,8 +43,11 @@ $stmt = $db->prepare("
     WHERE JSON_CONTAINS(o.offices_ids, JSON_ARRAY(?))
       AND o.id_status <> 4
     GROUP BY o.id, p.id
-    ORDER BY ordered_quantity DESC, o.name ASC
-    LIMIT 50
+    ORDER BY
+        (p.id IS NULL),
+        ordered_quantity DESC,
+        p.id DESC
+    LIMIT 100
 ");
 
 $stmt->bind_param("i", $officeId);

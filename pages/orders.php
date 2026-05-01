@@ -22,7 +22,8 @@ $sql = "
             p.id AS pID,
             p.status,
             COALESCE(CONCAT(u.fname, ' ', u.lname), p.source_user) AS source_user,
-            DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate
+            DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate,
+            p.id_buy_doc AS buy_doc
         FROM ppp p
         JOIN ". DB_NAMES['sod'] .".objects o
             ON o.id = p.id_dest AND p.dest_type = 'object'
@@ -71,7 +72,8 @@ if ($stmt->num_rows === 0) {
         $pID,
         $status,
         $sourceUser,
-        $sourceDate
+        $sourceDate,
+        $buyDoc
     );
 
     $currentDateHeader = '';
@@ -81,6 +83,7 @@ if ($stmt->num_rows === 0) {
         $oID   = (int)$oID;
         $pID   = (int)$pID;
         $status = $status ?? 'wait';
+        $buyDoc = (int)$buyDoc ?? 0;
 
         $oNum  = htmlspecialchars($oNum ?? '');
         $oName = htmlspecialchars($oName ?? '');
@@ -129,6 +132,14 @@ if ($stmt->num_rows === 0) {
         </div>
 
     </a>
+
+    <?php if ($buyDoc > 0): ?>
+        <!-- INVOICE BUTTON -->
+        <button class="btn rounded-circle d-flex align-items-center justify-content-center invoice-btn btn-success"
+                style="width:42px;height:42px;">
+            <i class="fa-solid fa-file-invoice"></i>
+        </button>
+    <?php endif; ?>
 
     <!-- STATUS BUTTON -->
     <button class="btn text-white rounded-circle d-flex align-items-center justify-content-center ms-3 order-status-btn <?= $statusClass ?>"

@@ -144,7 +144,7 @@ if (!$result || $result->num_rows === 0) {
     </div>
     <?php if($_SESSION['is_admin'] == 1) { ?>
         <span class="badge rounded-pill <?= $badgeClass ?> fs-6">
-            <?= $oTotalSum ?>
+            Обща сума: <?= $oTotalSum ?>
         </span>
     <?php } ?>
 

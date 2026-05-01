@@ -35,14 +35,15 @@ $stmt = $db->prepare("
         o.geo_lan AS oLan,
         p.id AS pppID,
         p.`status` AS order_status,
-        p.id_buy_doc AS buy_doc
+        p.id_buy_doc AS buy_doc,
+        SUM(COALESCE(pe.`count`, 0)) AS ordered_quantity
     FROM objects o
-    LEFT JOIN ". DB_NAMES['storage'] .".ppp p
-        ON o.id = p.id_dest
-        AND DATE(p.source_date) = CURDATE()
+    LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON o.id = p.id_dest AND DATE(p.source_date) = CURDATE()
+    LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON p.id = pe.id_ppp
     WHERE JSON_CONTAINS(o.offices_ids, JSON_ARRAY(?))
       AND o.id_status <> 4
-    ORDER BY o.name ASC
+    GROUP BY o.id, p.id
+    ORDER BY ordered_quantity DESC, o.name ASC
     LIMIT 50
 ");
 
@@ -61,6 +62,8 @@ while ($row = $result->fetch_assoc()):
     $pppID    = (int) $row['pppID'];
     $oStatus  = $row['order_status'] ?? 'open';
     $buyDoc = (int) ($row['buy_doc'] ?? 0);
+    $oQty = (int)($row['ordered_quantity'] ?? 0);
+
 
     $oNum     = htmlspecialchars($row['oNum']);
     $oName    = htmlspecialchars($row['oName']);
@@ -137,14 +140,20 @@ while ($row = $result->fetch_assoc()):
 
             <?php if ($pppID > 0): ?>
 
-                <!-- STATUS BUTTON -->
-                <button class="btn text-white rounded-circle d-flex align-items-center justify-content-center status-btn <?= $statusClass ?>"
-                        style="width:42px;height:42px;"
-                        data-ppp="<?= $pppID ?>"
-                        data-status="<?= $oStatus ?>"
-                        <?= $disabled ?>>
-                    <i class="fa-solid fa-clock"></i>
-                </button>
+            <button class="btn text-white rounded-circle d-flex align-items-center justify-content-center status-btn <?= $statusClass ?>"
+                    style="width:42px;height:42px; position:relative;"
+                    data-ppp="<?= $pppID ?>"
+                    data-status="<?= $oStatus ?>"
+                    <?= $disabled ?>>
+
+                <i class="fa-solid fa-clock"></i>
+
+                <span class="badge rounded-pill position-absolute top-0 start-100 translate-middle
+                    <?= $oQty > 0 ? 'bg-success' : 'bg-danger' ?>">
+                    <?= $oQty ?>
+                </span>
+
+            </button>
 
             <?php endif; ?>
 

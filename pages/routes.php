@@ -7,21 +7,70 @@ if (empty($_SESSION['user_id'])) {
 $db = db_connect('sod');
 
 $stmt = $db->prepare("
-            SELECT
-                offs.id AS offs_id,
-                offs.name AS offs_name,
-                COUNT(DISTINCT o.id) AS obj_count,
-                COUNT(DISTINCT CASE
-                    WHEN pe.id > 0
-                         AND ((CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1) OR offs.code = 99)
-                    THEN o.id
-                END) AS obj_visited
-            FROM offices offs
-            LEFT JOIN objects o ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$') AND o.id_status = 1
-            LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON p.id_dest = o.id AND DATE(p.source_date) = CURDATE()
-            LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON pe.id_ppp = p.id AND pe.count > 1
-            GROUP BY offs.id, offs.name
-            ORDER BY offs.name ASC
+                SELECT
+                    offs.id AS offs_id,
+                    offs.name AS offs_name,
+
+                    COUNT(DISTINCT o.id) AS obj_count,
+
+                    COUNT(DISTINCT CASE
+                        WHEN obj_sum.id_dest IS NOT NULL
+                             AND (
+                                 CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
+                                 OR offs.code = 99
+                             )
+                        THEN o.id
+                    END) AS obj_visited,
+
+                    SUM(CASE
+                        WHEN obj_sum.id_dest IS NOT NULL
+                             AND (
+                                 CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
+                                 OR offs.code = 99
+                             )
+                        THEN obj_sum.total_sum
+                        ELSE 0
+                    END) AS total_sum,
+
+                    SUM(CASE
+                        WHEN obj_sum.id_dest IS NOT NULL
+                             AND (
+                                 CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
+                             OR offs.code = 99
+                         )
+                    THEN obj_sum.total_qty
+                    ELSE 0
+                END) AS total_qty
+
+                FROM offices offs
+
+                LEFT JOIN objects o
+                    ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
+                    AND o.id_status = 1
+
+                LEFT JOIN (
+                    SELECT
+                        p.id_dest,
+                        SUM(pe_sum.total_qty) AS total_qty,
+                        SUM(pe_sum.total_sum) AS total_sum
+                    FROM ". DB_NAMES['storage'] .".ppp p
+                    LEFT JOIN (
+                        SELECT
+                            pe.id_ppp,
+                            SUM(pe.`count`) AS total_qty,
+                            SUM(pe.`count` * pe.single_price) AS total_sum
+                        FROM ". DB_NAMES['storage'] .".ppp_elements pe
+                        WHERE pe.count > 0
+                        GROUP BY pe.id_ppp
+                    ) pe_sum ON pe_sum.id_ppp = p.id
+                    WHERE p.source_date >= CURDATE()
+                      AND p.source_date < CURDATE() + INTERVAL 1 DAY
+                    GROUP BY p.id_dest
+                ) obj_sum
+                    ON obj_sum.id_dest = o.id
+
+                GROUP BY offs.id, offs.name
+                ORDER BY offs.name ASC
             ");
 
 $stmt->execute();
@@ -34,91 +83,81 @@ if (!$result || $result->num_rows === 0) {
 ?>
 
 <div class="container-fluid px-2">
+    <div id="officeMsg"></div>
 
-<div id="officeMsg"></div>
+        <div class="list-group list-group-flush route-list">
 
-<div class="list-group list-group-flush route-list">
+        <?php while ($row = $result->fetch_assoc()):
 
-<?php while ($row = $result->fetch_assoc()):
+                $officeId = (int)$row['offs_id'];
+                $officeName = htmlspecialchars($row['offs_name']);
+                $objectCount = (int)$row['obj_count'];
+                $objectVisited = (int)$row['obj_visited'];
+                $oTotalSum = (float)$row['total_sum'];
 
-$officeId = (int)$row['offs_id'];
-$officeName = htmlspecialchars($row['offs_name']);
-$objectCount = (int)$row['obj_count'];
-$objectVisited = (int)$row['obj_visited'];
+                $percentage = $objectCount > 0 ? round(($objectVisited / $objectCount) * 100) : 0;
 
-$percentage = $objectCount > 0 ? round(($objectVisited / $objectCount) * 100) : 0;
-
-if ($objectVisited === 0) {
-$statusClass='route-danger';
-$badgeClass='bg-danger';
-$iconClass='text-danger';
-$progressClass='bg-danger';
-}
-elseif ($percentage < 50) {
-$statusClass='route-warning';
-$badgeClass='bg-warning text-dark';
-$iconClass='text-warning';
-$progressClass='bg-warning';
-}
-else {
-$statusClass='route-success';
-$badgeClass='bg-success';
-$iconClass='text-success';
-$progressClass='bg-success';
-}
-?>
+                if ($objectVisited === 0) {
+                    $statusClass='route-danger';
+                    $badgeClass='bg-danger';
+                    $iconClass='text-danger';
+                    $progressClass='bg-danger';
+                } elseif ($percentage < 50) {
+                    $statusClass='route-warning';
+                    $badgeClass='bg-warning text-dark';
+                    $iconClass='text-warning';
+                    $progressClass='bg-warning';
+                } else {
+                    $statusClass='route-success';
+                    $badgeClass='bg-success';
+                    $iconClass='text-success';
+                    $progressClass='bg-success';
+                }
+        ?>
 
 <div class="list-group-item d-flex flex-column route-card <?= $statusClass ?>">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <div class="d-flex align-items-center gap-3">
 
-<div class="d-flex align-items-center justify-content-between mb-2">
+        <?php if (!empty($_SESSION['is_admin']) && $_SESSION['is_admin']==1): ?>
 
-<div class="d-flex align-items-center gap-3">
+            <button type="button"
+                    class="route-icon <?= $iconClass ?> openEditOffice"
+                    data-id="<?= $officeId ?>"
+                    data-name="<?= $officeName ?>"
+                    style="border:none;background:none;padding:0">
+                    <i class="fa-solid fa-route"></i>
+            </button>
 
-<?php if (!empty($_SESSION['is_admin']) && $_SESSION['is_admin']==1): ?>
+        <?php else: ?>
 
-<button type="button"
-class="route-icon <?= $iconClass ?> openEditOffice"
-data-id="<?= $officeId ?>"
-data-name="<?= $officeName ?>"
-style="border:none;background:none;padding:0">
+            <div class="route-icon <?= $iconClass ?>">
+                <i class="fa-solid fa-route"></i>
+            </div>
 
-<i class="fa-solid fa-route"></i>
+        <?php endif; ?>
 
-</button>
+        <a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
+            class="fw-semibold fs-5 text-decoration-none">
+            <?= $officeName ?>
+        </a>
+    </div>
+    <?php if($_SESSION['is_admin'] == 1) { ?>
+        <span class="badge rounded-pill <?= $badgeClass ?> fs-6">
+            <?= $oTotalSum ?>
+        </span>
+    <?php } ?>
 
-<?php else: ?>
-
-<div class="route-icon <?= $iconClass ?>">
-<i class="fa-solid fa-route"></i>
-</div>
-
-<?php endif; ?>
-
-<a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
-class="fw-semibold fs-5 text-decoration-none">
-
-<?= $officeName ?>
-
-</a>
-
-</div>
-
-<span class="badge rounded-pill <?= $badgeClass ?> fs-6">
-<?= $objectVisited ?> / <?= $objectCount ?>
-</span>
+    <span class="badge rounded-pill <?= $badgeClass ?> fs-6">
+        <?= $objectVisited ?> / <?= $objectCount ?>
+    </span>
 
 </div>
 
 <div class="d-flex align-items-center gap-2">
-
-<div class="progress flex-grow-1" style="height:8px">
-
-<div class="progress-bar <?= $progressClass ?>"
-style="width:<?= $percentage ?>%">
-
-</div>
-
-</div>
+    <div class="progress flex-grow-1" style="height:8px">
+        <div class="progress-bar <?= $progressClass ?>" style="width:<?= $percentage ?>%"></div>
+    </div>
 
 <span class="fw-semibold fs-6 text-nowrap">
 <?= $percentage ?>%

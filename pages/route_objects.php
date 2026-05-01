@@ -160,14 +160,14 @@ while ($row = $result->fetch_assoc()):
 
             <?php endif; ?>
 
-            <!-- INFO BUTTON -->
+            <!-- INFO BUTTON
             <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center"
                     style="width:42px;height:42px;"
                     data-bs-toggle="modal"
                     data-bs-target="#<?= $infoModalId ?>">
                 <i class="fa-solid fa-circle-user"></i>
             </button>
-
+ -->
         </div>
 
     </div>

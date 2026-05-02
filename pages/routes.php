@@ -68,9 +68,9 @@ $stmt = $db->prepare("
                         FROM ". DB_NAMES['storage'] .".ppp_elements pe
                         WHERE pe.count > 0
                         GROUP BY pe.id_ppp
-                    ) pe_sum ON pe_sum.id_ppp = p.id
+                    ) pe_sum ON pe_sum.id_ppp = p.id AND p.`status` != 'cancel'
                     WHERE p.source_date >= CURDATE()
-                      AND p.`status` != 'cancel'
+
                       AND p.source_date < CURDATE() + INTERVAL 1 DAY
                     GROUP BY p.id_dest
                 ) obj_sum

@@ -14,12 +14,21 @@ if ($officeId <= 0) {
     return;
 }
 ?>
+<div class="card shadow mb-3 border-0">
 
-<div class="card-header d-flex justify-content-between align-items-center">
-    <a href="dashboard.php?page=routes" class="btn btn-outline-secondary mb-3">
-        <i class="fa-solid fa-angles-left"></i>
-    </a>
-</div>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <a href="dashboard.php?page=routes" class="btn btn-outline-secondary mb-1">
+            <i class="fa-solid fa-angles-left"></i>
+        </a>
+        <?php if($_SESSION['is_admin'] == 1) { ?>
+        <div class="btn-group">
+            <button id="showRoute" class="btn btn-sm btn-success">
+                МАРШРУТ
+            </button>
+        </div>
+        <?php } ?>
+    </div>
+
 
 <?php
 $db = db_connect('sod');
@@ -59,6 +68,8 @@ if (!$result || $result->num_rows === 0) {
     return;
 }
 
+$routePoints = [];
+
 while ($row = $result->fetch_assoc()):
 
     $oID      = (int) $row['oID'];
@@ -95,6 +106,14 @@ while ($row = $result->fetch_assoc()):
     if ($oStatus === 'cancel') {
         $statusClass = 'bg-danger';
         $disabled = 'disabled';
+    }
+
+    if (!empty($oLat) && !empty($oLan)) {
+        $routePoints[] = [
+            'name' => $oName,
+            'lat'  => (float)$oLat,
+            'lng'  => (float)$oLan
+        ];
     }
 ?>
 
@@ -217,6 +236,21 @@ $stmt->close();
 $db->close();
 ?>
 
+<?php $routeJson = json_encode($routePoints); ?>
+
+<div class="modal fade" id="routeMapModal" tabindex="-1">
+    <div class="p-2 text-center fw-bold" id="routeInfo"></div>
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-body p-0">
+                <div id="routeMap" style="height:600px;"></div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
 <!-- ================= STATUS TOGGLE SCRIPT ================= -->
 <script>
 $(document).on('click', '.status-btn', function(){
@@ -332,4 +366,230 @@ $(document).on('click', '.invoice-btn', function(){
     }, 'json');
 
 });
+
+
+const routePoints = <?= $routeJson ?>;
+
+let routeMap = null;
+let routeLine = null;
+const depot = {
+    name: 'Склад',
+    lat: 43.2682128,
+    lng: 26.9475601
+};
+
+$('#showRoute').on('click', function(){
+
+    $('#routeMapModal').modal('show');
+
+    setTimeout(() => {
+
+        if(routeMap){
+            routeMap.remove();
+        }
+
+        routeMap = L.map('routeMap').setView([43.2682128,26.9475601], 12);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(routeMap);
+
+        let latlngs = [];
+
+        routePoints.forEach(p => {
+
+            const marker = L.marker([p.lat, p.lng])
+                .addTo(routeMap)
+                .bindPopup(p.name);
+
+            latlngs.push([p.lat, p.lng]);
+
+        });
+
+
+        const maxPoints = 50;
+        const limitedPoints = routePoints.slice(0, maxPoints);
+
+        // 👉 групиране по координати
+        const grouped = groupByCoordinates(limitedPoints);
+
+        // 👉 разместване при дубликати
+        const normalizedPoints = grouped.flatMap(applyOffset);
+
+        let optimizedStops = optimizeRoute(normalizedPoints, depot);
+        optimizedStops = twoOpt(optimizedStops);
+
+        const fullRoute = [depot, ...optimizedStops, depot];
+
+        const totalKm = calculateTotalDistance(fullRoute).toFixed(2);
+        document.getElementById('routeInfo').innerHTML =
+            'Маршрут (затворен): ' + totalKm + ' км | Спирки: ' + optimizedStops.length;
+
+        const waypoints = fullRoute.map(p => L.latLng(p.lat, p.lng));
+
+        L.Routing.control({
+            waypoints: waypoints,
+            routeWhileDragging: false,
+            draggableWaypoints: false,
+            addWaypoints: false,
+            show: false,
+            createMarker: function(i, wp) {
+
+                let label;
+
+                if(i === 0){
+                    label = 'S'; // старт (склад)
+                } else if(i === fullRoute.length - 1){
+                    label = 'S'; // край (връщане)
+                } else {
+                    label = i; // обекти
+                }
+
+                return L.marker(wp.latLng, {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div style="
+                            background:${label === 'S' ? '#198754' : '#0d6efd'};
+                            color:#fff;
+                            border-radius:50%;
+                            width:30px;
+                            height:30px;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-weight:bold;
+                        ">${label}</div>`
+                    })
+                }).bindPopup(fullRoute[i].name);
+            }
+        }).addTo(routeMap);
+
+    }, 300);
+
+});
+
+function distance(a, b) {
+    const R = 6371; // km
+    const dLat = (b.lat - a.lat) * Math.PI / 180;
+    const dLng = (b.lng - a.lng) * Math.PI / 180;
+
+    const lat1 = a.lat * Math.PI / 180;
+    const lat2 = b.lat * Math.PI / 180;
+
+    const x = Math.sin(dLat/2)**2 +
+              Math.sin(dLng/2)**2 * Math.cos(lat1) * Math.cos(lat2);
+
+    return 2 * R * Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
+}
+
+function optimizeRoute(points, startPoint) {
+
+    let remaining = [...points];
+    let route = [];
+
+    let current = startPoint;
+
+    while(remaining.length > 0){
+
+        let nearestIndex = 0;
+        let minDist = Infinity;
+
+        remaining.forEach((p, i) => {
+            const d = distance(current, p);
+            if(d < minDist){
+                minDist = d;
+                nearestIndex = i;
+            }
+        });
+
+        current = remaining.splice(nearestIndex, 1)[0];
+        route.push(current);
+    }
+
+    return route;
+}
+
+
+function calculateTotalDistance(route){
+
+    let total = 0;
+
+    for(let i = 0; i < route.length - 1; i++){
+        total += distance(route[i], route[i+1]);
+    }
+
+    return total;
+}
+
+function twoOpt(route) {
+
+    let improved = true;
+
+    while(improved){
+        improved = false;
+
+        for(let i = 1; i < route.length - 2; i++){
+            for(let j = i + 1; j < route.length - 1; j++){
+
+                const A = route[i - 1];
+                const B = route[i];
+                const C = route[j];
+                const D = route[j + 1];
+
+                const currentDist =
+                    distance(A, B) + distance(C, D);
+
+                const newDist =
+                    distance(A, C) + distance(B, D);
+
+                if(newDist < currentDist){
+
+                    // обръщаме сегмента
+                    const reversed = route.slice(i, j + 1).reverse();
+
+                    route.splice(i, j - i + 1, ...reversed);
+
+                    improved = true;
+                }
+            }
+        }
+    }
+
+    return route;
+}
+
+function groupByCoordinates(points) {
+
+    const map = {};
+
+    points.forEach(p => {
+        const key = `${p.lat.toFixed(6)}_${p.lng.toFixed(6)}`;
+
+        if(!map[key]) {
+            map[key] = [];
+        }
+
+        map[key].push(p);
+    });
+
+    return Object.values(map);
+}
+
+function applyOffset(group) {
+
+    if(group.length === 1) return group;
+
+    const radius = 0.00015; // ~15m (можеш да го пипаш)
+
+    return group.map((p, i) => {
+
+        const angle = (2 * Math.PI / group.length) * i;
+
+        return {
+            ...p,
+            lat: p.lat + radius * Math.cos(angle),
+            lng: p.lng + radius * Math.sin(angle)
+        };
+    });
+}
 </script>

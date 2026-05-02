@@ -37,6 +37,22 @@ LIMIT 1000
 $result = $db->query($sql);
 ?>
 
+<div class="card shadow mb-3 border-0">
+
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"> Обекти </h5>
+
+        <div class="btn-group">
+            <button id="filterNoGeo" class="btn btn-sm btn-outline-primary">
+                БЕЗ КООРДИНАТИ
+            </button>
+            <button id="filterAll" class="btn btn-sm btn-primary">
+                ВСИЧКИ
+            </button>
+        </div>
+
+    </div>
+
 <div id="objectsContainer">
 
 <?php if (!$result || $result->num_rows === 0): ?>
@@ -54,42 +70,45 @@ $result = $db->query($sql);
     $lng = $row['geo_lan'] ?: 26.9266601;
 ?>
 
-<div class="card mb-2 shadow-sm border-0">
-    <div class="card-body d-flex align-items-center justify-content-between p-2">
+    <div class="card mb-2 shadow-sm border-0 object-item"
+         data-lat="<?= (float)$row['geo_lat'] ?>"
+         data-lng="<?= (float)$row['geo_lan'] ?>">
 
-        <button class="btn btn-primary openObjectModal"
-                data-id="<?= $id ?>"
-                data-name="<?= $name ?>"
-                data-info="<?= $info ?>"
-                data-offices='<?= $officesJson ?>'
-                data-lat="<?= $lat ?>"
-                data-lng="<?= $lng ?>">
-            <i class="fa fa-home"></i>
-        </button>
+        <div class="card-body d-flex align-items-center justify-content-between p-2">
 
-        <div class="flex-grow-1 px-2">
-            <button class="btn p-0 text-start w-100 openObjectModal"
+            <button class="btn btn-primary openObjectModal"
                     data-id="<?= $id ?>"
                     data-name="<?= $name ?>"
                     data-info="<?= $info ?>"
                     data-offices='<?= $officesJson ?>'
                     data-lat="<?= $lat ?>"
                     data-lng="<?= $lng ?>">
-
-                <div class="fw-bold"><?= $name ?></div>
-                <div class="small text-muted"><?= htmlspecialchars($row['office_name']) ?></div>
-
+                <i class="fa fa-home"></i>
             </button>
+
+            <div class="flex-grow-1 px-2">
+                <button class="btn p-0 text-start w-100 openObjectModal"
+                        data-id="<?= $id ?>"
+                        data-name="<?= $name ?>"
+                        data-info="<?= $info ?>"
+                        data-offices='<?= $officesJson ?>'
+                        data-lat="<?= $lat ?>"
+                        data-lng="<?= $lng ?>">
+
+                    <div class="fw-bold"><?= $name ?></div>
+                    <div class="small text-muted"><?= htmlspecialchars($row['office_name']) ?></div>
+
+                </button>
+            </div>
+
         </div>
+    </div>
+
+    <?php endwhile; ?>
+    <?php endif; ?>
 
     </div>
 </div>
-
-<?php endwhile; ?>
-<?php endif; ?>
-
-</div>
-
 <!-- MODAL -->
 <div class="modal fade" id="objectModal" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -150,3 +169,44 @@ $result = $db->query($sql);
 </div>
 
 <?php $db->close(); ?>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const btnNoGeo = document.getElementById("filterNoGeo");
+    const btnAll   = document.getElementById("filterAll");
+    const items    = document.querySelectorAll(".object-item");
+
+    function showAll() {
+        items.forEach(el => el.style.display = "");
+        btnAll.classList.add("btn-primary");
+        btnAll.classList.remove("btn-outline-primary");
+
+        btnNoGeo.classList.remove("btn-primary");
+        btnNoGeo.classList.add("btn-outline-primary");
+    }
+
+    function showNoGeo() {
+        items.forEach(el => {
+            let lat = parseFloat(el.dataset.lat) || 0;
+            let lng = parseFloat(el.dataset.lng) || 0;
+
+            if (lat === 0 || lng === 0) {
+                el.style.display = "";
+            } else {
+                el.style.display = "none";
+            }
+        });
+
+        btnNoGeo.classList.add("btn-primary");
+        btnNoGeo.classList.remove("btn-outline-primary");
+
+        btnAll.classList.remove("btn-primary");
+        btnAll.classList.add("btn-outline-primary");
+    }
+
+    btnNoGeo.addEventListener("click", showNoGeo);
+    btnAll.addEventListener("click", showAll);
+
+});
+</script>

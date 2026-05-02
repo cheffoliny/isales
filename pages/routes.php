@@ -10,6 +10,10 @@ $stmt = $db->prepare("
                 SELECT
                     offs.id AS offs_id,
                     offs.name AS offs_name,
+                    offs.km_per_roadlist AS km_per_route,
+
+                    sys.fuel_price,
+                    sys.salary_per_day,
 
                     COUNT(DISTINCT o.id) AS obj_count,
 
@@ -36,17 +40,19 @@ $stmt = $db->prepare("
                         WHEN obj_sum.id_dest IS NOT NULL
                              AND (
                                  CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
-                             OR offs.code = 99
-                         )
-                    THEN obj_sum.total_qty
-                    ELSE 0
-                END) AS total_qty
+                                 OR offs.code = 99
+                             )
+                        THEN obj_sum.total_qty
+                        ELSE 0
+                    END) AS total_qty
 
                 FROM offices offs
 
+                LEFT JOIN ". DB_NAMES['system'] .".`system` sys ON 1 = 1
+
                 LEFT JOIN objects o
                     ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
-                    AND o.id_status = 1
+                   AND o.id_status = 1
 
                 LEFT JOIN (
                     SELECT
@@ -91,6 +97,12 @@ if (!$result || $result->num_rows === 0) {
 
                 $officeId = (int)$row['offs_id'];
                 $officeName = htmlspecialchars($row['offs_name']);
+
+                $kmRerRoute = (int)($row['km_per_route']);
+
+                $fuelPrice = (float)$row['fuel_price'];
+                $salaryPerDay = (float)$row['salary_per_day'];
+
                 $objectCount = (int)$row['obj_count'];
                 $objectVisited = (int)$row['obj_visited'];
                 $oTotalSum = (float)$row['total_sum'];
@@ -113,6 +125,10 @@ if (!$result || $result->num_rows === 0) {
                     $iconClass='text-success';
                     $progressClass='bg-success';
                 }
+
+                $sumEarning = ROUND($oTotalSum - ($oTotalSum / 1.3), 2);
+                $sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * $fuelPrice ) + (2 * $salaryPerDay), 2);
+                $sumBalance = ROUND($sumEarning - $sumExpense, 2);
         ?>
 
 <div class="list-group-item d-flex flex-column route-card <?= $statusClass ?>">
@@ -142,10 +158,21 @@ if (!$result || $result->num_rows === 0) {
             <?= $officeName ?>
         </a>
     </div>
-    <?php if($_SESSION['is_admin'] == 1) { ?>
+    <?php if($_SESSION['is_admin'] == 1 && $objectVisited > 0   ) { ?>
+    <span >
         <span class="badge rounded-pill <?= $badgeClass ?> fs-6">
-            Обща сума: <?= $oTotalSum ?>
+            Оборот: <?= $oTotalSum ?>
         </span>
+        <span class="badge rounded-pill bg-success fs-6">
+            + <?= $sumEarning ?>
+         </span>
+        <span class="badge rounded-pill bg-danger fs-6">
+            -  <?= $sumExpense ?>
+        </span>
+        <span class="badge rounded-pill bg-info fs-6">
+            = <?= $sumBalance ?>
+        </span>
+    </span>
     <?php } ?>
 
     <span class="badge rounded-pill <?= $badgeClass ?> fs-6">

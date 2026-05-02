@@ -239,10 +239,10 @@ $db->close();
 <?php $routeJson = json_encode($routePoints); ?>
 
 <div class="modal fade" id="routeMapModal" tabindex="-1">
-    <div class="p-2 text-center fw-bold" id="routeInfo"></div>
     <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content">
 
+        <div class="modal-content">
+            <div class="p-2 text-center fw-bold" id="routeInfo"></div>
             <div class="modal-body p-0">
                 <div id="routeMap" style="height:600px;"></div>
             </div>
@@ -371,7 +371,8 @@ $(document).on('click', '.invoice-btn', function(){
 const routePoints = <?= $routeJson ?>;
 
 let routeMap = null;
-let routeLine = null;
+let routingControl = null;
+
 const depot = {
     name: 'Склад',
     lat: 43.2682128,
@@ -388,66 +389,58 @@ $('#showRoute').on('click', function(){
             routeMap.remove();
         }
 
-        routeMap = L.map('routeMap').setView([43.2682128,26.9475601], 12);
+        routeMap = L.map('routeMap').setView([depot.lat, depot.lng], 12);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(routeMap);
 
-        let latlngs = [];
-
-        routePoints.forEach(p => {
-
-            const marker = L.marker([p.lat, p.lng])
-                .addTo(routeMap)
-                .bindPopup(p.name);
-
-            latlngs.push([p.lat, p.lng]);
-
-        });
-
-
-        const maxPoints = 50;
+        const maxPoints = 40;
         const limitedPoints = routePoints.slice(0, maxPoints);
 
-        // 👉 групиране по координати
-        const grouped = groupByCoordinates(limitedPoints);
+        if (limitedPoints.length < 1) {
+            document.getElementById('routeInfo').innerHTML = 'Няма точки за маршрут';
+            return;
+        }
 
-        // 👉 разместване при дубликати
-        const normalizedPoints = grouped.flatMap(applyOffset);
-
-        let optimizedStops = optimizeRoute(normalizedPoints, depot);
+        // 👉 TSP + 2-opt (реални координати)
+        let optimizedStops = optimizeRoute(limitedPoints, depot);
         optimizedStops = twoOpt(optimizedStops);
 
-        const fullRoute = [depot, ...optimizedStops, depot];
+        // 👉 OFFSET (само визуален)
+        const grouped = groupByCoordinates(optimizedStops);
+        const visualStops = grouped.flatMap(applyOffset);
 
-        const totalKm = calculateTotalDistance(fullRoute).toFixed(2);
-        document.getElementById('routeInfo').innerHTML =
-            'Маршрут (затворен): ' + totalKm + ' км | Спирки: ' + optimizedStops.length;
+        // 👉 маршрути
+        const fullRoute = [depot, ...optimizedStops, depot];
+        const visualRoute = [depot, ...visualStops, depot];
 
         const waypoints = fullRoute.map(p => L.latLng(p.lat, p.lng));
 
-        L.Routing.control({
+        // 👉 fallback (веднага показва нещо)
+        document.getElementById('routeInfo').innerHTML =
+            'Изчисляване на маршрут... (' + optimizedStops.length + ' спирки)';
+
+        // 👉 cleanup
+        if (routingControl) {
+            routeMap.removeControl(routingControl);
+        }
+
+        routingControl = L.Routing.control({
             waypoints: waypoints,
             routeWhileDragging: false,
             draggableWaypoints: false,
             addWaypoints: false,
             show: false,
+
             createMarker: function(i, wp) {
 
-                let label;
+                let label = (i === 0 || i === visualRoute.length - 1) ? 'S' : i;
 
-                if(i === 0){
-                    label = 'S'; // старт (склад)
-                } else if(i === fullRoute.length - 1){
-                    label = 'S'; // край (връщане)
-                } else {
-                    label = i; // обекти
-                }
+                const point = visualRoute[i];
 
-                return L.marker(wp.latLng, {
+                return L.marker([point.lat, point.lng], {
                     icon: L.divIcon({
-                        className: '',
                         html: `<div style="
                             background:${label === 'S' ? '#198754' : '#0d6efd'};
                             color:#fff;
@@ -460,8 +453,23 @@ $('#showRoute').on('click', function(){
                             font-weight:bold;
                         ">${label}</div>`
                     })
-                }).bindPopup(fullRoute[i].name);
+                }).bindPopup(point.name);
             }
+
+        }).on('routesfound', function(e) {
+
+            const route = e.routes[0];
+            const km = (route.summary.totalDistance / 1000).toFixed(2);
+            const time = Math.round(route.summary.totalTime / 60);
+
+            document.getElementById('routeInfo').innerHTML =
+                `<b>${km} км</b> | ⏱ ${time} мин | 📍 ${optimizedStops.length} спирки`;
+
+        }).on('routingerror', function() {
+
+            document.getElementById('routeInfo').innerHTML =
+                'Грешка при изчисляване на маршрута';
+
         }).addTo(routeMap);
 
     }, 300);
@@ -579,7 +587,7 @@ function applyOffset(group) {
 
     if(group.length === 1) return group;
 
-    const radius = 0.00015; // ~15m (можеш да го пипаш)
+    const radius = 0.0001 + (group.length * 0.00002);
 
     return group.map((p, i) => {
 

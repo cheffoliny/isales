@@ -457,7 +457,6 @@ $('#showRoute').on('click', function(){
             }
 
         }).on('routesfound', function(e) {
-
             const route = e.routes[0];
             const km = (route.summary.totalDistance / 1000).toFixed(2);
             const time = Math.round(route.summary.totalTime / 60);

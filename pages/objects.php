@@ -191,7 +191,7 @@ document.addEventListener("DOMContentLoaded", function () {
             let lat = parseFloat(el.dataset.lat) || 0;
             let lng = parseFloat(el.dataset.lng) || 0;
 
-            if (lat === 0 || lng === 0) {
+            if (lat === 0 || lng === 0 || lng === 26.9266601) {
                 el.style.display = "";
             } else {
                 el.style.display = "none";

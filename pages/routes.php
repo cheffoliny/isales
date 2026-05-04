@@ -6,7 +6,7 @@ if (empty($_SESSION['user_id'])) {
 $no_dds = 1.2;
 $markup_percentage = 16;
 $markup_percentage_100 = 1.16;
-$salary_percentage = 1.5;
+$salary_percentage = 1.05;
 
 $db = db_connect('sod');
 

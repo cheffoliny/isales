@@ -3,6 +3,10 @@ if (empty($_SESSION['user_id'])) {
     echo '<div class="alert alert-danger m-3">Нямате достъп.</div>';
     exit;
 }
+$no_dds = 1.2;
+$markup_percentage = 16;
+$markup_percentage_100 = 1.16;
+$salary_percentage = 1.5;
 
 $db = db_connect('sod');
 
@@ -127,8 +131,9 @@ if (!$result || $result->num_rows === 0) {
                     $progressClass='bg-success';
                 }
 
-                $sumEarning = ROUND($oTotalSum - ($oTotalSum / 1.3), 2);
-                $sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * $fuelPrice ) + (2 * $salaryPerDay), 2);
+                $sumNoDDS   = ROUND(($oTotalSum / $no_dds), 2);
+                $sumEarning = ROUND($sumNoDDS - ($sumNoDDS / $markup_percentage_100), 2);
+                $sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * $fuelPrice ) + ($sumNoDDS - ($sumNoDDS/$salary_percentage)), 2);
                 $sumBalance = ROUND($sumEarning - $sumExpense, 2);
         ?>
 
@@ -162,16 +167,16 @@ if (!$result || $result->num_rows === 0) {
     <?php if($_SESSION['is_admin'] == 1 && $objectVisited > 0   ) { ?>
     <span >
         <span class="badge rounded-pill <?= $badgeClass ?> fs-6">
-            Оборот: <?= $oTotalSum ?>
+            <i class="fa-solid fa-cash-register"></i> <?= $oTotalSum ?> /<?= $sumNoDDS ?>/
         </span>
         <span class="badge rounded-pill bg-success fs-6">
-            + <?= $sumEarning ?>
+            <i class="fa-solid fa-plus-circle"></i> <?= $sumEarning ?> (<?= $markup_percentage?>%)
          </span>
         <span class="badge rounded-pill bg-danger fs-6">
-            -  <?= $sumExpense ?>
+            <i class="fa-solid fa-minus-circle"></i> <?= $sumExpense ?>
         </span>
         <span class="badge rounded-pill bg-info fs-6">
-            = <?= $sumBalance ?>
+            <i class="fa-solid fa-scale-balanced"></i> <?= $sumBalance ?>
         </span>
     </span>
     <?php } ?>

@@ -26,7 +26,7 @@ $currentPage = $_GET['page'] ?? 'routes';
                 <ul class="dropdown-menu dropdown-menu-end shadow">
 
                     <li class="dropdown-item-text small text-muted">
-                        <?= htmlspecialchars($_SESSION['username']) .' '. $_SESSION['first_name']; ?>
+                        <?= '['.htmlspecialchars($_SESSION['username']) .']  '. $_SESSION['first_name']; ?>
                     </li>
 
                     <li><hr class="dropdown-divider"></li>

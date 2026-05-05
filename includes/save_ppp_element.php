@@ -14,7 +14,7 @@ $id_nomenclature = (int)($_POST['id_nomenclature'] ?? 0);
 $count = (float)($_POST['count'] ?? 0);
 $single_price = (float)($_POST['single_price'] ?? 0);
 
-if ($id_ppp <= 0 || $id_nomenclature <= 0 || $count <= 0) {
+if ($id_ppp <= 0 || $id_nomenclature <= 0 || $count < 0) {
     echo json_encode([
         'success'=>false,
         'message'=>"Невалидни данни ppp:$id_ppp nom:$id_nomenclature count:$count"

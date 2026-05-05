@@ -207,7 +207,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
                 $inputValue=(int)$oQuantity;
 
-                $btnClass=$inputValue>0?'btn-success':'btn-secondary';
+                $btnClass=$inputValue>0?'btn-success':'btn-danger';
 
                 // Thumbnail for table view
                 if ($hasImage) {
@@ -454,21 +454,18 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
         const row = $(this).closest('.list-group-item');
         const val = parseInt($(this).val()) || 0;
+
         row.attr('data-ordered', val > 0 ? 1 : 0);
 
 
         const saved=parseInt($(this).data('saved'))||0;
 
-        if(val!==saved){
-
+        if(val > 0 && val === saved){
+            btn.removeClass('btn-danger')
+               .addClass('btn-success');
+        } else {
             btn.removeClass('btn-success')
-                .addClass('btn-secondary');
-
-        }else{
-
-            btn.removeClass('btn-secondary')
-                .addClass('btn-success');
-
+               .addClass('btn-danger');
         }
 
         calculateTotal();
@@ -495,7 +492,7 @@ $(document).on('click','.save-delivery',function(){
     const id_n=btn.data('id');
     const price=btn.data('price');
 
-    if(qty<=0) return;
+    //if(qty<=0) return;
 
     $.post('includes/save_ppp_element.php',{
         id_ppp:id_ppp,
@@ -505,11 +502,17 @@ $(document).on('click','.save-delivery',function(){
     },function(resp){
 
         if(resp.success){
+
+//             if(qty > 0){
+//                 btn.removeClass('btn-danger')
+//                    .addClass('btn-success');
+//             }else{
+//                 btn.removeClass('btn-success')
+//                    .addClass('btn-danger');
+//             }
+
             input.data('saved',qty);
-
-            btn.removeClass('btn-secondary')
-                .addClass('btn-success');
-
+            input.trigger('input');
             // ✅ RESET SEARCH + FILTERS
             $('#deliverySearch').val('');
 
@@ -527,7 +530,8 @@ $(document).on('click','.save-delivery',function(){
             }, 450); // можеш да го направиш 150–400ms
 
             calculateTotal();
-            row.attr('data-ordered', 1);
+            //row.attr('data-ordered', 1);
+            row.attr('data-ordered', qty > 0 ? 1 : 0);
         }else{
 
             alert('Грешка');

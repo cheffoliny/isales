@@ -8,7 +8,7 @@ $allowedPages = [
     'object_order',
     'route_objects',
     'import_nomenclatures',
-    'import_sales',
+    'general_report',
     'delivery_request'
 ];
 

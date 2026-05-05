@@ -133,7 +133,7 @@ if (!$result || $result->num_rows === 0) {
 
                 $sumNoDDS   = ROUND(($oTotalSum / $no_dds), 2);
                 $sumEarning = ROUND($sumNoDDS - ($sumNoDDS / $markup_percentage_100), 2);
-                $sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * $fuelPrice ) + ($sumNoDDS - ($sumNoDDS/$salary_percentage)), 2);
+                $sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * ($fuelPrice/$no_dds)) + ($sumNoDDS - ($sumNoDDS/$salary_percentage)), 2);
                 $sumBalance = ROUND($sumEarning - $sumExpense, 2);
         ?>
 

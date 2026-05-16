@@ -410,12 +410,21 @@ $(document).on("click", ".openUserModal", function(){
         .prop("checked", false);
 
     /* SELECT OFFICES */
-    offices.forEach(function(id){
+    const allOffices = btn.data("all-offices") == 1;
 
-        $("#user_office_" + id)
-            .prop("checked", true);
+    if(allOffices || offices.includes(0)){
 
-    });
+        $("#user_office_0").prop("checked", true);
+        toggleAllOfficesMode();
+
+    } else {
+
+        offices.forEach(function(id){
+            $("#user_office_" + id).prop("checked", true);
+        });
+
+        toggleAllOfficesMode();
+    }
 
     /* APPLY ALL MODE */
     toggleAllOfficesMode();
@@ -433,21 +442,18 @@ $(document).on("click", ".openUserModal", function(){
 =============================== */
 function toggleAllOfficesMode(){
 
-    const allChecked = $("#user_office_0")
-        .is(":checked");
+    const allChecked = $("#user_office_0").is(":checked");
 
     $(".user-office-checkbox").each(function(){
 
         const val = parseInt($(this).val());
 
-        if(val !== 0){
+        if(val === 0) return;
 
-            $(this)
-                .prop("disabled", allChecked);
-
-            if(allChecked){
-                $(this).prop("checked", false);
-            }
+        if(allChecked){
+            $(this).prop("checked", false).prop("disabled", true);
+        } else {
+            $(this).prop("disabled", false);
         }
     });
 }

@@ -28,13 +28,14 @@ $sql = "
                 aa.id_profile,
 
                 GROUP_CONCAT(DISTINCT aof.id_office) AS offices_ids,
+
+                MAX(CASE WHEN aof.id_office = 0 THEN 1 ELSE 0 END) AS has_all_offices,
                 CASE
-                    WHEN FIND_IN_SET(0, GROUP_CONCAT(DISTINCT aof.id_office))
+                    WHEN MAX(CASE WHEN aof.id_office = 0 THEN 1 ELSE 0 END) = 1
                     THEN 'ВСИЧКИ'
-                    ELSE COALESCE(
-                        GROUP_CONCAT(DISTINCT offs.name SEPARATOR ', '),
-                        '—'
-                    )
+                    WHEN aof.id_office IS NULL
+                    THEN '—'
+                    ELSE COALESCE(GROUP_CONCAT(DISTINCT offs.name SEPARATOR ', '), '—')
                 END AS office_name
 
             FROM personnel p
@@ -132,6 +133,18 @@ $result = $db->query($sql);
     $lname = htmlspecialchars($row['lname']);
     $officesJson = $row['offices_ids'];
 
+
+    $officeIdsRaw = array_map('intval', explode(',', $row['offices_ids'] ?? ''));
+    $hasAllOffices = (int)($row['has_all_offices'] ?? 0);
+
+    // ако има "ВСИЧКИ"
+    if ($hasAllOffices === 1) {
+        $officeIds = [0]; // 👈 ключово
+    } else {
+        $officeIds = array_values(array_filter($officeIdsRaw, fn($v) => $v > 0));
+    }
+    $hasAllOffices = (int)($row['has_all_offices'] ?? 0);
+
 ?>
 
     <div class="card mb-2 shadow-sm border-0 person-item" data-person-id="<?= $id ?>" data-status="<?= $row['status'] ?>"
@@ -195,7 +208,8 @@ $result = $db->query($sql);
                             data-name="<?= $name ?>"
                             data-lname="<?= $lname ?>"
                             data-status="<?= $row['status'] ?>"
-                            data-offices='<?= json_encode(explode(',', $officesJson ?? '')) ?>'>
+                            data-all-offices="<?= $hasAllOffices ?>"
+                            data-offices='<?= htmlspecialchars(json_encode($officeIds), ENT_QUOTES, "UTF-8") ?>'>
                         <i class="fa fa-pen"></i>
                     </button>
 
@@ -204,7 +218,8 @@ $result = $db->query($sql);
                             data-account-id="<?= (int)$row['account_id'] ?>"
                             data-username="<?= htmlspecialchars($row['username'] ?? '') ?>"
                             data-profile="<?= (int)$row['id_profile'] ?>"
-                            data-offices='<?= json_encode(explode(',', $row['offices_ids'] ?? '')) ?>'>
+                            data-all-offices="<?= $hasAllOffices ?>"
+                            data-offices='<?= htmlspecialchars(json_encode($officeIds), ENT_QUOTES, "UTF-8") ?>'>
                         <i class="fa fa-key"></i>
                     </button>
 

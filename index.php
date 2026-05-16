@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/core/init.php';
-require_once __DIR__ . '/config/config.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -8,11 +7,13 @@ require_once __DIR__ . '/config/config.php';
 |--------------------------------------------------------------------------
 */
 if (!empty($_SESSION['user_id'])) {
+
     header("Location: dashboard.php");
     exit;
 }
 
 $error = '';
+
 
 /*
 |--------------------------------------------------------------------------
@@ -21,56 +22,96 @@ $error = '';
 */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $username = trim($_POST['username'] ?? '');
+    $username = strtolower(trim($_POST['username'] ?? ''));
     $password = trim($_POST['password'] ?? '');
 
     if ($username === '' || $password === '') {
+
         $error = "Моля попълнете всички полета.";
+
     } else {
 
-        // Връзка към alaska_system
         $db = db_connect('system');
 
         $stmt = $db->prepare("
-            SELECT p.id AS id,
-                   sa.id AS user_id,
-                   sa.username AS username,
-                   p.fname AS first_name,
-                   p.lname AS last_name,
-                   GROUP_CONCAT(aof.id_office) AS offices_ids,
-                   sa.id_profile AS admin
+            SELECT
+                p.id AS id,
+                sa.id AS user_id,
+                sa.username,
+                sa.password,
+                sa.id_profile,
+
+                p.fname AS first_name,
+                p.lname AS last_name,
+
+                GROUP_CONCAT(DISTINCT aof.id_office) AS offices_ids
+
             FROM access_account sa
-            JOIN account_office aof ON sa.id = aof.id_account
-            LEFT JOIN ". DB_NAMES['personnel'] .".personnel p ON p.id = sa.id_person
+
+            LEFT JOIN account_office aof
+                ON sa.id = aof.id_account
+
+            LEFT JOIN ". DB_NAMES['personnel'] .".personnel p
+                ON p.id = sa.id_person
+
             WHERE sa.to_arc = 0
               AND p.status = 'active'
-              AND sa.username = ?
-              AND sa.password = MD5(?)
+              AND LOWER(sa.username) = LOWER(?)
+
+            GROUP BY sa.id
             LIMIT 1
         ");
 
         if (!$stmt) {
+
             die("SQL Error: " . $db->error);
         }
 
-        $stmt->bind_param("ss", $username, $password);
+        $stmt->bind_param("s", $username);
+
         $stmt->execute();
+
         $result = $stmt->get_result();
 
-        if ($user = $result->fetch_assoc()) {
+        $user = $result->fetch_assoc();
 
-            // Успешен login
-            $_SESSION['user_id'     ]   = $user['id'            ];
-            $_SESSION['is_admin'    ]   = $user['admin'         ];
-            $_SESSION['username'    ]   = $user['username'      ];
-            $_SESSION['first_name'  ]   = $user['first_name'    ];
-            $_SESSION['last_name'   ]   = $user['last_name'     ];
-            $_SESSION['offices_ids' ]   = $user['offices_ids'   ];
+        /*
+        |--------------------------------------------------------------------------
+        | VERIFY PASSWORD
+        |--------------------------------------------------------------------------
+        */
+        if (
+            $user &&
+            password_verify($password, $user['password'])
+        ) {
+
+            /*
+            |--------------------------------------------------------------------------
+            | SECURITY
+            |--------------------------------------------------------------------------
+            */
+            session_regenerate_id(true);
+
+            /*
+            |--------------------------------------------------------------------------
+            | LOGIN SESSION
+            |--------------------------------------------------------------------------
+            */
+            $_SESSION['user_id']     = $user['id'];
+            $_SESSION['is_admin']    = $user['id_profile'];
+            $_SESSION['username']    = $user['username'];
+            $_SESSION['first_name']  = $user['first_name'];
+            $_SESSION['last_name']   = $user['last_name'];
+            $_SESSION['offices_ids'] = $user['offices_ids'];
+
+            $stmt->close();
+            $db->close();
+
             header("Location: dashboard.php");
-
             exit;
 
         } else {
+
             $error = "Невалидно потребителско име или парола.";
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+header('Content-Type: application/json');
+
 include_once __DIR__ . '/../includes/functions.php';
 
 /* ===============================
@@ -20,6 +22,8 @@ if (empty($_SESSION['user_id'])) {
 =============================== */
 $db = db_connect('system');
 
+$db->set_charset("utf8mb4");
+
 /* ===============================
    POST DATA
 =============================== */
@@ -27,7 +31,6 @@ $personId  = (int)($_POST['person_id'] ?? 0);
 $accountId = (int)($_POST['account_id'] ?? 0);
 
 $username = strtolower(trim($_POST['username'] ?? ''));
-//$username = trim($_POST['username'] ?? '');
 $password = trim($_POST['password'] ?? '');
 
 $profile = (int)($_POST['profile'] ?? 2);
@@ -40,6 +43,7 @@ $offices = json_decode(
 /* ===============================
    VALIDATION
 =============================== */
+
 if ($personId <= 0) {
 
     echo json_encode([
@@ -54,11 +58,39 @@ if ($username === '') {
 
     echo json_encode([
         'success' => false,
-        'message' => 'Въведете username'
+        'message' => 'Въведете потребителско име'
     ]);
 
     exit;
 }
+
+/*
+|--------------------------------------------------------------------------
+| USERNAME FORMAT
+|--------------------------------------------------------------------------
+*/
+if (!preg_match('/^[a-zA-Z0-9._-]{3,50}$/', $username)) {
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Невалидно потребителско име'
+    ]);
+
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| OFFICES VALIDATION
+|--------------------------------------------------------------------------
+*/
+if (!is_array($offices)) {
+    $offices = [];
+}
+
+$offices = array_unique(
+    array_map('intval', $offices)
+);
 
 /* ===============================
    CHECK DUPLICATE USERNAME
@@ -67,7 +99,7 @@ $stmtCheck = $db->prepare("
     SELECT id
     FROM access_account
     WHERE LOWER(TRIM(username)) = LOWER(TRIM(?))
-    AND id != ?
+      AND id != ?
     LIMIT 1
 ");
 
@@ -83,6 +115,8 @@ $resCheck = $stmtCheck->get_result();
 
 if ($resCheck->num_rows > 0) {
 
+    $stmtCheck->close();
+
     echo json_encode([
         'success' => false,
         'message' => 'Това потребителско име вече съществува'
@@ -94,168 +128,189 @@ if ($resCheck->num_rows > 0) {
 $stmtCheck->close();
 
 /* ===============================
-   CREATE ACCOUNT
+   TRANSACTION
 =============================== */
-if ($accountId <= 0) {
+$db->begin_transaction();
 
-    if ($password === '') {
-
-        echo json_encode([
-            'success' => false,
-            'message' => 'Въведете парола'
-        ]);
-
-        exit;
-    }
-
-    $md5 = md5($password);
-
-    $stmt = $db->prepare("
-        INSERT INTO access_account
-        (
-            id_person,
-            id_profile,
-            username,
-            password
-        )
-        VALUES
-        (
-            ?, ?, ?, ?
-        )
-    ");
-
-    $stmt->bind_param(
-        "iiss",
-        $personId,
-        $profile,
-        $username,
-        $md5
-    );
-
-    $ok = $stmt->execute();
-
-    if (!$ok) {
-
-        echo json_encode([
-            'success' => false,
-            'message' => 'Грешка при създаване на акаунт'
-        ]);
-
-        exit;
-    }
-
-    $accountId = $stmt->insert_id;
-
-    $stmt->close();
-
-} else {
+try {
 
     /* ===============================
-       UPDATE ACCOUNT
+       CREATE ACCOUNT
     =============================== */
+    if ($accountId <= 0) {
 
-    if ($password !== '') {
+        if ($password === '') {
 
-        $md5 = md5($password);
+            throw new Exception('Въведете парола');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | SECURE PASSWORD HASH
+        |--------------------------------------------------------------------------
+        */
+        $passwordHash = password_hash(
+            $password,
+            PASSWORD_DEFAULT
+        );
 
         $stmt = $db->prepare("
-            UPDATE access_account
-            SET
-                id_profile = ?,
-                username = ?,
-                password = ?
-            WHERE id = ?
+            INSERT INTO access_account
+            (
+                id_person,
+                id_profile,
+                username,
+                password
+            )
+            VALUES
+            (
+                ?, ?, ?, ?
+            )
         ");
 
         $stmt->bind_param(
-            "issi",
+            "iiss",
+            $personId,
             $profile,
             $username,
-            $md5,
-            $accountId
+            $passwordHash
         );
+
+        if (!$stmt->execute()) {
+
+            throw new Exception(
+                'Грешка при създаване на акаунт'
+            );
+        }
+
+        $accountId = $stmt->insert_id;
+
+        $stmt->close();
 
     } else {
 
-        $stmt = $db->prepare("
-            UPDATE access_account
-            SET
-                id_profile = ?,
-                username = ?
-            WHERE id = ?
-        ");
+        /* ===============================
+           UPDATE ACCOUNT
+        =============================== */
 
-        $stmt->bind_param(
-            "isi",
-            $profile,
-            $username,
-            $accountId
-        );
+        if ($password !== '') {
+
+            $passwordHash = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+            $stmt = $db->prepare("
+                UPDATE access_account
+                SET
+                    id_profile = ?,
+                    username = ?,
+                    password = ?
+                WHERE id = ?
+            ");
+
+            $stmt->bind_param(
+                "issi",
+                $profile,
+                $username,
+                $passwordHash,
+                $accountId
+            );
+
+        } else {
+
+            $stmt = $db->prepare("
+                UPDATE access_account
+                SET
+                    id_profile = ?,
+                    username = ?
+                WHERE id = ?
+            ");
+
+            $stmt->bind_param(
+                "isi",
+                $profile,
+                $username,
+                $accountId
+            );
+        }
+
+        if (!$stmt->execute()) {
+
+            throw new Exception(
+                'Грешка при обновяване'
+            );
+        }
+
+        $stmt->close();
     }
 
-    $ok = $stmt->execute();
-
-    $stmt->close();
-}
-
-/* ===============================
-   SYNC OFFICES
-=============================== */
-
-/*
- * Изтриваме старите
- */
-$stmtDelete = $db->prepare("
-    DELETE FROM account_office
-    WHERE id_account = ?
-");
-
-$stmtDelete->bind_param(
-    "i",
-    $accountId
-);
-
-$stmtDelete->execute();
-
-$stmtDelete->close();
-
-/*
- * Добавяме новите
- */
-if (!empty($offices)) {
-
-    $stmtOffice = $db->prepare("
-        INSERT INTO account_office
-        (
-            id_account,
-            id_office
-        )
-        VALUES
-        (
-            ?, ?
-        )
+    /* ===============================
+       DELETE OLD OFFICES
+    =============================== */
+    $stmtDelete = $db->prepare("
+        DELETE FROM account_office
+        WHERE id_account = ?
     ");
 
-    foreach ((array)$offices as $officeId) {
+    $stmtDelete->bind_param(
+        "i",
+        $accountId
+    );
 
-        $officeId = (int)$officeId;
+    $stmtDelete->execute();
 
-        $stmtOffice->bind_param(
-            "ii",
-            $accountId,
-            $officeId
-        );
+    $stmtDelete->close();
 
-        $stmtOffice->execute();
+    /* ===============================
+       INSERT NEW OFFICES
+    =============================== */
+    if (!empty($offices)) {
+
+        $stmtOffice = $db->prepare("
+            INSERT INTO account_office
+            (
+                id_account,
+                id_office
+            )
+            VALUES
+            (
+                ?, ?
+            )
+        ");
+
+        foreach ($offices as $officeId) {
+
+            $stmtOffice->bind_param(
+                "ii",
+                $accountId,
+                $officeId
+            );
+
+            $stmtOffice->execute();
+        }
+
+        $stmtOffice->close();
     }
 
-    $stmtOffice->close();
+    /* ===============================
+       COMMIT
+    =============================== */
+    $db->commit();
+
+    echo json_encode([
+        'success' => true,
+        'account_id' => $accountId
+    ]);
+
+} catch (Exception $e) {
+
+    $db->rollback();
+
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }
 
-/* ===============================
-   RESPONSE
-=============================== */
-echo json_encode([
-    'success' => true,
-    'account_id' => $accountId
-]);
+$db->close();

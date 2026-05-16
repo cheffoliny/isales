@@ -278,126 +278,96 @@ $(document).on("click", "#savePersonBtnModal", function(){
     });
 
 });
-//$(document).on("click", "#savePersonBtnModal", function(){
-//
-//    const id     = $("#modal_person_id").val();
-//    const fname  = $("#modal_person_name").val().trim();
-//    const lname  = $("#modal_person_lname").val().trim();
-//    const status = $("#modal_person_status").val();
-//
-//    if(!fname || !lname){
-//        showToast("Попълнете име и фамилия", "danger");
-//        return;
-//    }
-//
-//    $.post("includes/save_person.php", {
-//        id: id,
-//        fname: fname,
-//        lname: lname,
-//        status: status
-//    }, function(resp){
-//
-//        if(!resp.success){
-//            showToast(resp.message || "Грешка при запис", "danger");
-//            return;
-//        }
-//
-//        const fullName = fname + " " + lname;
-//
-//        const statusBadge =
-//            status === "active"
-//                ? `<span class="badge person-status-badge bg-success">Активен</span>`
-//                : `<span class="badge person-status-badge bg-danger">Неактивен</span>`;
-//
-//        const officesText = "—"; // засега (нямаме в save_person)
-//
-//        const profileBadge = `<span class="badge person-profile-badge bg-secondary">Без акаунт</span>`;
-//
-//        if(resp.mode === "insert"){
-//
-//            const newCard = `
-//            <div class="card mb-2 shadow-sm border-0 person-item"
-//                 data-person-id="${resp.id}"
-//                 data-status="${status}"
-//                 data-profile="0"
-//                 data-name="${fullName.toLowerCase()}">
-//
-//                <div class="card-body d-flex align-items-center justify-content-between p-2">
-//
-//                    <button class="btn btn-primary openPersonModal"
-//                            data-id="${resp.id}"
-//                            data-name="${fname}"
-//                            data-lname="${lname}"
-//                            data-status="${status}">
-//                        <i class="fa fa-user"></i>
-//                    </button>
-//
-//                    <div class="flex-grow-1 px-2">
-//                        <button class="btn p-0 text-start w-100 openPersonModal"
-//                                data-id="${resp.id}"
-//                                data-name="${fname}"
-//                                data-lname="${lname}"
-//                                data-status="${status}">
-//
-//                            <div class="fw-bold d-flex align-items-center gap-2 person-fullname">
-//                                ${fullName}
-//                                ${statusBadge}
-//                            </div>
-//
-//                            <div class="small text-muted person-offices">
-//                                ${officesText}
-//                            </div>
-//
-//                            ${profileBadge}
-//                        </button>
-//                    </div>
-//
-//                    <button class="btn btn-sm btn-outline-primary openUserModal"
-//                            data-person-id="${resp.id}"
-//                            data-account-id="0"
-//                            data-username=""
-//                            data-profile="0"
-//                            data-offices='[]'>
-//                        <i class="fa fa-key"></i>
-//                    </button>
-//
-//                </div>
-//            </div>`;
-//
-//            $("#personsContainer").prepend(newCard);
-//
-//            showToast("Добавен нов служител", "success");
-//        }
-//
-//        if(resp.mode === "update"){
-//
-//            const row = $(`.person-item[data-person-id='${resp.id}']`);
-//
-//            row.attr("data-name", fullName.toLowerCase());
-//            row.attr("data-status", status);
-//
-//            row.find(".person-fullname").html(`
-//                ${fullName}
-//                ${statusBadge}
-//            `);
-//
-//            // update modal trigger
-//            row.find(".openPersonModal")
-//                .data("name", fname)
-//                .data("lname", lname)
-//                .data("status", status);
-//
-//            showToast("Обновен служител", "success");
-//        }
-//
-//        // close modal
-//        const modalEl = document.getElementById("personModal");
-//        const modal = bootstrap.Modal.getInstance(modalEl);
-//        if(modal) modal.hide();
-//
-//    }, "json");
-//
-//});
+
+/* ===============================
+   OPEN CHANGE PASSWORD MODAL
+=============================== */
+$(document).on("click", "#openChangePasswordModal", function(){
+
+    $("#currentPassword").val("");
+    $("#newPassword").val("");
+    $("#confirmPassword").val("");
+
+    const modal = new bootstrap.Modal(
+        document.getElementById("changePasswordModal")
+    );
+
+    modal.show();
+
+});
+
+/* ===============================
+   CHANGE PASSWORD
+=============================== */
+$(document).on("click", "#savePasswordBtn", function(){
+
+    const btn = $(this);
+
+    const currentPassword = $("#currentPassword").val().trim();
+    const newPassword = $("#newPassword").val().trim();
+    const confirmPassword = $("#confirmPassword").val().trim();
+
+    if(
+        !currentPassword ||
+        !newPassword ||
+        !confirmPassword
+    ){
+        showToast("Попълнете всички полета", "danger");
+        return;
+    }
+
+    if(newPassword !== confirmPassword){
+        showToast("Паролите не съвпадат", "danger");
+        return;
+    }
+
+    btn.prop("disabled", true).html(`
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Запис...
+    `);
+
+    $.post("includes/change_password.php", {
+
+        current_password: currentPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+
+    }, function(resp){
+
+        if(resp.success){
+
+            showToast(
+                "Паролата е сменена успешно",
+                "success"
+            );
+
+            const modal = bootstrap.Modal.getInstance(
+                document.getElementById("changePasswordModal")
+            );
+
+            if(modal) modal.hide();
+
+        } else {
+
+            showToast(
+                resp.message || "Грешка",
+                "danger"
+            );
+        }
+
+    }, "json")
+    .fail(function(){
+
+        showToast("Мрежова грешка", "danger");
+
+    })
+    .always(function(){
+
+        btn.prop("disabled", false).html("Запази");
+
+    });
+
+});
 
 /* ===============================
    OPEN USER MODAL

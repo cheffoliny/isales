@@ -6,6 +6,12 @@ if (empty($_SESSION['user_id'])) {
     return;
 }
 
+$where_offices = '';
+if( $_SESSION['offices_ids' ] != '0' ) {
+    $where_offices = ' AND offs.id IN('.$_SESSION['offices_ids'].') ';
+}
+
+
 $db = db_connect('sod');
 
 /* ===== LOAD OFFICES ===== */
@@ -17,21 +23,21 @@ while($r = $resOff->fetch_assoc()){
 
 /* ===== LOAD OBJECTS ===== */
 $sql = "
-SELECT
-    o.id,
-    o.name,
-    COALESCE(o.operativ_info,'') AS info,
-    COALESCE(o.offices_ids,'[]') AS offices_ids,
-    o.geo_lat,
-    o.geo_lan,
-    COALESCE(GROUP_CONCAT(offs.name SEPARATOR ', '), '—') AS office_name
-FROM objects o
-LEFT JOIN offices offs
-    ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
-WHERE o.id_status <> 4
-GROUP BY o.id
-ORDER BY o.name ASC
-LIMIT 1000
+        SELECT
+            o.id,
+            o.name,
+            COALESCE(o.operativ_info,'') AS info,
+            COALESCE(o.offices_ids,'[]') AS offices_ids,
+            o.geo_lat,
+            o.geo_lan,
+            COALESCE(GROUP_CONCAT(offs.name SEPARATOR ', '), '—') AS office_name
+        FROM objects o
+        JOIN offices offs ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
+        WHERE o.id_status <> 4
+            ". $where_offices ."
+        GROUP BY o.id
+        ORDER BY o.name ASC
+        LIMIT 1000
 ";
 
 $result = $db->query($sql);

@@ -1,5 +1,5 @@
 <?php
-session_start();
+require_once __DIR__ . '/core/init.php';
 require_once __DIR__ . '/config/config.php';
 
 /*
@@ -37,8 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    sa.username AS username,
                    p.fname AS first_name,
                    p.lname AS last_name,
+                   GROUP_CONCAT(aof.id_office) AS offices_ids,
                    sa.id_profile AS admin
             FROM access_account sa
+            JOIN account_office aof ON sa.id = aof.id_account
             LEFT JOIN ". DB_NAMES['personnel'] .".personnel p ON p.id = sa.id_person
             WHERE sa.to_arc = 0
               AND p.status = 'active'
@@ -58,12 +60,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user = $result->fetch_assoc()) {
 
             // Успешен login
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['is_admin'] = $user['admin'];
-            $_SESSION['username'] = $user['username'];
-            $_SESSION['first_name'] = $user['first_name'];
-            $_SESSION['last_name']  = $user['last_name'];
+            $_SESSION['user_id'     ]   = $user['id'            ];
+            $_SESSION['is_admin'    ]   = $user['admin'         ];
+            $_SESSION['username'    ]   = $user['username'      ];
+            $_SESSION['first_name'  ]   = $user['first_name'    ];
+            $_SESSION['last_name'   ]   = $user['last_name'     ];
+            $_SESSION['offices_ids' ]   = $user['offices_ids'   ];
             header("Location: dashboard.php");
+
             exit;
 
         } else {

@@ -9,6 +9,12 @@ if (empty($_SESSION['user_id'])) {
 $idUser   = (int)$_SESSION['user_id'];
 $officeId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
+$where_offices = '';
+if( $_SESSION['offices_ids' ] != '0' ) {
+    $where_offices = ' AND offs.id IN('.$_SESSION['offices_ids'].') ';
+}
+
+
 $db = db_connect('storage');
 $today = date('Y-m-d');
 
@@ -25,12 +31,19 @@ $sql = "
             DATE_FORMAT(p.source_date, '%d.%m.%Y %H:%i') AS sourceDate,
             p.id_buy_doc AS buy_doc
         FROM ppp p
-        JOIN ". DB_NAMES['sod'] .".objects o
-            ON o.id = p.id_dest AND p.dest_type = 'object'
-        LEFT JOIN ". DB_NAMES['personnel'] .".personnel u
-            ON u.id = p.source_user            
+        JOIN ". DB_NAMES['sod'] .".objects o ON o.id = p.id_dest AND p.dest_type = 'object'
+        JOIN ". DB_NAMES['sod'] .".offices offs ON offs.id = o.id_office
+        LEFT JOIN ". DB_NAMES['personnel'] .".personnel u ON u.id = p.source_user
         WHERE
             p.source_date >= CURDATE() - INTERVAL 10 DAY
+            AND (
+                DATE(p.source_date) < CURDATE()
+                OR (
+                    DATE(p.source_date) = CURDATE()
+                    AND p.`status` = 'wait'
+                )
+            )
+            ". $where_offices ."
         ORDER BY p.source_date DESC, p.`status` DESC ";
 
 $stmt = $db->prepare($sql);

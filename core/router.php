@@ -9,7 +9,8 @@ $allowedPages = [
     'route_objects',
     'import_nomenclatures',
     'general_report',
-    'delivery_request'
+    'delivery_request',
+    'users'
 ];
 
 $page = $_GET['page'] ?? 'routes';

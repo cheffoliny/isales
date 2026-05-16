@@ -17,11 +17,30 @@ $currentPage = $_GET['page'] ?? 'routes';
     </a>
 
 <?php if($_SESSION['is_admin'] == 1) { ?>
-    <a href="dashboard.php?page=import_nomenclatures"
-       class="nav-item <?= $currentPage === 'import_nomenclatures' ? 'active' : '' ?>">
-        <i class="fa-solid fa-file-import"></i>
-        <span>Импорт</span>
-    </a>
+
+ <!-- CENTER FLOAT BUTTON -->
+    <div class="dropup center-action">
+        <button class="btn action-btn dropdown-toggle"
+                type="button"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+            <i class="fa-solid fa-gear"></i>
+        </button>
+
+        <ul class="dropdown-menu text-center shadow">
+            <li>
+                <a class="dropdown-item <?= $currentPage === 'import_nomenclatures' ? 'active' : '' ?>" href="dashboard.php?page=import_nomenclatures">
+                    <i class="fa-solid fa-file-import me-2"></i> ИМПОРТ ДАННИ
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="dashboard.php?page=users">
+                    <i class="fa-solid fa-users me-2"></i> ПОТРЕБИТЕЛИ
+                </a>
+            </li>
+        </ul>
+    </div>
+
 <?php } ?>
     <a href="dashboard.php?page=objects"
        class="nav-item <?= $currentPage === 'objects' ? 'active' : '' ?>">
@@ -35,11 +54,4 @@ $currentPage = $_GET['page'] ?? 'routes';
         <span>Артикули</span>
     </a>
 
-<!--
-    <a href="dashboard.php?page=import_sales"
-       class="nav-item <?= $currentPage === 'import_sales' ? 'active' : '' ?>">
-        <i class="fa-solid fa-cart-plus"></i>
-        <span>Продажби</span>
-    </a>
--->
 </nav>

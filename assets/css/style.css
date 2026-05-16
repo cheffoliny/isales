@@ -20,7 +20,7 @@ html, body {
 .app-content {
     flex: 1;
     padding: 15px;
-    padding-bottom: 80px; /* space for bottom nav */
+    padding-bottom: 100px; /* extra space for floating button */
 }
 
 /* Bottom Navigation */
@@ -29,29 +29,147 @@ html, body {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 65px;
+
+    height: 72px;
+
     display: flex;
     justify-content: space-around;
     align-items: center;
+
     z-index: 1030;
+
+    background: var(--bs-body-bg);
+    backdrop-filter: blur(12px);
+
+    box-shadow: 0 -2px 15px rgba(0,0,0,0.08);
+    border-top: 1px solid var(--bs-border-color);
+
+    padding: 0 8px;
 }
 
 .app-bottom-nav .nav-item {
+    flex: 1;
+
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
+
     font-size: 12px;
     text-decoration: none;
     color: var(--bs-secondary-color);
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
 }
 
 .app-bottom-nav .nav-item i {
     font-size: 18px;
+    margin-bottom: 4px;
 }
 
 .app-bottom-nav .nav-item.active {
     color: var(--bs-primary);
     font-weight: 600;
+}
+
+.app-bottom-nav .nav-item:active {
+    transform: scale(0.94);
+}
+
+/* CENTER FLOATING BUTTON */
+
+.app-bottom-nav .center-action {
+    position: relative;
+    top: -18px;
+    flex: 0 0 auto;
+}
+
+.app-bottom-nav .action-btn {
+    width: 64px;
+    height: 64px;
+
+    border-radius: 50%;
+    border: 0;
+
+    background: var(--bs-primary);
+    color: #fff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 24px;
+
+    box-shadow:
+        0 10px 25px rgba(var(--bs-primary-rgb), 0.35);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.app-bottom-nav .action-btn:hover {
+    background: var(--bs-primary);
+    color: #fff;
+    transform: scale(1.05);
+}
+
+.app-bottom-nav .action-btn:active {
+    transform: scale(0.95);
+}
+
+.app-bottom-nav .action-btn::after {
+    display: none;
+}
+
+/* DROPUP MENU */
+
+.app-bottom-nav .dropdown-menu {
+    border: 0;
+    border-radius: 18px;
+
+    padding: 10px;
+
+    min-width: 220px;
+
+    margin-bottom: 16px;
+
+    background: var(--bs-body-bg);
+
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.15);
+}
+
+.app-bottom-nav .dropdown-item {
+    border-radius: 12px;
+
+    padding: 12px 14px;
+
+    font-size: 14px;
+    font-weight: 500;
+
+    display: flex;
+    align-items: center;
+
+    transition:
+        background-color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.app-bottom-nav .dropdown-item i {
+    width: 22px;
+    font-size: 16px;
+}
+
+.app-bottom-nav .dropdown-item:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.app-bottom-nav .dropdown-item:active {
+    transform: scale(0.98);
 }
 
 /* Route list styling */
@@ -78,19 +196,27 @@ html, body {
 }
 
 /* Status left border */
-.route-danger { border-left: 4px solid var(--bs-danger); }
-.route-warning { border-left: 4px solid var(--bs-warning); }
-.route-success { border-left: 4px solid var(--bs-success); }
+.route-danger {
+    border-left: 4px solid var(--bs-danger);
+}
+
+.route-warning {
+    border-left: 4px solid var(--bs-warning);
+}
+
+.route-success {
+    border-left: 4px solid var(--bs-success);
+}
 
 /* Progress bar customization */
 .progress {
     border-radius: 8px;
     background-color: rgba(255,255,255,0.1);
 }
+
 .progress-bar {
     border-radius: 8px;
 }
-
 
 /* Object cards */
 .object-card {
@@ -112,7 +238,6 @@ html, body {
     text-decoration: none;
 }
 
-
 .list-group-item {
     background-color: var(--bs-body-bg);
     color: var(--bs-body-color);
@@ -120,4 +245,17 @@ html, body {
 
 .list-group-item:hover {
     background-color: var(--bs-tertiary-bg);
+}
+
+/* MOBILE SAFE AREA SUPPORT */
+
+@supports (padding: max(0px)) {
+    .app-bottom-nav {
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+        height: calc(72px + env(safe-area-inset-bottom));
+    }
+
+    .app-content {
+        padding-bottom: calc(110px + env(safe-area-inset-bottom));
+    }
 }

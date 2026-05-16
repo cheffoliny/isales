@@ -13,9 +13,19 @@ if(empty($_SESSION['user_id'])){
         <div class="d-flex gap-2 w-100 flex-wrap align-items-center">
             <input type="text" id="search" class="form-control form-control-sm py-2" placeholder="КОД / ИМЕ">
 
-            <button id="promoFilter" class="btn btn-sm btn-danger">ПРОМО</button>
-            <button id="zeroFilter" class="btn btn-sm btn-warning">НУЛЕВИ</button>
-            <button id="zeroImage" class="btn btn-sm btn-info">БЕЗ СНИМКА</button>
+            <button id="newFilter" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-file-circle-plus"></i> НОВО
+            </button>
+
+            <button id="promoFilter" class="btn btn-sm btn-danger">
+                <i class="fa-solid fa-percent"></i> ПРОМО
+            </button>
+            <button id="zeroFilter" class="btn btn-sm btn-warning text-white">
+                <i class="fa-brands fa-creative-commons-zero"></i> НУЛЕВИ
+            </button>
+            <button id="zeroImage" class="btn btn-sm btn-primary text-white">
+                <i class="fa-solid fa-image"></i> БЕЗ СНИМКА
+            </button>
 
             <div class="btn-group btn-group-sm ms-auto">
                 <button type="button" class="btn btn-primary active" id="viewListBtn">
@@ -84,6 +94,7 @@ if(empty($_SESSION['user_id'])){
 <script>
 let page = 0;
 let searchVal = '';
+let newp = false;
 let promo = false;
 let zero = false;
 let image = false;
@@ -110,6 +121,7 @@ function loadItems(reset=false){
     $.get('includes/items_fetch.php', {
         page: page,
         search: searchVal,
+        newp: newp ? 1 : 0,
         promo: promo ? 1 : 0,
         zero: zero ? 1 : 0,
         image: image ? 1 : 0
@@ -157,6 +169,12 @@ $('#search').on('input', function(){
 });
 
 // FILTERS
+$('#newFilter').on('click', function(){
+    newp = !newp;
+    $(this).toggleClass('btn-success btn-secondary');
+    loadItems(true);
+});
+
 $('#promoFilter').on('click', function(){
     promo = !promo;
     $(this).toggleClass('btn-danger btn-secondary');
@@ -239,6 +257,7 @@ $(document).on('click', '.save-item', function(){
     const client = scope.find('input.client_price').first().val();
     const sales = scope.find('input.sales_price').first().val();
     const promoNote = scope.find('input.promo_note').first().val();
+    const newp = scope.find('input.newp').is(':checked') ? 1 : 0;
 
     btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i>');
 
@@ -246,7 +265,8 @@ $(document).on('click', '.save-item', function(){
         id: id,
         client_price: client,
         sales_price: sales,
-        promo_note: promoNote
+        promo_note: promoNote,
+        newp: newp
     }, function(resp){
 
         btn.prop('disabled', false).html('<i class="fa fa-save"></i>');

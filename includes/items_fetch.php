@@ -10,6 +10,7 @@ $db = db_connect('storage');
 
 $page = (int)($_GET['page'] ?? 0);
 $search = trim($_GET['search'] ?? '');
+$newp = (int)($_GET['newp'] ?? 0);
 $promo = (int)($_GET['promo'] ?? 0);
 //$promoNote = ($_GET['promo_note'] ?? NULL);
 $zero = (int)($_GET['zero'] ?? 0);
@@ -18,13 +19,16 @@ $limit = 2000;
 $offset = $page * $limit;
 $offset = $limit;
 
-$where = "WHERE n.to_arc=0";
+$where = " WHERE n.to_arc = 0 ";
 
 // Защитен вход в заявката - ескейпваме
 if ($search !== '') {
     $s = $db->real_escape_string($search);
     // Търсим в nom_code и name (case-insensitive по подразбиране)
     $where .= " AND (n.nom_code LIKE '%$s%' OR n.name LIKE '%$s%')";
+}
+if ($newp) {
+    $where .= " AND n.is_new > 0";
 }
 if ($promo) {
     $where .= " AND n.sales_price > 0";
@@ -38,7 +42,7 @@ if ($image) {
     $where .= " AND n.image IS NULL ";
 }
 
-$sql = "SELECT n.id, n.nom_code, n.name, n.client_price, n.sales_price, n.is_calc, n.image, n.promo_note
+$sql = "SELECT n.id, n.nom_code, n.name, n.client_price, n.sales_price, n.is_calc, n.image, n.is_new, CONCAT('(',n.promo_note,')') AS promo_note
         FROM nomenclatures n
         $where
         ORDER BY n.nom_code
@@ -73,7 +77,7 @@ while ($r = $res->fetch_assoc()) {
     // Табличен ред
     $html .= '<tr>
                 <td class="text-center border-0">'.htmlspecialchars($r['nom_code']).'</td>
-                <td class="px-2 border-0">'.htmlspecialchars($r['name']).' <span class="text-danger">('.$promoNote.')</span></td>
+                <td class="px-2 border-0">'.htmlspecialchars($r['name']).' <span class="text-danger">'.$promoNote.'</span></td>
                 <td class="text-center border-0">'.(int)$r['is_calc'].'</td>
                 <td class="text-danger border-0">'.number_format((float)$r['sales_price'], 2, '.', '').'</td>
                 <td class="border-0">'.number_format((float)$r['client_price'], 2, '.', '').'</td>
@@ -83,7 +87,10 @@ while ($r = $res->fetch_assoc()) {
         ($_SESSION['is_admin'] == 1
         ?
         $html .= '<tr data-id="'.$r['id'].'">
-                <td class="text-light small"></td>
+                <td class="bg-success text-white small"><span class=" p-1 m-0"><input type="checkbox"
+                                                                                      class="newp"
+                                                                                      name="newp"
+                                                                                      '.($r['is_new'] ? 'checked' : '').' /> НОВО</span></td>
                 <td><input type="text" class="form-control form-control-sm promo_note text-danger"
                            placeholder="Промо описание..." value="'.$promoNote.'" '.$strDisable.' /></td>
                 <td>&nbsp;</td>
@@ -159,7 +166,11 @@ while ($r = $res->fetch_assoc()) {
                     ($_SESSION['is_admin'] == 1
                     ?
                         '<div class="mt-2">
-
+                            <span class="bg-success w-100 text-white p-1 m-0">
+                                <input type="checkbox"
+                                       class="newp"
+                                       name="newp"
+                                       '.($r['is_new'] ? 'checked' : '').' /> НОВО</span>
                             <input type="number"
                                    class="form-control form-control-sm mb-1 client_price"
                                    value="'.$clientPrice.'" '.$strDisable.'>

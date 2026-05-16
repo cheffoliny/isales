@@ -3,6 +3,7 @@
 =============================== */
 let mapInstance = null;
 let mapMarker = null;
+let isSavingPerson = false;
 
 /* ===============================
    DEBOUNCE FUNCTION
@@ -95,6 +96,562 @@ function debounce(func, wait) {
 //        }
 //    },"json");
 //});
+
+/* ===============================
+   LOAD PERSON MODAL
+=============================== */
+$(document).on("click", ".openPersonModal", function(){
+
+    const btn = $(this);
+
+    const id     = btn.data("id");
+    const name   = btn.data("name");
+    const lname  = btn.data("lname");
+    const status = btn.data("status");
+
+    $("#modal_person_id").val(id);
+    $("#modal_person_name").val(name);
+    $("#modal_person_lname").val(lname);
+    $("#modal_person_status").val(status);
+
+    const modal = new bootstrap.Modal(
+        document.getElementById("personModal")
+    );
+
+    modal.show();
+
+});
+
+/* ===============================
+   ADD PERSON
+=============================== */
+$(document).on("click", "#addPerson", function(){
+
+    $("#modal_person_id").val("");
+    $("#modal_person_name").val("");
+    $("#modal_person_lname").val("");
+    $("#modal_person_status").val("active");
+
+    const modal = new bootstrap.Modal(
+        document.getElementById("personModal")
+    );
+
+    modal.show();
+});
+
+/* ===============================
+   SAVE PERSON
+=============================== */
+$(document).on("click", "#savePersonBtnModal", function(){
+
+    if(isSavingPerson) return;
+
+    const btn = $(this);
+
+    const id     = $("#modal_person_id").val();
+    const fname  = $("#modal_person_name").val().trim();
+    const lname  = $("#modal_person_lname").val().trim();
+    const status = $("#modal_person_status").val();
+
+    if(!fname || !lname){
+        showToast("Попълнете име и фамилия", "danger");
+        return;
+    }
+
+    isSavingPerson = true;
+
+    // 🔵 UI LOCK
+    btn.prop("disabled", true).html(`
+        <span class="spinner-border spinner-border-sm me-2"></span>
+        Запис...
+    `);
+
+    $.post("includes/save_person.php", {
+        id: id,
+        fname: fname,
+        lname: lname,
+        status: status
+    }, function(resp){
+
+        if(!resp.success){
+            showToast(resp.message || "Грешка при запис", "danger");
+            return;
+        }
+
+        const fullName = fname + " " + lname;
+
+        const statusBadge =
+            status === "active"
+                ? `<span class="badge person-status-badge bg-success">Активен</span>`
+                : `<span class="badge person-status-badge bg-danger">Неактивен</span>`;
+
+        // =========================
+        // UPDATE OR INSERT
+        // =========================
+
+        if(resp.mode === "insert"){
+
+            const newCard = `
+            <div class="card mb-2 shadow-sm border-0 person-item"
+                 data-person-id="${resp.id}"
+                 data-status="${status}"
+                 data-profile="0"
+                 data-name="${fullName.toLowerCase()}">
+
+                <div class="card-body d-flex align-items-center justify-content-between p-2">
+
+                    <button class="btn btn-primary openPersonModal"
+                            data-id="${resp.id}"
+                            data-name="${fname}"
+                            data-lname="${lname}"
+                            data-status="${status}">
+                        <i class="fa fa-user"></i>
+                    </button>
+
+                    <div class="flex-grow-1 px-2">
+                        <div class="fw-bold d-flex align-items-center gap-2 person-fullname">
+                            ${fullName}
+                            ${statusBadge}
+                        </div>
+                    </div>
+
+                    <button class="btn btn-sm btn-outline-primary openUserModal"
+                            data-person-id="${resp.id}"
+                            data-account-id="0"
+                            data-username=""
+                            data-profile="0"
+                            data-offices='[]'>
+                        <i class="fa fa-key"></i>
+                    </button>
+
+                </div>
+            </div>`;
+
+            $("#personsContainer").prepend(newCard);
+
+        } else {
+
+            const row = $(`.person-item[data-person-id='${resp.id}']`);
+
+            row.attr("data-name", fullName.toLowerCase());
+            row.attr("data-status", status);
+
+            row.find(".person-fullname").html(`
+                ${fullName}
+                ${statusBadge}
+            `);
+
+            row.find(".openPersonModal")
+                .data("name", fname)
+                .data("lname", lname)
+                .data("status", status);
+        }
+
+        // =========================
+        // SUCCESS UX
+        // =========================
+        showToast(
+            resp.mode === "insert"
+                ? "Добавен служител"
+                : "Обновен служител",
+            "success"
+        );
+
+        // close modal
+        const modalEl = document.getElementById("personModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if(modal) modal.hide();
+
+    }, "json")
+    .fail(function(){
+
+        showToast("Мрежова грешка", "danger");
+
+    })
+    .always(function(){
+
+        // 🔵 UNLOCK UI
+        isSavingPerson = false;
+
+        btn.prop("disabled", false).html("Запази");
+
+    });
+
+});
+//$(document).on("click", "#savePersonBtnModal", function(){
+//
+//    const id     = $("#modal_person_id").val();
+//    const fname  = $("#modal_person_name").val().trim();
+//    const lname  = $("#modal_person_lname").val().trim();
+//    const status = $("#modal_person_status").val();
+//
+//    if(!fname || !lname){
+//        showToast("Попълнете име и фамилия", "danger");
+//        return;
+//    }
+//
+//    $.post("includes/save_person.php", {
+//        id: id,
+//        fname: fname,
+//        lname: lname,
+//        status: status
+//    }, function(resp){
+//
+//        if(!resp.success){
+//            showToast(resp.message || "Грешка при запис", "danger");
+//            return;
+//        }
+//
+//        const fullName = fname + " " + lname;
+//
+//        const statusBadge =
+//            status === "active"
+//                ? `<span class="badge person-status-badge bg-success">Активен</span>`
+//                : `<span class="badge person-status-badge bg-danger">Неактивен</span>`;
+//
+//        const officesText = "—"; // засега (нямаме в save_person)
+//
+//        const profileBadge = `<span class="badge person-profile-badge bg-secondary">Без акаунт</span>`;
+//
+//        if(resp.mode === "insert"){
+//
+//            const newCard = `
+//            <div class="card mb-2 shadow-sm border-0 person-item"
+//                 data-person-id="${resp.id}"
+//                 data-status="${status}"
+//                 data-profile="0"
+//                 data-name="${fullName.toLowerCase()}">
+//
+//                <div class="card-body d-flex align-items-center justify-content-between p-2">
+//
+//                    <button class="btn btn-primary openPersonModal"
+//                            data-id="${resp.id}"
+//                            data-name="${fname}"
+//                            data-lname="${lname}"
+//                            data-status="${status}">
+//                        <i class="fa fa-user"></i>
+//                    </button>
+//
+//                    <div class="flex-grow-1 px-2">
+//                        <button class="btn p-0 text-start w-100 openPersonModal"
+//                                data-id="${resp.id}"
+//                                data-name="${fname}"
+//                                data-lname="${lname}"
+//                                data-status="${status}">
+//
+//                            <div class="fw-bold d-flex align-items-center gap-2 person-fullname">
+//                                ${fullName}
+//                                ${statusBadge}
+//                            </div>
+//
+//                            <div class="small text-muted person-offices">
+//                                ${officesText}
+//                            </div>
+//
+//                            ${profileBadge}
+//                        </button>
+//                    </div>
+//
+//                    <button class="btn btn-sm btn-outline-primary openUserModal"
+//                            data-person-id="${resp.id}"
+//                            data-account-id="0"
+//                            data-username=""
+//                            data-profile="0"
+//                            data-offices='[]'>
+//                        <i class="fa fa-key"></i>
+//                    </button>
+//
+//                </div>
+//            </div>`;
+//
+//            $("#personsContainer").prepend(newCard);
+//
+//            showToast("Добавен нов служител", "success");
+//        }
+//
+//        if(resp.mode === "update"){
+//
+//            const row = $(`.person-item[data-person-id='${resp.id}']`);
+//
+//            row.attr("data-name", fullName.toLowerCase());
+//            row.attr("data-status", status);
+//
+//            row.find(".person-fullname").html(`
+//                ${fullName}
+//                ${statusBadge}
+//            `);
+//
+//            // update modal trigger
+//            row.find(".openPersonModal")
+//                .data("name", fname)
+//                .data("lname", lname)
+//                .data("status", status);
+//
+//            showToast("Обновен служител", "success");
+//        }
+//
+//        // close modal
+//        const modalEl = document.getElementById("personModal");
+//        const modal = bootstrap.Modal.getInstance(modalEl);
+//        if(modal) modal.hide();
+//
+//    }, "json");
+//
+//});
+
+/* ===============================
+   OPEN USER MODAL
+=============================== */
+$(document).on("click", ".openUserModal", function(){
+
+    const btn = $(this);
+
+    const personId  = btn.data("person-id");
+    const accountId = btn.data("account-id");
+    const username  = btn.data("username");
+    const profile   = btn.data("profile");
+
+    let offices = btn.data("offices");
+
+    if(typeof offices === "string"){
+
+        try{
+            offices = JSON.parse(offices);
+        }catch(e){
+            offices = [];
+        }
+    }
+
+    if(!Array.isArray(offices)){
+        offices = [];
+    }
+
+    /* RESET */
+
+    $("#modal_user_person_id").val(personId);
+    $("#modal_account_id").val(accountId || "");
+
+    $("#modal_username").val(username || "");
+    $("#modal_password").val("");
+
+    $("#modal_profile").val(profile || 2);
+
+    $(".user-office-checkbox")
+        .prop("checked", false);
+
+    /* SELECT OFFICES */
+    offices.forEach(function(id){
+
+        $("#user_office_" + id)
+            .prop("checked", true);
+
+    });
+
+    /* APPLY ALL MODE */
+    toggleAllOfficesMode();
+
+    const modal = new bootstrap.Modal(
+        document.getElementById("userLevelModal")
+    );
+
+    modal.show();
+
+});
+
+/* ===============================
+   ALL OFFICES LOGIC
+=============================== */
+function toggleAllOfficesMode(){
+
+    const allChecked = $("#user_office_0")
+        .is(":checked");
+
+    $(".user-office-checkbox").each(function(){
+
+        const val = parseInt($(this).val());
+
+        if(val !== 0){
+
+            $(this)
+                .prop("disabled", allChecked);
+
+            if(allChecked){
+                $(this).prop("checked", false);
+            }
+        }
+    });
+}
+
+/* CHANGE */
+$(document).on(
+    "change",
+    "#user_office_0",
+    toggleAllOfficesMode
+);
+
+/* ===============================
+   SAVE USER ACCOUNT
+=============================== */
+$(document).on("click", "#saveUserBtnModal", function(){
+
+    const personId  = $("#modal_user_person_id").val();
+    let accountId = $("#modal_account_id").val();
+
+    const username = $("#modal_username")
+        .val()
+        .trim();
+
+    const password = $("#modal_password")
+        .val()
+        .trim();
+
+    const profile = $("#modal_profile")
+        .val();
+
+    let offices = [];
+
+    $(".user-office-checkbox:checked")
+        .each(function(){
+
+            offices.push(
+                parseInt($(this).val())
+            );
+
+        });
+
+    if(!username){
+
+        showToast(
+            "Въведете username",
+            "danger"
+        );
+
+        return;
+    }
+
+    $.post(
+        "includes/save_user_account.php",
+        {
+
+            person_id: personId,
+            account_id: accountId,
+
+            username: username,
+            password: password,
+
+            profile: profile,
+
+            offices: JSON.stringify(offices)
+
+        },
+        function(resp){
+
+            if(resp.success){
+
+                showToast("Потребителят е записан успешно", "success");
+
+                const modalEl = document.getElementById("userLevelModal");
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if(modal) modal.hide();
+
+                // FULL REFRESH
+                $.get("includes/get_persons.php", function(data){
+
+                    if(data.success){
+                        $("#personsContainer").html(data.html);
+                        showToast("Списъкът е обновен", "success");
+                    }
+
+                }, "json");
+
+            } else {
+                showToast(resp.message || "Грешка при запис", "danger");
+            }
+
+        },
+        "json"
+    );
+
+});
+
+/* ===============================
+   PERSON FILTER ENGINE
+=============================== */
+function filterPersons(){
+
+    const search = $("#personSearch")
+        .val()
+        .toLowerCase()
+        .trim();
+
+    const status = $("#personStatusFilter")
+        .val();
+
+    const profile = $("#personProfileFilter")
+        .val();
+
+    $(".person-item").each(function(){
+
+        const row = $(this);
+
+        const rowName = row.data("name") || "";
+
+        const rowStatus = row.data("status") || "";
+
+        const rowProfile = String(row.data("profile") || "0");
+
+        let visible = true;
+
+        /* SEARCH */
+        if(search.length > 0){
+
+            if(!rowName.includes(search)){
+                visible = false;
+            }
+        }
+
+        /* STATUS */
+        if(status !== ""){
+
+            if(rowStatus !== status){
+                visible = false;
+            }
+        }
+
+        /* PROFILE */
+        if(profile !== ""){
+
+            if(rowProfile !== profile){
+                visible = false;
+            }
+        }
+
+        row.toggle(visible);
+
+    });
+
+}
+
+/* ===============================
+   FILTER EVENTS
+=============================== */
+$(document).on(
+    "keyup",
+    "#personSearch",
+    debounce(filterPersons, 200)
+);
+
+$(document).on(
+    "change",
+    "#personStatusFilter",
+    filterPersons
+);
+
+$(document).on(
+    "change",
+    "#personProfileFilter",
+    filterPersons
+);
 
 /* ===============================
    LOAD OBJECT MODAL

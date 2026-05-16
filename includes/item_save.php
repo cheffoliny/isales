@@ -6,6 +6,7 @@ header('Content-Type: application/json');
 $db = db_connect('storage');
 
 $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+$is_new = isset($_POST['newp']) ? (int)$_POST['newp'] : 0;
 $client = isset($_POST['client_price']) ? (float)$_POST['client_price'] : 0;
 $sales = isset($_POST['sales_price']) ? (float)$_POST['sales_price'] : 0;
 $promoNote = isset($_POST['promo_note']) ? $_POST['promo_note'] : '';
@@ -17,7 +18,7 @@ if(!$id){
 
 $stmt = $db->prepare("
     UPDATE nomenclatures
-    SET client_price = ?, sales_price = ?, promo_note = ?
+    SET client_price = ?, sales_price = ?, promo_note = ?, is_new = ?
     WHERE id = ?
 ");
 
@@ -26,7 +27,7 @@ if(!$stmt){
     exit;
 }
 
-$stmt->bind_param("ddsi", $client, $sales, $promoNote, $id);
+$stmt->bind_param("ddsii", $client, $sales, $promoNote, $is_new, $id);
 
 $ok = $stmt->execute();
 

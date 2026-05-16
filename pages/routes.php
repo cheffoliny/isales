@@ -8,6 +8,11 @@ $markup_percentage = 16;
 $markup_percentage_100 = 1.16;
 $salary_percentage = 1.05;
 
+$where_offices = '';
+if( $_SESSION['offices_ids' ] != '0' ) {
+    $where_offices = ' WHERE offs.id IN('.$_SESSION['offices_ids'].') ';
+}
+
 $db = db_connect('sod');
 
 $stmt = $db->prepare("
@@ -51,13 +56,8 @@ $stmt = $db->prepare("
                     END) AS total_qty
 
                 FROM offices offs
-
                 LEFT JOIN ". DB_NAMES['system'] .".`system` sys ON 1 = 1
-
-                LEFT JOIN objects o
-                    ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
-                   AND o.id_status = 1
-
+                LEFT JOIN objects o ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$') AND o.id_status = 1
                 LEFT JOIN (
                     SELECT
                         p.id_dest,
@@ -77,9 +77,8 @@ $stmt = $db->prepare("
 
                       AND p.source_date < CURDATE() + INTERVAL 1 DAY
                     GROUP BY p.id_dest
-                ) obj_sum
-                    ON obj_sum.id_dest = o.id
-
+                ) obj_sum ON obj_sum.id_dest = o.id
+                ". $where_offices ."
                 GROUP BY offs.id, offs.name
                 ORDER BY offs.name ASC
             ");
@@ -161,7 +160,7 @@ if (!$result || $result->num_rows === 0) {
 
         <a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
             class="fw-semibold fs-5 text-decoration-none">
-            <?= $officeName ?>
+            <?= $officeName .' / '. $_SESSION['offices_ids' ]?>
         </a>
     </div>
     <?php if($_SESSION['is_admin'] == 1 && $objectVisited > 0   ) { ?>

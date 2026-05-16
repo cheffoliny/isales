@@ -105,16 +105,26 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
         <!-- SEARCH + PROMO -->
         <div class="d-flex gap-2 mb-1">
+
             <input type="text"
                    id="deliverySearch"
                    class="form-control form-control-sm py-2"
                    placeholder="ТЪРСИ ПО КОД ИЛИ ИМЕ...">
 
-            <button id="promoFilter"
-                    class="btn btn-sm btn-danger">
-                ПРОМОЦИИ
+
+            <button id="newFilter"
+                    class="btn btn-success d-inline-flex align-items-center gap-1">
+
+                <i class="fa-solid fa-file-circle-plus"></i>
+                <span>НОВО</span>
+
             </button>
 
+            <button id="promoFilter"
+                    class="btn btn-danger d-inline-flex align-items-center gap-1">
+                <i class="fa-solid fa-percent"></i>
+                <span>ПРОМО</span>
+            </button>
         </div>
 
         <div class="text-center my-1">
@@ -140,6 +150,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                     n.sales_price,
                     n.is_calc,
                     n.unit,
+                    n.is_new,
                     COALESCE(pe.count,0),
                     DATE_FORMAT(pe.updated_time,'%d.%m.%Y'),
                     COALESCE(oldpe.count,0),
@@ -182,6 +193,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 $sPrice,
                 $nCount,
                 $nUnit,
+                $nIsNew,
                 $oQuantity,
                 $lOrder,
                 $oldQty,
@@ -198,6 +210,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
                 $sPromoNote = htmlspecialchars($nPromoNote ?? '', ENT_QUOTES, 'UTF-8');
                 $sUnit=htmlspecialchars($nUnit);
+                $isNew = ((int)$nIsNew > 0) ? 1 : 0;
 
                 $cPriceRaw=(float)$cPrice;
                 $sPriceRaw=(float)$sPrice;
@@ -231,6 +244,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                      data-code="<?= $sCode ?>"
                      data-name="<?= $sName ?>"
                      data-promo="<?= $isPromo ?>"
+                     data-new="<?= $isNew ?>"
                      data-ordered="<?= $inputValue > 0 ? 1 : 0 ?>">
 
                     <div class="flex-grow-1 d-flex align-items-start gap-2">
@@ -323,7 +337,8 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
     const deliveryConfirmed = <?= $isConfirmed?'true':'false' ?>;
 
-    let promoActive=false;
+    let newActive = false;
+    let promoActive = false;
     let showOnlyOrdered = false;
 
     /* FILTER */
@@ -337,6 +352,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
             const code = ($(this).attr('data-code') || '').toUpperCase();
             const name = ($(this).attr('data-name') || '').toUpperCase();
+            const isNew = parseInt($(this).attr('data-new')) || 0;
             const promo = parseInt($(this).attr('data-promo')) || 0;
             const ordered = parseInt($(this).attr('data-ordered')) || 0;
 
@@ -347,6 +363,11 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 if(code.indexOf(search) === -1 && name.indexOf(search) === -1)
                     visible=false;
             }
+
+
+            // NEW
+            if(newActive && isNew !== 1)
+                visible=false;
 
             // PROMO
             if(promoActive && promo !== 1)
@@ -403,16 +424,20 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 
     });
 
+    $('#newFilter').on('click',function(){
+        newActive=!newActive;
+        $(this)
+            .toggleClass('btn-success btn-secondary')
+            .text(newActive?'ВСИЧКИ':'НОВО');
+        applyFilters();
+    });
+
     $('#promoFilter').on('click',function(){
-
         promoActive=!promoActive;
-
         $(this)
             .toggleClass('btn-danger btn-secondary')
             .text(promoActive?'ВСИЧКИ':'ПРОМОЦИИ');
-
         applyFilters();
-
     });
 
     /* QTY + */
@@ -516,7 +541,13 @@ $(document).on('click','.save-delivery',function(){
             // ✅ RESET SEARCH + FILTERS
             $('#deliverySearch').val('');
 
+            newActive = false;
             promoActive = false;
+
+            $('#newFilter')
+                .removeClass('btn-secondary')
+                .addClass('btn-success')
+                .text('НОВО');
 
             $('#promoFilter')
                 .removeClass('btn-secondary')

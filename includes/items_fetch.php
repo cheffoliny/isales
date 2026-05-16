@@ -87,10 +87,8 @@ while ($r = $res->fetch_assoc()) {
         ($_SESSION['is_admin'] == 1
         ?
         $html .= '<tr data-id="'.$r['id'].'">
-                <td class="bg-success text-white small"><span class=" p-1 m-0"><input type="checkbox"
-                                                                                      class="newp"
-                                                                                      name="newp"
-                                                                                      '.($r['is_new'] ? 'checked' : '').' /> НОВО</span></td>
+                <td><span class="btn btn-sm btn-outline-success p-1 w-100 m-0 text-white">
+                    <input type="checkbox" class="newp mx-2" name="newp" '.($r['is_new'] ? 'checked' : '').' /> НОВО</span></td>
                 <td><input type="text" class="form-control form-control-sm promo_note text-danger"
                            placeholder="Промо описание..." value="'.$promoNote.'" '.$strDisable.' /></td>
                 <td>&nbsp;</td>
@@ -166,7 +164,7 @@ while ($r = $res->fetch_assoc()) {
                     ($_SESSION['is_admin'] == 1
                     ?
                         '<div class="mt-2">
-                            <span class="bg-success w-100 text-white p-1 m-0">
+                            <span class="btn btn-sm btn-outline-primary w-100 text-white p-1 m-0">
                                 <input type="checkbox"
                                        class="newp"
                                        name="newp"

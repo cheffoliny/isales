@@ -29,25 +29,16 @@ function hasLowStockWarnings(int $limit = 5): bool
             pe.id_nomenclature,
             n.is_calc,
             SUM(pe.count) AS ordered_qty
-
-        FROM ppp_elements pe
-
-        JOIN ppp p
-            ON p.id = pe.id_ppp
-
-        JOIN nomenclatures n
-            ON n.id = pe.id_nomenclature
-
+        FROM nomenclatures n
+        JOIN ppp_elements pe ON n.id = pe.id_nomenclature
+        JOIN ppp p ON p.id = pe.id_ppp
         WHERE
             DATE(p.source_date) = CURDATE()
             AND p.status != 'cancel'
             AND n.to_arc = 0
             AND n.is_calc > 0
 
-        GROUP BY
-            pe.id_nomenclature,
-            n.is_calc
-
+        GROUP BY pe.id_nomenclature, n.is_calc
         HAVING
             (n.is_calc - ordered_qty) < ?
 
@@ -57,7 +48,6 @@ function hasLowStockWarnings(int $limit = 5): bool
     $stmt = $db->prepare($sql);
 
     $stmt->bind_param("i", $limit);
-
     $stmt->execute();
 
     $result = $stmt->get_result();

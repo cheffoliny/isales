@@ -16,7 +16,7 @@ $hasLowStock = hasLowStockWarnings();
             iSales
         </span>
 
-        <?php if($hasLowStock): ?>
+        <?php if($hasLowStock && $_SESSION['is_admin'] == 1): ?>
 
             <a href="dashboard.php?page=low_stock"
                class="text-decoration-none">

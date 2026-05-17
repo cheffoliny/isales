@@ -28,7 +28,7 @@ $objName = getObjectByID($objectId);
             <i class="fa-solid fa-angles-left"></i>
         </a>
 
-        <h5 class="mb-0"> Заявка за: <?= htmlspecialchars($objName) ?></h5>
+        <h5 class="mb-0"> Заявка: <?= htmlspecialchars($objName) ?></h5>
 
         <div class="btn-group">
             <a href="dashboard.php?page=object_order&id=<?= $objectId ?>&pppID=<?= $pppID ?>" class="btn btn-sm <?= !$showAll?'btn-primary':'btn-outline-primary' ?>">

@@ -6,7 +6,7 @@ $currentPage = $_GET['page'] ?? 'routes';
 
     <div class="container-fluid d-flex justify-content-between">
 
-        <span class="fw-semibold">
+        <span class="fw-semibold" onclick="window.open('https://isales.daga2020.store')">
             iSales
         </span>
 

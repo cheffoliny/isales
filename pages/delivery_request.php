@@ -80,7 +80,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
             <i class="fa-solid fa-angles-left"></i>
         </a>
 
-        <h5 class="mb-0"> Заявка за: <?= htmlspecialchars($objName) ?></h5>
+        <h5 class="mb-0"> Заявка: <?= htmlspecialchars($objName) ?></h5>
 
         <div class="btn-group">
             <button id="filterOrdered" class="btn btn-sm btn-outline-primary">
@@ -154,7 +154,20 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                     COALESCE(pe.count,0),
                     DATE_FORMAT(pe.updated_time,'%d.%m.%Y'),
                     COALESCE(oldpe.count,0),
-                    DATE_FORMAT(oldpe.updated_time,'%d.%m.%Y')
+                    DATE_FORMAT(oldpe.updated_time,'%d.%m.%Y'),
+                    COALESCE(
+                        (
+                            SELECT SUM(pppe.`count`)
+                            FROM ppp_elements pppe
+                            INNER JOIN ppp ppp
+                                ON ppp.id = pppe.id_ppp
+                            WHERE pppe.id_nomenclature = n.id
+                              AND DATE(ppp.source_date) = CURDATE()
+                              AND ppp.status != 'cancel'
+                        ),
+                        0
+                    )
+                    AS qty_ordered
                 FROM nomenclatures n
                 LEFT JOIN ppp_elements pe ON pe.id_nomenclature = n.id AND pe.id_ppp = ?
                 LEFT JOIN (
@@ -197,7 +210,8 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 $oQuantity,
                 $lOrder,
                 $oldQty,
-                $oldOrderTime
+                $oldOrderTime,
+                $qtyOrdered
             );
 
             while($stmt->fetch()):
@@ -219,6 +233,13 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                 $nPriceRaw=$sPriceRaw>0?$sPriceRaw:$cPriceRaw;
 
                 $inputValue=(int)$oQuantity;
+
+                $qtyWarning = $nCount - $qtyOrdered;
+
+                $strOrdered = '';
+                if( $qtyWarning < 6 ) {
+                    $strOrdered = '<span class="bg-warning fw-semibold text-dark rounded- px-1"> Поръчано: '. $qtyOrdered .' </span>';
+                }
 
                 $btnClass=$inputValue>0?'btn-success':'btn-danger';
 
@@ -258,7 +279,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                             </div>
 
                             <div class="small text-info">
-                                Налично: <?= $nCount.' '.$sUnit ?>
+                                Налично: <?= $nCount.' '.$sUnit .' '. $strOrdered ?>
                                 / Цена: <?= number_format($cPriceRaw,2) ?>
 
                                 <?php if($sPriceRaw>0): ?>

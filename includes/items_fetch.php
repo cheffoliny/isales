@@ -11,8 +11,8 @@ $db = db_connect('storage');
 $page = (int)($_GET['page'] ?? 0);
 $search = trim($_GET['search'] ?? '');
 $newp = (int)($_GET['newp'] ?? 0);
+$norder = (int)($_GET['norder'] ?? 0);
 $promo = (int)($_GET['promo'] ?? 0);
-//$promoNote = ($_GET['promo_note'] ?? NULL);
 $zero = (int)($_GET['zero'] ?? 0);
 $image = (int)($_GET['image'] ?? NULL);
 $limit = 2000;
@@ -20,6 +20,7 @@ $offset = $page * $limit;
 $offset = $limit;
 
 $where = " WHERE n.to_arc = 0 ";
+$having = '';
 
 // Защитен вход в заявката - ескейпваме
 if ($search !== '') {
@@ -28,23 +29,46 @@ if ($search !== '') {
     $where .= " AND (n.nom_code LIKE '%$s%' OR n.name LIKE '%$s%')";
 }
 if ($newp) {
-    $where .= " AND n.is_new > 0";
+    $where .= " AND n.is_new > 0 ";
 }
+if ($norder) {
+    $having .= " HAVING norder = 0 ";
+}
+
 if ($promo) {
-    $where .= " AND n.sales_price > 0";
+    $where .= " AND n.sales_price > 0 ";
 }
 if ($zero) {
-    $where .= " AND n.is_calc = 0";
+    $where .= " AND n.is_calc = 0 ";
 } else {
-    $where .= " AND n.is_calc > 0";
+    $where .= " AND n.is_calc > 0 ";
 }
 if ($image) {
     $where .= " AND n.image IS NULL ";
 }
 
-$sql = "SELECT n.id, n.nom_code, n.name, n.client_price, n.sales_price, n.is_calc, n.image, n.is_new, CONCAT('(',n.promo_note,')') AS promo_note
+$sql = "SELECT
+            n.id,
+            n.nom_code,
+            n.name,
+            n.client_price,
+            n.sales_price,
+            n.is_calc,
+            n.image,
+            n.is_new,
+            CONCAT('(',n.promo_note,')') AS promo_note,
+            COALESCE(
+                (SELECT
+                    COUNT(pe.id)
+                FROM ppp_elements pe
+                JOIN ppp p ON p.id = pe.id_ppp AND p.`status` != 'cancel'
+                WHERE pe.id_nomenclature = n.id
+                GROUP BY pe.id_nomenclature),
+                0
+            ) AS norder
         FROM nomenclatures n
         $where
+        $having
         ORDER BY n.nom_code
         LIMIT $limit 
         ";

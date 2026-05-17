@@ -20,12 +20,17 @@ if(empty($_SESSION['user_id'])){
             <button id="promoFilter" class="btn btn-sm btn-danger">
                 <i class="fa-solid fa-percent"></i> ПРОМО
             </button>
-            <button id="zeroFilter" class="btn btn-sm btn-warning text-white">
-                <i class="fa-brands fa-creative-commons-zero"></i> НУЛЕВИ
-            </button>
-            <button id="zeroImage" class="btn btn-sm btn-primary text-white">
-                <i class="fa-solid fa-image"></i> БЕЗ СНИМКА
-            </button>
+            <?php if($_SESSION['is_admin'] == 1) { ?>
+                <button id="zeroFilter" class="btn btn-sm btn-warning text-white">
+                    <i class="fa-brands fa-creative-commons-zero"></i> НУЛЕВИ
+                </button>
+                <button id="zeroImage" class="btn btn-sm btn-primary text-white">
+                    <i class="fa-solid fa-image"></i> БЕЗ СНИМКА
+                </button>
+                <button id="zeroOrder" class="btn btn-sm bg-info-subtle text-info-emphasis">
+                    <i class="fa-solid fa-ban"></i> НЕ КУПУВАНИ
+                </button>
+            <?php } ?>
 
             <div class="btn-group btn-group-sm ms-auto">
                 <button type="button" class="btn btn-primary active" id="viewListBtn">
@@ -98,6 +103,7 @@ let newp = false;
 let promo = false;
 let zero = false;
 let image = false;
+let norder = false;
 let loading = false;
 let endReached = false;
 let viewMode = 'list';
@@ -124,7 +130,8 @@ function loadItems(reset=false){
         newp: newp ? 1 : 0,
         promo: promo ? 1 : 0,
         zero: zero ? 1 : 0,
-        image: image ? 1 : 0
+        image: image ? 1 : 0,
+        norder: norder ? 1 : 0
     }, function(resp){
 
         if(resp.success){
@@ -189,6 +196,12 @@ $('#zeroFilter').on('click', function(){
 
 $('#zeroImage').on('click', function(){
     image = !image;
+    $(this).toggleClass('btn-info btn-secondary');
+    loadItems(true);
+});
+
+$('#zeroOrder').on('click', function(){
+    norder = !norder;
     $(this).toggleClass('btn-info btn-secondary');
     loadItems(true);
 });

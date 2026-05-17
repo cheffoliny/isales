@@ -30,7 +30,7 @@ if(empty($_SESSION['user_id'])){
                 <button id="zeroOrder" class="btn btn-sm bg-info-subtle text-info-emphasis">
                     <i class="fa-solid fa-ban"></i> НЕ КУПУВАНИ
                 </button>
-            <?php } ?>
+            <?php }  ?>
 
             <div class="btn-group btn-group-sm ms-auto">
                 <button type="button" class="btn btn-primary active" id="viewListBtn">

@@ -1,5 +1,11 @@
 <?php
+
+include_once __DIR__ . '/../includes/functions.php';
+
 $currentPage = $_GET['page'] ?? 'routes';
+
+$hasLowStock = hasLowStockWarnings();
+
 ?>
 
 <nav class="navbar navbar-dark bg-primary app-header shadow-sm">
@@ -9,6 +15,18 @@ $currentPage = $_GET['page'] ?? 'routes';
         <span class="fw-semibold" onclick="window.open('https://isales.daga2020.store')">
             iSales
         </span>
+
+        <?php if($hasLowStock): ?>
+
+            <a href="dashboard.php?page=low_stock"
+               class="text-decoration-none">
+                <span class="badge bg-danger ms-2 pulse-badge">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    Ниска наличност
+                </span>
+            </a>
+
+        <?php endif; ?>
 
         <div class="d-flex align-items-center gap-2">
 
@@ -26,14 +44,9 @@ $currentPage = $_GET['page'] ?? 'routes';
                 <ul class="dropdown-menu dropdown-menu-end shadow">
 
                     <li>
-                        <button type="button"
-                                class="dropdown-item"
-                                id="openChangePasswordModal">
-
+                        <button type="button" class="dropdown-item" id="openChangePasswordModal">
                             <i class="fa-solid fa-user-gear me-2"></i>
-
                             <?= '[' . htmlspecialchars($_SESSION['username']) . '] ' . htmlspecialchars($_SESSION['first_name']); ?>
-
                         </button>
                     </li>
 

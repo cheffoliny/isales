@@ -20,11 +20,53 @@ function send_mail($from,$to,$subject,$body)
 	mail($to,$subject,$body,$headers);
 }
 
-function update_geo_data( $person, $geo_data, $geo_acc, $geo_time, $geo_source ) {
-    global $db_sod;
+function hasLowStockWarnings(int $limit = 5): bool
+{
+    $db = db_connect('storage');
 
-    $aQuery  = "INSERT INTO work_card_geo_log ( `id_person`, `geo_time`, `geo_data`, `geo_acc`, `geo_source`, `server_time` ) VALUES ( $person, '{$geo_time}', '{$geo_data}', '{$geo_acc}', '{$geo_source}', NOW() )";
-    $aResult = mysqli_query( $db_sod, $aQuery ) or die( print "ВЪЗНИКНА ГРЕШКА ПРИ ОПИТ ЗА ЗАПИС! ОПИТАЙТЕ ПО–КЪСНО!".$aQuery );
+    $sql = "
+        SELECT
+            pe.id_nomenclature,
+            n.is_calc,
+            SUM(pe.count) AS ordered_qty
+
+        FROM ppp_elements pe
+
+        JOIN ppp p
+            ON p.id = pe.id_ppp
+
+        JOIN nomenclatures n
+            ON n.id = pe.id_nomenclature
+
+        WHERE
+            DATE(p.source_date) = CURDATE()
+            AND p.status != 'cancel'
+            AND n.to_arc = 0
+            AND n.is_calc > 0
+
+        GROUP BY
+            pe.id_nomenclature,
+            n.is_calc
+
+        HAVING
+            (n.is_calc - ordered_qty) < ?
+
+        LIMIT 1
+    ";
+
+    $stmt = $db->prepare($sql);
+
+    $stmt->bind_param("i", $limit);
+
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+    $hasWarnings = $result->num_rows > 0;
+
+    $stmt->close();
+
+    return $hasWarnings;
 }
 
 function getPersonNameByID( $pID ) {

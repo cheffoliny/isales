@@ -5,18 +5,20 @@
 | SESSION CONFIG
 |--------------------------------------------------------------------------
 */
+
 $sessionLifetime = 60 * 60 * 120; // 12 часа
 
 /*
 |--------------------------------------------------------------------------
-| SESSION COOKIE
+| SESSION COOKIE SETTINGS
 |--------------------------------------------------------------------------
 */
+
 session_set_cookie_params([
     'lifetime' => $sessionLifetime,
     'path'     => '/',
     'domain'   => '',
-    'secure'   => isset($_SERVER['HTTPS']),
+    'secure'   => !empty($_SERVER['HTTPS']),
     'httponly' => true,
     'samesite' => 'Lax'
 ]);
@@ -26,6 +28,7 @@ session_set_cookie_params([
 | PHP SESSION GC
 |--------------------------------------------------------------------------
 */
+
 ini_set('session.gc_maxlifetime', $sessionLifetime);
 
 /*
@@ -40,24 +43,34 @@ if (session_status() === PHP_SESSION_NONE) {
 
 /*
 |--------------------------------------------------------------------------
-| INACTIVITY TIMEOUT
+| AUTO LOGOUT AFTER INACTIVITY
 |--------------------------------------------------------------------------
 */
 
-if (isset($_SESSION['LAST_ACTIVITY'])) {
-    $inactive = time() - $_SESSION['LAST_ACTIVITY'];
+$currentPage = basename($_SERVER['PHP_SELF']);
 
-    if ($inactive > $sessionLifetime) {
+if (
+    $currentPage !== 'index.php' &&
+    isset($_SESSION['LAST_ACTIVITY'])
+) {
+
+    $inactiveTime = time() - $_SESSION['LAST_ACTIVITY'];
+
+    if ($inactiveTime > $sessionLifetime) {
+
         session_unset();
+
         session_destroy();
+
         header('Location: index.php?expired=1');
+
         exit;
     }
 }
 
 /*
 |--------------------------------------------------------------------------
-| UPDATE LAST ACTIVITY
+| UPDATE ACTIVITY TIME
 |--------------------------------------------------------------------------
 */
 
@@ -68,4 +81,5 @@ $_SESSION['LAST_ACTIVITY'] = time();
 | LOAD CONFIG
 |--------------------------------------------------------------------------
 */
+
 require_once __DIR__ . '/../config/config.php';

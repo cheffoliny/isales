@@ -26,23 +26,22 @@ $firstName = htmlspecialchars($_SESSION['first_name'] ?? '');
         </div>
 
         <!-- CENTER ALERT -->
-        <?php if($hasLowStock): ?>
+        <?php if($_SESSION['is_admin'] == 1): ?>
 
             <div class="position-absolute top-50 start-50 translate-middle">
 
                 <a href="dashboard.php?page=low_stock"
                    class="text-decoration-none">
-
+                    <?php if($hasLowStock): ?>
                     <span class="badge bg-danger pulse-badge d-flex align-items-center gap-1 px-3 py-2">
-
+                    <?php else: ?>
+                    <span class="badge bg-secondary d-flex align-items-center gap-1 px-3 py-2">
+                    <?php endif; ?>
                         <i class="fa-solid fa-triangle-exclamation"></i>
-
                         <span>
                             Ниска наличност
                         </span>
-
                     </span>
-
                 </a>
 
             </div>

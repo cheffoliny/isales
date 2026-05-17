@@ -29,9 +29,9 @@ function hasLowStockWarnings(int $limit = 5): bool
             pe.id_nomenclature,
             n.is_calc,
             SUM(pe.count) AS ordered_qty
-        FROM nomenclatures n
-        JOIN ppp_elements pe ON n.id = pe.id_nomenclature
+        FROM ppp_elements pe
         JOIN ppp p ON p.id = pe.id_ppp
+        JOIN nomenclatures n ON n.id = pe.id_nomenclature
         WHERE
             DATE(p.source_date) = CURDATE()
             AND p.status != 'cancel'

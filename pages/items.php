@@ -27,7 +27,7 @@ if(empty($_SESSION['user_id'])){
                 <button id="zeroImage" class="btn btn-sm btn-primary text-white">
                     <i class="fa-solid fa-image"></i> БЕЗ СНИМКА
                 </button>
-                <button id="zeroOrder" class="btn btn-sm bg-info-subtle text-info-emphasis">
+                <button id="zeroOrder" class="btn btn-sm bg-primary text-info-emphasis">
                     <i class="fa-solid fa-ban"></i> НЕ КУПУВАНИ
                 </button>
             <?php }  ?>

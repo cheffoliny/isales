@@ -3,7 +3,6 @@
 include_once __DIR__ . '/../includes/functions.php';
 
 $currentPage = $_GET['page'] ?? 'routes';
-
 $hasLowStock = hasLowStockWarnings();
 
 ?>
@@ -16,7 +15,7 @@ $hasLowStock = hasLowStockWarnings();
             iSales
         </span>
 
-        <?php if($hasLowStock && $_SESSION['is_admin'] == 1): ?>
+        <?php if($hasLowStock): ?>
 
             <a href="dashboard.php?page=low_stock"
                class="text-decoration-none">

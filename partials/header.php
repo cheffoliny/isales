@@ -26,7 +26,7 @@ $firstName = htmlspecialchars($_SESSION['first_name'] ?? '');
         </div>
 
         <!-- CENTER ALERT -->
-        <?php if($_SESSION['is_admin'] == 1): ?>
+       <?php if(($_SESSION['is_admin'] ?? 0) == 1): ?>
 
             <div class="position-absolute top-50 start-50 translate-middle">
 

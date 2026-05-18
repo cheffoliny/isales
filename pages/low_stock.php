@@ -81,14 +81,14 @@ $stmt->bind_result(
 
         <div class="btn-group">
 
-            <a href="dashboard.php?page=low_stocks&filter=ordered"
+            <a href="dashboard.php?page=low_stock&filter=ordered"
                class="btn btn-sm <?= $filter === 'ordered'
                    ? 'btn-danger'
                    : 'btn-outline-danger' ?>">
                 ЗАЯВЕНО
             </a>
 
-            <a href="dashboard.php?page=low_stocks&filter=all"
+            <a href="dashboard.php?page=low_stock&filter=all"
                class="btn btn-sm <?= $filter === 'all'
                    ? 'btn-primary'
                    : 'btn-outline-primary' ?>">

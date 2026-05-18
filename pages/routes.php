@@ -1,8 +1,10 @@
 <?php
+
 if (empty($_SESSION['user_id'])) {
-    echo '<div class="alert alert-danger m-3">Нямате достъп.</div>';
+    header('Location: index.php');
     exit;
 }
+
 $no_dds = 1.2;
 $markup_percentage = 16;
 $markup_percentage_100 = 1.16;

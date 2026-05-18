@@ -1,8 +1,8 @@
 <?php
-include_once __DIR__ . '/../includes/functions.php';
+include_once __DIR__.'/../includes/functions.php';
 
 if (empty($_SESSION['user_id'])) {
-    echo '<div class="alert alert-danger">Нямате достъп.</div>';
+    header('Location: index.php');
     exit;
 }
 

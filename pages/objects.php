@@ -2,8 +2,8 @@
 include_once __DIR__ . '/../includes/functions.php';
 
 if (empty($_SESSION['user_id'])) {
-    echo '<div class="alert alert-danger m-3">Нямате достъп.</div>';
-    return;
+    header('Location: index.php');
+    exit;
 }
 
 $where_offices = '';

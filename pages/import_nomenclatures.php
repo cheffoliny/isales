@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../config/config.php';
+include_once __DIR__.'/../includes/functions.php';
 
 $conn = db_connect('storage');
 
@@ -332,26 +332,35 @@ function insertBatch($conn, $data) {
     $values = [];
 
     foreach ($data as $row) {
-        $placeholders[] = "(?, ?, ?, ?, ?, ?)";
+
+        // добавяме NOW() директно
+        $placeholders[] = "(?, ?, ?, ?, ?, ?, NOW())";
+
         $types .= 'isssdd';
+
         $values = array_merge($values, $row);
     }
 
-   // $sql = "
-     //   REPLACE INTO nomenclatures
-       // (id, nom_code, name, unit, is_calc, client_price)
-        //VALUES " . implode(',', $placeholders);
-        $sql = "
-            INSERT INTO nomenclatures
-            (id, nom_code, name, unit, is_calc, client_price)
-            VALUES " . implode(',', $placeholders) . "
-            ON DUPLICATE KEY UPDATE
-                nom_code = VALUES(nom_code),
-                name = VALUES(name),
-                unit = VALUES(unit),
-                is_calc = VALUES(is_calc),
-                client_price = VALUES(client_price)
-        ";
+    $sql = "
+        INSERT INTO nomenclatures
+        (
+            id,
+            nom_code,
+            name,
+            unit,
+            is_calc,
+            client_price,
+            updated_time
+        )
+        VALUES " . implode(',', $placeholders) . "
+        ON DUPLICATE KEY UPDATE
+            nom_code = VALUES(nom_code),
+            name = VALUES(name),
+            unit = VALUES(unit),
+            is_calc = VALUES(is_calc),
+            client_price = VALUES(client_price),
+            updated_time = NOW()
+    ";
 
     $stmt = $conn->prepare($sql);
 

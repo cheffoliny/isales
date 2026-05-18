@@ -1,5 +1,5 @@
 <?php
-include_once __DIR__ . '/../includes/functions.php';
+include_once __DIR__.'/../includes/functions.php';
 
 if (empty($_SESSION['user_id'])) {
     header('Location: index.php');

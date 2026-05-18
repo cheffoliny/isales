@@ -1,6 +1,5 @@
 <?php
-
-include_once __DIR__ . '/../includes/functions.php';
+include_once __DIR__.'/../includes/functions.php';
 
 header('Content-Type: application/json');
 

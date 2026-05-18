@@ -40,7 +40,7 @@ $sql = "
                 DATE(p.source_date) < CURDATE()
                 OR (
                     DATE(p.source_date) = CURDATE()
-                    AND p.`status` = 'wait'
+                    AND p.`status` != 'open'
                 )
             )
             ". $where_offices ."

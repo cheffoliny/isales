@@ -7,6 +7,13 @@ if (empty($_SESSION['user_id'])) {
 }
 
 $db = db_connect('storage');
+$filter = $_GET['filter'] ?? 'all';
+
+$havingExtra = '';
+
+if ($filter === 'ordered') {
+    $havingExtra = ' AND qty_ordered > 0 ';
+}
 
 $sql = "
     SELECT
@@ -38,6 +45,7 @@ $sql = "
       AND n.client_price > 0
 
     HAVING (is_calc - qty_ordered) < 6
+    {$havingExtra}
 
     ORDER BY (is_calc - qty_ordered) ASC, name ASC
 ";
@@ -68,13 +76,26 @@ $stmt->bind_result(
 
         <h5 class="mb-0 text-danger">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            Намаляваща наличност
+            Критична наличност
         </h5>
 
-        <span class="badge bg-danger">
-            Критични артикули
-        </span>
+        <div class="btn-group">
 
+            <a href="dashboard.php?page=low_stocks&filter=ordered"
+               class="btn btn-sm <?= $filter === 'ordered'
+                   ? 'btn-danger'
+                   : 'btn-outline-danger' ?>">
+                ЗАЯВЕНО
+            </a>
+
+            <a href="dashboard.php?page=low_stocks&filter=all"
+               class="btn btn-sm <?= $filter === 'all'
+                   ? 'btn-primary'
+                   : 'btn-outline-primary' ?>">
+                ВСИЧКИ
+            </a>
+
+        </div>
     </div>
 
     <div class="card-body">

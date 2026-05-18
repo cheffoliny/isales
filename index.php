@@ -107,6 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->close();
             $db->close();
 
+            session_regenerate_id(true);
+            $_SESSION['LAST_ACTIVITY'] = time();
+            
             header("Location: dashboard.php");
             exit;
 

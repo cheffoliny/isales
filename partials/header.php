@@ -19,7 +19,7 @@ $firstName = htmlspecialchars($_SESSION['first_name'] ?? '');
 
             <span class="fw-semibold"
                   style="cursor:pointer"
-                  onclick="window.open('https://isales.daga2020.store')">
+                  onclick="window.location.href='https://isales.daga2020.store'">
                 iSales
             </span>
 

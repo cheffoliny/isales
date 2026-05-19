@@ -1,5 +1,11 @@
 <?php
 require_once 'core/init.php';
+
+if (empty($_SESSION['user_id'])) {
+    header('Location: index.php');
+    exit;
+}
+
 $page = require 'core/router.php';
 ?>
 <!DOCTYPE html>

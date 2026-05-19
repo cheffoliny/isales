@@ -32,6 +32,8 @@ $sql = "
                 INNER JOIN ppp p ON p.id = pe.id_ppp
                 WHERE pe.id_nomenclature = n.id
                   AND DATE(p.source_date) = CURDATE()
+                  AND n.updated_time != '0000-00-00 00:00:00'
+                  AND pe.updated_time > n.updated_time
                   AND p.status != 'cancel'
             ),
             0

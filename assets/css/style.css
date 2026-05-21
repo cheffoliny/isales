@@ -130,17 +130,13 @@ html, body {
 .app-bottom-nav .dropdown-menu {
     border: 0;
     border-radius: 18px;
-
     padding: 10px;
-
     min-width: 220px;
-
     margin-bottom: 16px;
-
     background: var(--bs-body-bg);
-
     box-shadow:
         0 10px 30px rgba(0,0,0,0.15);
+    transform: translate3d(-69px, -66px, 0px);
 }
 
 .app-bottom-nav .dropdown-item {

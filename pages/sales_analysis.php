@@ -333,7 +333,7 @@ $averageProfit = $daysCount > 0
 
 <div class="card shadow border-0 mb-4">
 
-    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="card-header bg-primary d-flex justify-content-between align-items-center flex-wrap gap-2">
 
         <div>
 
@@ -625,12 +625,9 @@ $averageProfit = $daysCount > 0
 
             <div class="card border-0 shadow-sm mb-4">
 
-                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
-
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="fw-semibold">
-
                         <i class="fa-solid fa-chart-area text-primary"></i>
-
                         Динамика на оборот и печалба
 
                     </div>
@@ -684,18 +681,12 @@ $averageProfit = $daysCount > 0
 
                     <table class="table table-hover align-middle mb-0">
 
-                        <thead class="table-light">
-
+                        <thead class="">
                         <tr>
-
                             <th>Дата</th>
-
                             <th class="text-end">С ДДС</th>
-
                             <th class="text-end">Без ДДС</th>
-
                             <th class="text-end">Печалба</th>
-
                         </tr>
 
                         </thead>

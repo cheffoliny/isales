@@ -11,7 +11,8 @@ $allowedPages = [
     'general_report',
     'delivery_request',
     'users',
-    'low_stock'
+    'low_stock',
+    'sales_analysis'
 ];
 
 $page = $_GET['page'] ?? 'routes';

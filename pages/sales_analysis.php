@@ -151,11 +151,13 @@ $sql .= "
 if ($selectedOffice > 0) {
 
     $sql .= "
-        AND o.offices_ids IS NOT NULL
-        AND JSON_VALID(o.offices_ids)
-        AND JSON_CONTAINS(
-            o.offices_ids,
-            CAST(? AS JSON)
+    AND o.offices_ids IS NOT NULL
+    AND FIND_IN_SET(
+            ?,
+            REPLACE(
+                REPLACE(o.offices_ids, '[', ''),
+                ']', ''
+            )
         )
     ";
 }

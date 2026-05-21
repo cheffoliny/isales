@@ -11,9 +11,21 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
+/*
+|--------------------------------------------------------------------------
+| DATABASES
+|--------------------------------------------------------------------------
+*/
+
 $db = db_connect('storage');
 
-/* PERIOD */
+$db_storage = db_connect('sod');
+
+/*
+|--------------------------------------------------------------------------
+| PERIOD
+|--------------------------------------------------------------------------
+*/
 
 $period = (int)($_GET['period'] ?? 30);
 
@@ -23,7 +35,11 @@ if (!in_array($period, $allowedPeriods, true)) {
     $period = 30;
 }
 
-/* VAT */
+/*
+|--------------------------------------------------------------------------
+| VAT
+|--------------------------------------------------------------------------
+*/
 
 $vat = (float)($_GET['vat'] ?? 20);
 
@@ -33,16 +49,56 @@ if ($vat < 0 || $vat > 50) {
 
 /*
 |--------------------------------------------------------------------------
-| PROFIT SETTINGS
+| PROFIT %
 |--------------------------------------------------------------------------
-|
-| Печалбата е фиксирани 16% от крайната цена БЕЗ ДДС
-|
 */
 
-$profitPercent = 16;
+$profitPercent = (float)($_GET['profit'] ?? 16);
 
-/* SQL */
+if ($profitPercent < 0 || $profitPercent > 100) {
+    $profitPercent = 16;
+}
+
+/*
+|--------------------------------------------------------------------------
+| OFFICE FILTER
+|--------------------------------------------------------------------------
+*/
+
+$selectedOffice = (int)($_GET['office'] ?? 0);
+
+/*
+|--------------------------------------------------------------------------
+| LOAD OFFICES
+|--------------------------------------------------------------------------
+*/
+
+$offices = [];
+
+$officesSql = "
+    SELECT
+        id,
+        name
+    FROM offices
+    WHERE to_arc = 0
+    ORDER BY name ASC
+";
+
+$officesQuery = $db_storage->query($officesSql);
+
+if ($officesQuery) {
+
+    while ($office = $officesQuery->fetch_assoc()) {
+
+        $offices[] = $office;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| SQL
+|--------------------------------------------------------------------------
+*/
 
 $sql = "
     SELECT
@@ -54,31 +110,125 @@ $sql = "
     INNER JOIN ppp p
         ON p.id = pe.id_ppp
        AND p.status = 'confirm'
+";
 
+/*
+|--------------------------------------------------------------------------
+| OFFICE JOIN
+|--------------------------------------------------------------------------
+*/
+
+if ($selectedOffice > 0) {
+
+    $sql .= "
+        LEFT JOIN sod.objects o
+            ON o.id = p.id_dest
+    ";
+}
+
+/*
+|--------------------------------------------------------------------------
+| WHERE
+|--------------------------------------------------------------------------
+*/
+
+$sql .= "
     WHERE
         pe.to_arc = 0
         AND p.dest_date >= CURDATE() - INTERVAL ? DAY
+";
 
+/*
+|--------------------------------------------------------------------------
+| OFFICE FILTER
+|--------------------------------------------------------------------------
+|
+| offices_ids examples:
+|
+| [1]
+| [1,4]
+| [2,5]
+|
+| Ако колоната е JSON -> JSON_CONTAINS()
+|
+*/
+
+if ($selectedOffice > 0) {
+
+    $sql .= "
+        AND o.offices_ids IS NOT NULL
+        AND JSON_VALID(o.offices_ids)
+        AND JSON_CONTAINS(
+            o.offices_ids,
+            CAST(? AS JSON)
+        )
+    ";
+}
+
+/*
+|--------------------------------------------------------------------------
+| GROUP
+|--------------------------------------------------------------------------
+*/
+
+$sql .= "
     GROUP BY sale_date
-
     ORDER BY sale_date ASC
 ";
+
+/*
+|--------------------------------------------------------------------------
+| PREPARE
+|--------------------------------------------------------------------------
+*/
 
 $stmt = $db->prepare($sql);
 
 if (!$stmt) {
-    die('SQL Prepare Error: ' . $db->error);
+    die('Prepare Error: ' . $db->error);
 }
 
-$stmt->bind_param('i', $period);
+/*
+|--------------------------------------------------------------------------
+| BIND
+|--------------------------------------------------------------------------
+*/
+
+if ($selectedOffice > 0) {
+
+    $officeJson = (string)$selectedOffice;
+
+    $stmt->bind_param(
+        'is',
+        $period,
+        $officeJson
+    );
+
+} else {
+
+    $stmt->bind_param(
+        'i',
+        $period
+    );
+}
+
+/*
+|--------------------------------------------------------------------------
+| EXECUTE
+|--------------------------------------------------------------------------
+*/
 
 if (!$stmt->execute()) {
-    die('SQL Execute Error: ' . $stmt->error);
+    die('Execute Error: ' . $stmt->error);
 }
 
 $result = $stmt->get_result();
 
-/* DATA */
+/*
+|--------------------------------------------------------------------------
+| DATA
+|--------------------------------------------------------------------------
+*/
 
 $rows = [];
 
@@ -101,7 +251,11 @@ while ($row = $result->fetch_assoc()) {
 
     $grossSales = (float)$row['gross_sales'];
 
-    /* REMOVE VAT */
+    /*
+    |--------------------------------------------------------------------------
+    | REMOVE VAT
+    |--------------------------------------------------------------------------
+    */
 
     $netSales = $grossSales / (1 + ($vat / 100));
 
@@ -109,9 +263,6 @@ while ($row = $result->fetch_assoc()) {
     |--------------------------------------------------------------------------
     | PROFIT
     |--------------------------------------------------------------------------
-    |
-    | Печалбата е 16% от крайната цена без ДДС
-    |
     */
 
     $profit = $netSales * ($profitPercent / 100);
@@ -127,17 +278,35 @@ while ($row = $result->fetch_assoc()) {
         'profit' => $profit
     ];
 
+    /*
+    |--------------------------------------------------------------------------
+    | CHART
+    |--------------------------------------------------------------------------
+    */
+
     $chartLabels[] = date('d.m', strtotime($saleDate));
 
     $chartNetData[] = round($netSales, 2);
 
     $chartProfitData[] = round($profit, 2);
 
+    /*
+    |--------------------------------------------------------------------------
+    | TOTALS
+    |--------------------------------------------------------------------------
+    */
+
     $totalGross += $grossSales;
 
     $totalNet += $netSales;
 
     $totalProfit += $profit;
+
+    /*
+    |--------------------------------------------------------------------------
+    | BEST DAY
+    |--------------------------------------------------------------------------
+    */
 
     if ($netSales > $bestDayNet) {
 
@@ -149,7 +318,11 @@ while ($row = $result->fetch_assoc()) {
     $daysCount++;
 }
 
-/* AVERAGES */
+/*
+|--------------------------------------------------------------------------
+| AVERAGES
+|--------------------------------------------------------------------------
+*/
 
 $averageNet = $daysCount > 0
     ? $totalNet / $daysCount
@@ -177,7 +350,7 @@ $averageProfit = $daysCount > 0
 
             <div class="small text-muted mt-1">
 
-                Печалба: <?= $profitPercent ?>% от цена без ДДС
+                Анализ по период, офис и печалба
 
             </div>
 
@@ -187,7 +360,7 @@ $averageProfit = $daysCount > 0
 
             <?php foreach ($allowedPeriods as $p): ?>
 
-                <a href="dashboard.php?page=sales_analysis&period=<?= $p ?>&vat=<?= $vat ?>"
+                <a href="dashboard.php?page=sales_analysis&period=<?= $p ?>&vat=<?= $vat ?>&profit=<?= $profitPercent ?>&office=<?= $selectedOffice ?>"
                    class="btn btn-sm <?= $period === $p
                        ? 'btn-primary'
                        : 'btn-outline-primary' ?>">
@@ -208,13 +381,55 @@ $averageProfit = $daysCount > 0
 
         <form method="get" class="mb-4">
 
-            <input type="hidden" name="page" value="sales_analysis">
+            <input type="hidden"
+                   name="page"
+                   value="sales_analysis">
 
-            <input type="hidden" name="period" value="<?= $period ?>">
+            <input type="hidden"
+                   name="period"
+                   value="<?= $period ?>">
 
             <div class="row g-3 align-items-end">
 
-                <div class="col-12 col-md-3">
+                <!-- OFFICE -->
+
+                <div class="col-12 col-lg-4">
+
+                    <label class="form-label small fw-semibold">
+
+                        Офис
+
+                    </label>
+
+                    <select name="office"
+                            class="form-select">
+
+                        <option value="0">
+
+                            ВСИЧКИ
+
+                        </option>
+
+                        <?php foreach ($offices as $office): ?>
+
+                            <option value="<?= (int)$office['id'] ?>"
+                                <?= $selectedOffice === (int)$office['id']
+                                    ? 'selected'
+                                    : '' ?>>
+
+                                <?= htmlspecialchars($office['name']) ?>
+
+                            </option>
+
+                        <?php endforeach; ?>
+
+                    </select>
+
+                </div>
+
+                <!-- VAT -->
+
+                <div class="col-6 col-lg-2">
 
                     <label class="form-label small fw-semibold">
 
@@ -242,13 +457,45 @@ $averageProfit = $daysCount > 0
 
                 </div>
 
-                <div class="col-12 col-md-auto">
+                <!-- PROFIT -->
 
-                    <button class="btn btn-primary">
+                <div class="col-6 col-lg-2">
 
-                        <i class="fa-solid fa-rotate"></i>
+                    <label class="form-label small fw-semibold">
 
-                        Преизчисли
+                        Печалба %
+
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+
+                            <i class="fa-solid fa-sack-dollar"></i>
+
+                        </span>
+
+                        <input type="number"
+                               step="0.01"
+                               min="0"
+                               max="100"
+                               name="profit"
+                               value="<?= htmlspecialchars((string)$profitPercent) ?>"
+                               class="form-control">
+
+                    </div>
+
+                </div>
+
+                <!-- BUTTON -->
+
+                <div class="col-12 col-lg-auto">
+
+                    <button class="btn btn-primary w-100">
+
+                        <i class="fa-solid fa-filter"></i>
+
+                        Филтрирай
 
                     </button>
 
@@ -261,6 +508,8 @@ $averageProfit = $daysCount > 0
         <!-- KPI -->
 
         <div class="row g-3 mb-4">
+
+            <!-- GROSS -->
 
             <div class="col-6 col-lg-3">
 
@@ -286,6 +535,8 @@ $averageProfit = $daysCount > 0
 
             </div>
 
+            <!-- NET -->
+
             <div class="col-6 col-lg-3">
 
                 <div class="card border-0 bg-primary text-white shadow-sm h-100">
@@ -310,6 +561,8 @@ $averageProfit = $daysCount > 0
 
             </div>
 
+            <!-- PROFIT -->
+
             <div class="col-6 col-lg-3">
 
                 <div class="card border-0 bg-success text-white shadow-sm h-100">
@@ -318,7 +571,7 @@ $averageProfit = $daysCount > 0
 
                         <div class="small opacity-75 mb-1">
 
-                            ПЕЧАЛБА (16%)
+                            ПЕЧАЛБА
 
                         </div>
 
@@ -333,6 +586,8 @@ $averageProfit = $daysCount > 0
                 </div>
 
             </div>
+
+            <!-- AVERAGE -->
 
             <div class="col-6 col-lg-3">
 
@@ -373,7 +628,7 @@ $averageProfit = $daysCount > 0
 
             <div class="card border-0 shadow-sm mb-4">
 
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
 
                     <div class="fw-semibold">
 
@@ -415,13 +670,19 @@ $averageProfit = $daysCount > 0
 
             <div class="card border-0 shadow-sm">
 
-                <div class="card-header bg-white">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
 
                     <div class="fw-semibold">
 
                         <i class="fa-solid fa-table"></i>
 
                         Детайлна справка
+
+                    </div>
+
+                    <div class="small text-muted">
+
+                        <?= count($rows) ?> дни
 
                     </div>
 
@@ -450,6 +711,18 @@ $averageProfit = $daysCount > 0
                         <tbody>
 
                         <?php foreach (array_reverse($rows) as $row): ?>
+
+                            <?php
+
+                            $profitClass = 'bg-secondary';
+
+                            if ($row['profit'] >= 2000) {
+                                $profitClass = 'bg-success';
+                            } elseif ($row['profit'] >= 1000) {
+                                $profitClass = 'bg-primary';
+                            }
+
+                            ?>
 
                             <tr>
 
@@ -481,7 +754,7 @@ $averageProfit = $daysCount > 0
 
                                 <td class="text-end">
 
-                                    <span class="badge bg-success fs-6">
+                                    <span class="badge <?= $profitClass ?> fs-6">
 
                                         <?= number_format($row['profit'], 2) ?> €
 
@@ -535,10 +808,22 @@ $averageProfit = $daysCount > 0
 
         const ctx = canvas.getContext('2d');
 
+        /*
+        |--------------------------------------------------------------------------
+        | BLUE GRADIENT
+        |--------------------------------------------------------------------------
+        */
+
         const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
 
-        gradientBlue.addColorStop(0, 'rgba(13,110,253,0.30)');
+        gradientBlue.addColorStop(0, 'rgba(13,110,253,0.35)');
         gradientBlue.addColorStop(1, 'rgba(13,110,253,0.02)');
+
+        /*
+        |--------------------------------------------------------------------------
+        | CHART
+        |--------------------------------------------------------------------------
+        */
 
         new Chart(ctx, {
 
@@ -551,7 +836,6 @@ $averageProfit = $daysCount > 0
                 datasets: [
 
                     {
-
                         label: 'Оборот без ДДС',
 
                         data: chartNetData,
@@ -572,7 +856,6 @@ $averageProfit = $daysCount > 0
                     },
 
                     {
-
                         label: 'Печалба',
 
                         data: chartProfitData,
@@ -624,8 +907,9 @@ $averageProfit = $daysCount > 0
 
                             label: function(context) {
 
-                                return context.dataset.label + ': '
-                                    + context.raw.toFixed(2)
+                                return context.dataset.label
+                                    + ': '
+                                    + Number(context.raw).toFixed(2)
                                     + ' €';
                             }
                         }
@@ -652,4 +936,3 @@ $averageProfit = $daysCount > 0
     }
 
 </script>
-```

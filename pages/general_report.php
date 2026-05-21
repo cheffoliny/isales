@@ -1,4 +1,5 @@
 <?php
+phpinfo();
 ?>
 <div class="container">
   <h5 class="mb-3">Приходи за последните 30 дни</h5>

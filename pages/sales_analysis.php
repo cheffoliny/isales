@@ -1,5 +1,11 @@
+```php
 <?php
-include_once __DIR__.'/../includes/functions.php';
+
+declare(strict_types=1);
+
+include_once __DIR__ . '/../includes/functions.php';
+
+date_default_timezone_set('Europe/Sofia');
 
 if (empty($_SESSION['user_id'])) {
     header('Location: index.php');
@@ -12,7 +18,9 @@ $db = db_connect('storage');
 
 $period = (int)($_GET['period'] ?? 30);
 
-if (!in_array($period, [7, 30, 90, 180], true)) {
+$allowedPeriods = [7, 30, 90, 180];
+
+if (!in_array($period, $allowedPeriods, true)) {
     $period = 30;
 }
 
@@ -24,20 +32,22 @@ if ($vat < 0 || $vat > 50) {
     $vat = 20;
 }
 
-/* MARKUP */
+/*
+|--------------------------------------------------------------------------
+| PROFIT SETTINGS
+|--------------------------------------------------------------------------
+|
+| Печалбата е фиксирани 16% от крайната цена БЕЗ ДДС
+|
+*/
 
-$markup = (float)($_GET['markup'] ?? 16);
-
-if ($markup < 0 || $markup > 100) {
-    $markup = 16;
-}
+$profitPercent = 16;
 
 /* SQL */
 
 $sql = "
     SELECT
         DATE(p.dest_date) AS sale_date,
-
         SUM(pe.single_price * pe.count) AS gross_sales
 
     FROM ppp_elements pe
@@ -48,27 +58,34 @@ $sql = "
 
     WHERE
         pe.to_arc = 0
-        AND DATE(p.dest_date) >= DATE_ADD(CURDATE(), INTERVAL -{$period} DAY)
+        AND p.dest_date >= CURDATE() - INTERVAL ? DAY
 
-    GROUP BY DATE(p.dest_date)
+    GROUP BY sale_date
 
-    ORDER BY DATE(p.dest_date) ASC
+    ORDER BY sale_date ASC
 ";
 
 $stmt = $db->prepare($sql);
-$stmt->execute();
 
-$stmt->bind_result(
-    $saleDate,
-    $grossSales
-);
+if (!$stmt) {
+    die('SQL Prepare Error: ' . $db->error);
+}
+
+$stmt->bind_param('i', $period);
+
+if (!$stmt->execute()) {
+    die('SQL Execute Error: ' . $stmt->error);
+}
+
+$result = $stmt->get_result();
 
 /* DATA */
 
 $rows = [];
 
 $chartLabels = [];
-$chartData = [];
+$chartNetData = [];
+$chartProfitData = [];
 
 $totalGross = 0;
 $totalNet = 0;
@@ -79,19 +96,26 @@ $bestDayDate = null;
 
 $daysCount = 0;
 
-while ($stmt->fetch()) {
+while ($row = $result->fetch_assoc()) {
 
-    $saleDate = (string)$saleDate;
+    $saleDate = (string)$row['sale_date'];
 
-    $grossSales = (float)$grossSales;
+    $grossSales = (float)$row['gross_sales'];
 
     /* REMOVE VAT */
 
     $netSales = $grossSales / (1 + ($vat / 100));
 
-    /* PROFIT */
+    /*
+    |--------------------------------------------------------------------------
+    | PROFIT
+    |--------------------------------------------------------------------------
+    |
+    | Печалбата е 16% от крайната цена без ДДС
+    |
+    */
 
-    $profit = $netSales * ($markup / 100);
+    $profit = $netSales * ($profitPercent / 100);
 
     $rows[] = [
 
@@ -102,12 +126,13 @@ while ($stmt->fetch()) {
         'net' => $netSales,
 
         'profit' => $profit
-
     ];
 
     $chartLabels[] = date('d.m', strtotime($saleDate));
 
-    $chartData[] = round($netSales, 2);
+    $chartNetData[] = round($netSales, 2);
+
+    $chartProfitData[] = round($profit, 2);
 
     $totalGross += $grossSales;
 
@@ -134,56 +159,45 @@ $averageNet = $daysCount > 0
 $averageProfit = $daysCount > 0
     ? $totalProfit / $daysCount
     : 0;
+
 ?>
 
-<div class="card shadow mb-3 border-0">
+<div class="card shadow border-0 mb-4">
 
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-        <a href="dashboard.php?page=routes"
-           class="btn btn-outline-secondary btn-sm">
+        <div>
 
-            <i class="fa-solid fa-angles-left"></i>
+            <h5 class="mb-0 text-primary">
 
-        </a>
+                <i class="fa-solid fa-chart-line"></i>
 
-        <h5 class="mb-0 text-primary">
+                Анализ на продажбите
 
-            <i class="fa-solid fa-chart-line"></i>
+            </h5>
 
-            Анализ на продажбите
+            <div class="small text-muted mt-1">
 
-        </h5>
+                Печалба: <?= $profitPercent ?>% от цена без ДДС
+
+            </div>
+
+        </div>
 
         <div class="btn-group">
 
-            <a href="dashboard.php?page=sales_analysis&period=7&vat=<?= $vat ?>&markup=<?= $markup ?>"
-               class="btn btn-sm <?= $period === 7
-                   ? 'btn-primary'
-                   : 'btn-outline-primary' ?>">
-                7 ДНИ
-            </a>
+            <?php foreach ($allowedPeriods as $p): ?>
 
-            <a href="dashboard.php?page=sales_analysis&period=30&vat=<?= $vat ?>&markup=<?= $markup ?>"
-               class="btn btn-sm <?= $period === 30
-                   ? 'btn-primary'
-                   : 'btn-outline-primary' ?>">
-                30 ДНИ
-            </a>
+                <a href="dashboard.php?page=sales_analysis&period=<?= $p ?>&vat=<?= $vat ?>"
+                   class="btn btn-sm <?= $period === $p
+                       ? 'btn-primary'
+                       : 'btn-outline-primary' ?>">
 
-            <a href="dashboard.php?page=sales_analysis&period=90&vat=<?= $vat ?>&markup=<?= $markup ?>"
-               class="btn btn-sm <?= $period === 90
-                   ? 'btn-primary'
-                   : 'btn-outline-primary' ?>">
-                90 ДНИ
-            </a>
+                    <?= $p ?> ДНИ
 
-            <a href="dashboard.php?page=sales_analysis&period=180&vat=<?= $vat ?>&markup=<?= $markup ?>"
-               class="btn btn-sm <?= $period === 180
-                   ? 'btn-primary'
-                   : 'btn-outline-primary' ?>">
-                180 ДНИ
-            </a>
+                </a>
+
+            <?php endforeach; ?>
 
         </div>
 
@@ -191,30 +205,30 @@ $averageProfit = $daysCount > 0
 
     <div class="card-body">
 
-        <!-- SETTINGS -->
+        <!-- FILTER -->
 
         <form method="get" class="mb-4">
 
-            <input type="hidden"
-                   name="page"
-                   value="sales_analysis">
+            <input type="hidden" name="page" value="sales_analysis">
 
-            <input type="hidden"
-                   name="period"
-                   value="<?= $period ?>">
+            <input type="hidden" name="period" value="<?= $period ?>">
 
             <div class="row g-3 align-items-end">
 
-                <div class="col-6 col-lg-3">
+                <div class="col-12 col-md-3">
 
                     <label class="form-label small fw-semibold">
+
                         ДДС %
+
                     </label>
 
                     <div class="input-group">
 
                         <span class="input-group-text">
+
                             <i class="fa-solid fa-percent"></i>
+
                         </span>
 
                         <input type="number"
@@ -222,40 +236,16 @@ $averageProfit = $daysCount > 0
                                min="0"
                                max="50"
                                name="vat"
-                               value="<?= htmlspecialchars($vat) ?>"
+                               value="<?= htmlspecialchars((string)$vat) ?>"
                                class="form-control">
 
                     </div>
 
                 </div>
 
-                <div class="col-6 col-lg-3">
+                <div class="col-12 col-md-auto">
 
-                    <label class="form-label small fw-semibold">
-                        Надценка %
-                    </label>
-
-                    <div class="input-group">
-
-                        <span class="input-group-text">
-                            <i class="fa-solid fa-sack-dollar"></i>
-                        </span>
-
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               max="100"
-                               name="markup"
-                               value="<?= htmlspecialchars($markup) ?>"
-                               class="form-control">
-
-                    </div>
-
-                </div>
-
-                <div class="col-12 col-lg-auto">
-
-                    <button class="btn btn-primary w-100">
+                    <button class="btn btn-primary">
 
                         <i class="fa-solid fa-rotate"></i>
 
@@ -280,7 +270,9 @@ $averageProfit = $daysCount > 0
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
+
                             ПРОДАЖБИ С ДДС
+
                         </div>
 
                         <div class="fs-5 fw-bold">
@@ -302,7 +294,9 @@ $averageProfit = $daysCount > 0
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
+
                             ОБОРОТ БЕЗ ДДС
+
                         </div>
 
                         <div class="fs-5 fw-bold">
@@ -324,7 +318,9 @@ $averageProfit = $daysCount > 0
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-                            ОЧАКВАНА ПЕЧАЛБА
+
+                            ПЕЧАЛБА (16%)
+
                         </div>
 
                         <div class="fs-5 fw-bold">
@@ -346,7 +342,9 @@ $averageProfit = $daysCount > 0
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
+
                             СРЕДНО НА ДЕН
+
                         </div>
 
                         <div class="fw-bold">
@@ -376,19 +374,20 @@ $averageProfit = $daysCount > 0
 
             <div class="card border-0 shadow-sm mb-4">
 
-                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
 
                     <div class="fw-semibold">
 
                         <i class="fa-solid fa-chart-area text-primary"></i>
 
-                        Динамика на оборота
+                        Динамика на оборот и печалба
 
                     </div>
 
                     <div class="small text-muted">
 
                         Най-силен ден:
+
                         <strong>
 
                             <?= $bestDayDate
@@ -403,7 +402,7 @@ $averageProfit = $daysCount > 0
 
                 <div class="card-body">
 
-                    <div style="height:350px">
+                    <div style="height:400px">
 
                         <canvas id="salesChart"></canvas>
 
@@ -417,19 +416,13 @@ $averageProfit = $daysCount > 0
 
             <div class="card border-0 shadow-sm">
 
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <div class="card-header bg-white">
 
                     <div class="fw-semibold">
 
-                        <i class="fa-solid fa-table text-secondary"></i>
+                        <i class="fa-solid fa-table"></i>
 
                         Детайлна справка
-
-                    </div>
-
-                    <div class="small text-muted">
-
-                        <?= count($rows) ?> дни
 
                     </div>
 
@@ -445,17 +438,11 @@ $averageProfit = $daysCount > 0
 
                             <th>Дата</th>
 
-                            <th class="text-end">
-                                С ДДС
-                            </th>
+                            <th class="text-end">С ДДС</th>
 
-                            <th class="text-end">
-                                Без ДДС
-                            </th>
+                            <th class="text-end">Без ДДС</th>
 
-                            <th class="text-end">
-                                Печалба
-                            </th>
+                            <th class="text-end">Печалба</th>
 
                         </tr>
 
@@ -464,16 +451,6 @@ $averageProfit = $daysCount > 0
                         <tbody>
 
                         <?php foreach (array_reverse($rows) as $row): ?>
-
-                            <?php
-                            $profitClass = 'bg-secondary';
-
-                            if ($row['profit'] >= 2000) {
-                                $profitClass = 'bg-success';
-                            } elseif ($row['profit'] >= 1000) {
-                                $profitClass = 'bg-primary';
-                            }
-                            ?>
 
                             <tr>
 
@@ -495,21 +472,21 @@ $averageProfit = $daysCount > 0
 
                                 <td class="text-end">
 
-                                        <span class="fw-semibold text-primary">
+                                    <span class="fw-semibold text-primary">
 
-                                            <?= number_format($row['net'], 2) ?> €
+                                        <?= number_format($row['net'], 2) ?> €
 
-                                        </span>
+                                    </span>
 
                                 </td>
 
                                 <td class="text-end">
 
-                                        <span class="badge <?= $profitClass ?> fs-6">
+                                    <span class="badge bg-success fs-6">
 
-                                            <?= number_format($row['profit'], 2) ?> €
+                                        <?= number_format($row['profit'], 2) ?> €
 
-                                        </span>
+                                    </span>
 
                                 </td>
 
@@ -543,16 +520,26 @@ $averageProfit = $daysCount > 0
 
 <!-- CHART.JS -->
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
 
     const chartLabels = <?= json_encode($chartLabels) ?>;
-    const chartData = <?= json_encode($chartData) ?>;
 
-    if(document.getElementById('salesChart')){
+    const chartNetData = <?= json_encode($chartNetData) ?>;
 
-        const ctx = document.getElementById('salesChart');
+    const chartProfitData = <?= json_encode($chartProfitData) ?>;
+
+    const canvas = document.getElementById('salesChart');
+
+    if (canvas) {
+
+        const ctx = canvas.getContext('2d');
+
+        const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
+
+        gradientBlue.addColorStop(0, 'rgba(13,110,253,0.30)');
+        gradientBlue.addColorStop(1, 'rgba(13,110,253,0.02)');
 
         new Chart(ctx, {
 
@@ -562,28 +549,52 @@ $averageProfit = $daysCount > 0
 
                 labels: chartLabels,
 
-                datasets: [{
+                datasets: [
 
-                    label: 'Оборот без ДДС',
+                    {
 
-                    data: chartData,
+                        label: 'Оборот без ДДС',
 
-                    borderColor: '#0d6efd',
+                        data: chartNetData,
 
-                    backgroundColor: 'rgba(13,110,253,0.10)',
+                        borderColor: '#0d6efd',
 
-                    fill: true,
+                        backgroundColor: gradientBlue,
 
-                    tension: 0.35,
+                        fill: true,
 
-                    borderWidth: 3,
+                        tension: 0.35,
 
-                    pointRadius: 4,
+                        borderWidth: 3,
 
-                    pointHoverRadius: 6
+                        pointRadius: 4,
 
-                }]
+                        pointHoverRadius: 6
+                    },
 
+                    {
+
+                        label: 'Печалба',
+
+                        data: chartProfitData,
+
+                        borderColor: '#198754',
+
+                        backgroundColor: 'rgba(25,135,84,0.08)',
+
+                        fill: false,
+
+                        tension: 0.35,
+
+                        borderWidth: 3,
+
+                        borderDash: [6, 6],
+
+                        pointRadius: 3,
+
+                        pointHoverRadius: 5
+                    }
+                ]
             },
 
             options: {
@@ -595,16 +606,31 @@ $averageProfit = $daysCount > 0
                 interaction: {
 
                     intersect: false,
-                    mode: 'index'
 
+                    mode: 'index'
                 },
 
                 plugins: {
 
                     legend: {
-                        display: false
-                    }
 
+                        display: true,
+
+                        position: 'top'
+                    },
+
+                    tooltip: {
+
+                        callbacks: {
+
+                            label: function(context) {
+
+                                return context.dataset.label + ': '
+                                    + context.raw.toFixed(2)
+                                    + ' €';
+                            }
+                        }
+                    }
                 },
 
                 scales: {
@@ -615,22 +641,16 @@ $averageProfit = $daysCount > 0
 
                         ticks: {
 
-                            callback: function(value){
+                            callback: function(value) {
 
                                 return value + ' €';
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
         });
-
     }
 
 </script>
+```

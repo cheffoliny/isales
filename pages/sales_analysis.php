@@ -17,9 +17,9 @@ if (empty($_SESSION['user_id'])) {
 |--------------------------------------------------------------------------
 */
 
-$db = db_connect('storage');
+$db_storage = db_connect('storage');
 
-$db_storage = db_connect('sod');
+$db = db_connect('sod');
 
 /*
 |--------------------------------------------------------------------------
@@ -84,7 +84,7 @@ $officesSql = "
     ORDER BY name ASC
 ";
 
-$officesQuery = $db_storage->query($officesSql);
+$officesQuery = $db->query($officesSql);
 
 if ($officesQuery) {
 
@@ -121,7 +121,7 @@ $sql = "
 if ($selectedOffice > 0) {
 
     $sql .= "
-        LEFT JOIN sod.objects o
+        LEFT JOIN ".$db_storage.".objects o
             ON o.id = p.id_dest
     ";
 }
@@ -142,13 +142,8 @@ $sql .= "
 |--------------------------------------------------------------------------
 | OFFICE FILTER
 |--------------------------------------------------------------------------
-|
 | offices_ids examples:
-|
-| [1]
-| [1,4]
 | [2,5]
-|
 | Ако колоната е JSON -> JSON_CONTAINS()
 |
 */
@@ -182,10 +177,10 @@ $sql .= "
 |--------------------------------------------------------------------------
 */
 
-$stmt = $db->prepare($sql);
+$stmt = $db_storage->prepare($sql);
 
 if (!$stmt) {
-    die('Prepare Error: ' . $db->error);
+    die('Prepare Error: ' . $db_storage->error);
 }
 
 /*

@@ -135,7 +135,7 @@ if ($selectedOffice > 0) {
 $sql .= "
     WHERE
         pe.to_arc = 0
-        AND p.dest_date >= CURDATE() - INTERVAL ? DAY
+        AND p.source_date >= CURDATE() - INTERVAL ? DAY
 ";
 
 /*

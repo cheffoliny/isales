@@ -338,23 +338,18 @@ $averageProfit = $daysCount > 0
         <div>
 
             <h5 class="mb-0 text-primary">
-
                 <i class="fa-solid fa-chart-line"></i>
-
-                Анализ на продажбите
-
+                Анализ на продажби
             </h5>
 
             <div class="small text-muted mt-1">
-
-                Анализ по период, офис и печалба
+                По период, линия/офис и печалба
 
             </div>
 
         </div>
 
         <div class="btn-group">
-
             <?php foreach ($allowedPeriods as $p): ?>
 
                 <a href="dashboard.php?page=sales_analysis&period=<?= $p ?>&vat=<?= $vat ?>&profit=<?= $profitPercent ?>&office=<?= $selectedOffice ?>"
@@ -377,7 +372,6 @@ $averageProfit = $daysCount > 0
         <!-- FILTER -->
 
         <form method="get" class="mb-4">
-
             <input type="hidden"
                    name="page"
                    value="sales_analysis">
@@ -391,11 +385,8 @@ $averageProfit = $daysCount > 0
                 <!-- OFFICE -->
 
                 <div class="col-12 col-lg-4">
-
                     <label class="form-label small fw-semibold">
-
-                        Офис
-
+                        Линия/Офис
                     </label>
 
                     <select name="office"

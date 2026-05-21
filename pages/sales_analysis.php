@@ -121,7 +121,7 @@ $sql = "
 if ($selectedOffice > 0) {
 
     $sql .= "
-        LEFT JOIN ". DB_NAMES['sod'] ."objects o
+        LEFT JOIN ". DB_NAMES['sod'] .".objects o
             ON o.id = p.id_dest
     ";
 }

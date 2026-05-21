@@ -169,7 +169,7 @@ if ($selectedOffice > 0) {
 */
 
 $sql .= "
-    GROUP BY sale_date
+    GROUP BY DATE(sale_date)
     ORDER BY sale_date ASC
 ";
 

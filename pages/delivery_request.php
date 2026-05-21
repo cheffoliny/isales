@@ -52,7 +52,7 @@ if ($existingID) {
         VALUES (?,NOW(),?,'storagehouse',1,'object',?)";
 
     $stmt = $db_storage->prepare($insertSql);
-    $stmt->bind_param("ssi",$status,$sourceUser,$objectId);
+    $stmt->bind_param("ssi",$status,$idUser,$objectId);
     $stmt->execute();
 
     $pppID = $db_storage->insert_id;

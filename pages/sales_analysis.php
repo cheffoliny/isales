@@ -333,7 +333,7 @@ $averageProfit = $daysCount > 0
 
 <div class="card shadow border-0 mb-4">
 
-    <div class="card-header bg-primary d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
 
         <div>
 

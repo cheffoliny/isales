@@ -135,7 +135,7 @@ if ($selectedOffice > 0) {
 $sql .= "
     WHERE
         pe.to_arc = 0
-        AND p.source_date >= CURDATE() - INTERVAL ? DAY
+        AND DATE(p.source_date) >= DATE_ADD(CURDATE(), INTERVAL ? DAY)
 ";
 
 /*
@@ -169,7 +169,7 @@ if ($selectedOffice > 0) {
 */
 
 $sql .= "
-    GROUP BY sale_date
+    GROUP BY DATE(sale_date)
     ORDER BY sale_date ASC
 ";
 

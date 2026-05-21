@@ -109,7 +109,7 @@ $sql = "
 
     INNER JOIN ppp p
         ON p.id = pe.id_ppp
-       AND p.status = 'confirm'
+       AND p.status != 'cancel'
 ";
 
 /*

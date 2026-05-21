@@ -102,7 +102,7 @@ if ($officesQuery) {
 
 $sql = "
     SELECT
-        DATE(p.dest_date) AS sale_date,
+        DATE(p.source_date) AS sale_date,
         SUM(pe.single_price * pe.count) AS gross_sales
 
     FROM ppp_elements pe
@@ -169,7 +169,7 @@ if ($selectedOffice > 0) {
 */
 
 $sql .= "
-    GROUP BY DATE(sale_date)
+    GROUP BY sale_date
     ORDER BY sale_date ASC
 ";
 

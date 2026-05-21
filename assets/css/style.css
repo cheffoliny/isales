@@ -136,7 +136,7 @@ html, body {
     background: var(--bs-body-bg);
     box-shadow:
         0 10px 30px rgba(0,0,0,0.15);
-    transform: translate3d(-69px, -66px, 0px);
+    transform: translate3d(-69px, -66px, 0px) !important;
 }
 
 .app-bottom-nav .dropdown-item {

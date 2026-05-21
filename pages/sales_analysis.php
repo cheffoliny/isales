@@ -667,16 +667,11 @@ $averageProfit = $daysCount > 0
 
             <div class="card border-0 shadow-sm">
 
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <div class="fw-semibold">
-
                         <i class="fa-solid fa-table"></i>
-
                         Детайлна справка
-
                     </div>
-
                     <div class="small text-muted">
 
                         <?= count($rows) ?> дни

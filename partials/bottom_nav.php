@@ -30,7 +30,7 @@ $currentPage = $_GET['page'] ?? 'routes';
         <ul class="dropdown-menu text-center shadow">
             <li>
                 <a class="dropdown-item <?= $currentPage === 'products_top' ? 'active' : '' ?>" href="dashboard.php?page=products_top">
-                    <i class="fa-solid fa-ranking-star me-2"></i> НАЙ-ПРОДАВАНИ
+                    <i class="fa-solid fa-ranking-star text-success me-2"></i> НАЙ-ПРОДАВАНИ
                 </a>
             </li>
             <li>
@@ -40,7 +40,7 @@ $currentPage = $_GET['page'] ?? 'routes';
             </li>
             <li>
                 <a class="dropdown-item <?= $currentPage === 'products_profit' ? 'active' : '' ?>" href="dashboard.php?page=products_profit">
-                    <i class="fa-solid fa-cloud-sun me-2"></i> ПРОГНОЗA
+                    <i class="fa-solid fa-cloud-sun text-warning  me-2"></i> ПРОГНОЗA
                 </a>
             </li>
             <li>

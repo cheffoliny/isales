@@ -92,7 +92,7 @@ $sql = "
     FROM nomenclatures n
 
     LEFT JOIN ppp_elements pe
-        ON pe.id_article = a.id
+        ON pe.id_nomenclature = n.id
        AND pe.to_arc = 0
 
     LEFT JOIN ppp p

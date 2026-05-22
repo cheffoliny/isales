@@ -142,11 +142,7 @@ $sql .= "
 |--------------------------------------------------------------------------
 | OFFICE FILTER
 |--------------------------------------------------------------------------
-| offices_ids examples:
-| [2,5]
-| Ако колоната е JSON -> JSON_CONTAINS()
 |
-*/
 
 if ($selectedOffice > 0) {
 
@@ -161,7 +157,15 @@ if ($selectedOffice > 0) {
         )
     ";
 }
+*/
 
+if ($selectedOffice > 0) {
+
+    $sql .= "
+        INNER JOIN ". DB_NAMES['sod'] .".offices_objects oo
+            ON oo.id_object = p.id_dest
+    ";
+}
 /*
 |--------------------------------------------------------------------------
 | GROUP

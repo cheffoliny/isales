@@ -73,15 +73,6 @@ if ($officesQuery) {
 |--------------------------------------------------------------------------
 | SQL
 |--------------------------------------------------------------------------
-|
-| IMPORTANT:
-| - NO articles table
-| - Uses ONLY real ERP tables:
-|   nomenclatures
-|   ppp
-|   ppp_elements
-|   offices_objects
-|
 */
 
 $sql = "
@@ -93,29 +84,11 @@ $sql = "
 
         IFNULL(n.is_calc, 0) AS stock_qty,
 
-        SUM(
-            CASE
-                WHEN p.source_date >= CURDATE() - INTERVAL ? DAY
-                THEN pe.count
-                ELSE 0
-            END
-        ) AS qty_sold,
+        IFNULL(SUM(pe.count), 0) AS qty_sold,
 
-        SUM(
-            CASE
-                WHEN p.source_date >= CURDATE() - INTERVAL ? DAY
-                THEN pe.single_price * pe.count
-                ELSE 0
-            END
-        ) AS turnover,
+        IFNULL(SUM(pe.single_price * pe.count), 0) AS turnover,
 
-        AVG(
-            CASE
-                WHEN p.source_date >= CURDATE() - INTERVAL ? DAY
-                THEN pe.single_price
-                ELSE NULL
-            END
-        ) AS avg_price,
+        AVG(pe.single_price) AS avg_price,
 
         MAX(p.source_date) AS last_sale_date,
 
@@ -133,6 +106,7 @@ $sql = "
     LEFT JOIN ppp p
         ON p.id = pe.id_ppp
        AND p.status != 'cancel'
+       AND p.source_date >= CURDATE() - INTERVAL ? DAY
 ";
 
 /*
@@ -204,8 +178,7 @@ if (!$stmt) {
 if ($selectedOffice > 0) {
 
     $stmt->bind_param(
-        'iii',
-        $period,
+        'ii',
         $period,
         $selectedOffice
     );
@@ -213,8 +186,7 @@ if ($selectedOffice > 0) {
 } else {
 
     $stmt->bind_param(
-        'ii',
-        $period,
+        'i',
         $period
     );
 }

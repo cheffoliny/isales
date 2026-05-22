@@ -116,13 +116,27 @@ $sql = "
 |--------------------------------------------------------------------------
 | OFFICE JOIN
 |--------------------------------------------------------------------------
-*/
+
 
 if ($selectedOffice > 0) {
 
     $sql .= "
         LEFT JOIN ". DB_NAMES['sod'] .".objects o
             ON o.id = p.id_dest
+    ";
+}
+*/
+/*
+|--------------------------------------------------------------------------
+| OFFICE JOIN
+|--------------------------------------------------------------------------
+*/
+
+if ($selectedOffice > 0) {
+
+    $sql .= "
+        INNER JOIN ". DB_NAMES['sod'] .".offices_objects oo
+            ON oo.id_object = p.id_dest
     ";
 }
 
@@ -159,11 +173,16 @@ if ($selectedOffice > 0) {
 }
 */
 
+/*
+|--------------------------------------------------------------------------
+| OFFICE FILTER
+|--------------------------------------------------------------------------
+*/
+
 if ($selectedOffice > 0) {
 
     $sql .= "
-        INNER JOIN ". DB_NAMES['sod'] .".offices_objects oo
-            ON oo.id_object = p.id_dest
+        AND oo.id_office = ?
     ";
 }
 /*
@@ -193,16 +212,32 @@ if (!$stmt) {
 |--------------------------------------------------------------------------
 | BIND
 |--------------------------------------------------------------------------
-*/
+
 
 if ($selectedOffice > 0) {
 
-    $officeJson = (string)$selectedOffice;
+  //  $officeJson = (string)$selectedOffice;
 
     $stmt->bind_param(
         'is',
         $period,
         $officeJson
+    );
+
+} else {
+
+    $stmt->bind_param(
+        'i',
+        $period
+    );
+}
+*/
+if ($selectedOffice > 0) {
+
+    $stmt->bind_param(
+        'ii',
+        $period,
+        $selectedOffice
     );
 
 } else {

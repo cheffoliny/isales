@@ -126,7 +126,7 @@ if ($selectedOffice > 0) {
 */
 
 $sql .= "
-    WHERE n.client_price > 0 AND n.is_calc > 0
+    WHERE n.client_price > 0 AND n.is_calc > 0 AND LENGTH(n.nom_code) > 6
 ";
 
 if ($selectedOffice > 0) {

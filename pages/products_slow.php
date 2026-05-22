@@ -77,23 +77,19 @@ if ($officesQuery) {
 
 $sql = "
     SELECT
-        a.id,
-        a.name,
-
+        n.id,
+        n.name,
         IFNULL(SUM(pe.count), 0) AS qty_sold,
-
         IFNULL(SUM(pe.single_price * pe.count), 0) AS turnover,
-
         MAX(p.source_date) AS last_sale_date,
-
         DATEDIFF(
             NOW(),
             MAX(p.source_date)
         ) AS aging_days,
 
-        IFNULL(s.quantity, 0) AS stock_qty
+        IFNULL(n.is_calc, 0) AS stock_qty
 
-    FROM articles a
+    FROM nomenclatures n
 
     LEFT JOIN ppp_elements pe
         ON pe.id_article = a.id
@@ -103,9 +99,6 @@ $sql = "
         ON p.id = pe.id_ppp
        AND p.status != 'cancel'
        AND p.source_date >= CURDATE() - INTERVAL ? DAY
-
-    LEFT JOIN storage_quantities s
-        ON s.id_article = a.id
 ";
 
 /*
@@ -129,7 +122,7 @@ if ($selectedOffice > 0) {
 */
 
 $sql .= "
-    WHERE a.to_arc = 0
+    WHERE n.is_calc > 0 AND n.client_price > 0 AND LENGTH(n.nom_code) > 6
 ";
 
 if ($selectedOffice > 0) {
@@ -146,7 +139,7 @@ if ($selectedOffice > 0) {
 */
 
 $sql .= "
-    GROUP BY a.id
+    GROUP BY n.id
 
     ORDER BY
         qty_sold ASC,

@@ -413,7 +413,7 @@ while ($row = $result->fetch_assoc()) {
 
             <div class="col-6 col-xl-3">
 
-                <div class="card border-0 bg-dark text-white shadow-sm h-100">
+                <div class="card border-0 bg-info text-white shadow-sm h-100">
 
                     <div class="card-body">
 

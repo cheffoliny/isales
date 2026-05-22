@@ -61,6 +61,18 @@ if ($profitPercent < 0 || $profitPercent > 100) {
 
 /*
 |--------------------------------------------------------------------------
+| EXPENSE %
+|--------------------------------------------------------------------------
+*/
+
+$expensePercent = (float)($_GET['expense'] ?? 8);
+
+if ($expensePercent < 0 || $expensePercent > 100) {
+    $expensePercent = 8;
+}
+
+/*
+|--------------------------------------------------------------------------
 | OFFICE FILTER
 |--------------------------------------------------------------------------
 */
@@ -271,10 +283,13 @@ $rows = [];
 $chartLabels = [];
 $chartNetData = [];
 $chartProfitData = [];
+$chartExpenseData = [];
+$chartBalanceData = [];
 
-$totalGross = 0;
 $totalNet = 0;
 $totalProfit = 0;
+$totalExpenses = 0;
+$totalBalance = 0;
 
 $bestDayNet = 0;
 $bestDayDate = null;
@@ -302,16 +317,17 @@ while ($row = $result->fetch_assoc()) {
     */
 
     $profit = $netSales * ($profitPercent / 100);
+    $expenses = $netSales * ($expensePercent / 100);
+    $balance = $profit - $expenses;
 
     $rows[] = [
 
         'date' => $saleDate,
-
         'gross' => $grossSales,
-
         'net' => $netSales,
-
-        'profit' => $profit
+        'profit' => $profit,
+        'expenses' => $expenses,
+        'balance' => $balance
     ];
 
     /*
@@ -325,6 +341,8 @@ while ($row = $result->fetch_assoc()) {
     $chartNetData[] = round($netSales, 2);
 
     $chartProfitData[] = round($profit, 2);
+    $chartExpenseData[] = round($expenses, 2);
+    $chartBalanceData[] = round($balance, 2);
 
     /*
     |--------------------------------------------------------------------------
@@ -337,6 +355,8 @@ while ($row = $result->fetch_assoc()) {
     $totalNet += $netSales;
 
     $totalProfit += $profit;
+    $totalExpenses += $expenses;
+    $totalBalance += $balance;
 
     /*
     |--------------------------------------------------------------------------
@@ -368,6 +388,13 @@ $averageProfit = $daysCount > 0
     ? $totalProfit / $daysCount
     : 0;
 
+$averageExpenses = $daysCount > 0
+    ? $totalExpenses / $daysCount
+    : 0;
+
+$averageBalance = $daysCount > 0
+    ? $totalBalance / $daysCount
+    : 0;
 ?>
 
 <div class="card shadow border-0 mb-4">
@@ -513,6 +540,30 @@ $averageProfit = $daysCount > 0
                     </div>
 
                 </div>
+                <div class="col-6 col-lg-2">
+
+                    <label class="form-label small fw-semibold">
+
+                        Разходи %
+
+                    </label>
+
+                    <div class="input-group">
+
+                        <span class="input-group-text">
+                            <i class="fa-solid fa-money-bill-wave"></i>
+                        </span>
+                        <input type="number"
+                               step="0.01"
+                               min="0"
+                               max="100"
+                               name="expense"
+                               value="<?= htmlspecialchars((string)$expensePercent) ?>"
+                               class="form-control">
+
+                    </div>
+
+                </div>
 
                 <!-- BUTTON -->
 
@@ -536,31 +587,6 @@ $averageProfit = $daysCount > 0
 
         <div class="row g-3 mb-4">
 
-            <!-- GROSS -->
-
-            <div class="col-6 col-lg-3">
-
-                <div class="card border-0 bg-dark text-white shadow-sm h-100">
-
-                    <div class="card-body">
-
-                        <div class="small opacity-75 mb-1">
-
-                            ПРОДАЖБИ С ДДС
-
-                        </div>
-
-                        <div class="fs-5 fw-bold">
-
-                            <?= number_format($totalGross, 2) ?> €
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
 
             <!-- NET -->
 
@@ -592,7 +618,7 @@ $averageProfit = $daysCount > 0
 
             <div class="col-6 col-lg-3">
 
-                <div class="card border-0 bg-success text-white shadow-sm h-100">
+                <div class="card border-0 bg-info text-white shadow-sm h-100">
 
                     <div class="card-body">
 
@@ -605,6 +631,58 @@ $averageProfit = $daysCount > 0
                         <div class="fs-5 fw-bold">
 
                             <?= number_format($totalProfit, 2) ?> €
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- EXPENSE -->
+
+            <div class="col-6 col-lg-3">
+
+                <div class="card border-0 bg-danger text-white shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="small opacity-75 mb-1">
+
+                            РАЗХОДИ
+
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+
+                            <?= number_format($totalExpenses, 2) ?> €
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- BALANCE -->
+
+            <div class="col-6 col-lg-3">
+
+                <div class="card border-0 bg-success text-white shadow-sm h-100">
+
+                    <div class="card-body">
+
+                        <div class="small opacity-75 mb-1">
+
+                            БАЛАНС
+
+                        </div>
+
+                        <div class="fs-5 fw-bold">
+
+                            <?= number_format($totalBalance, 2) ?> €
 
                         </div>
 
@@ -714,9 +792,10 @@ $averageProfit = $daysCount > 0
                         <thead class="">
                         <tr>
                             <th>Дата</th>
-                            <th class="text-end">С ДДС</th>
-                            <th class="text-end">Без ДДС</th>
-                            <th class="text-end">Печалба</th>
+                            <th class="text-end">Оборот</th>
+                            <th class="text-end">Марж</th>
+                            <th class="text-end">Разходи</th>
+                            <th class="text-end">Баланс</th>
                         </tr>
 
                         </thead>
@@ -751,12 +830,6 @@ $averageProfit = $daysCount > 0
 
                                 <td class="text-end">
 
-                                    <?= number_format($row['gross'], 2) ?> €
-
-                                </td>
-
-                                <td class="text-end">
-
                                     <span class="fw-semibold text-primary">
 
                                         <?= number_format($row['net'], 2) ?> €
@@ -773,6 +846,23 @@ $averageProfit = $daysCount > 0
 
                                     </span>
 
+                                </td>
+                                <td class="text-end">
+
+                                    <?= number_format($row['expenses'], 2) ?> €
+
+                                </td>
+
+                                <td class="text-end">
+
+                                    <?php
+                                    $balanceClass = $row['balance'] >= 0
+                                        ? 'text-success'
+                                        : 'text-danger';
+                                    ?>
+                                    <span class="fw-bold <?= $balanceClass ?>">
+                                        <?= number_format($row['balance'], 2) ?> €
+                                    </span>
                                 </td>
 
                             </tr>
@@ -816,6 +906,10 @@ $averageProfit = $daysCount > 0
     const chartProfitData = <?= json_encode($chartProfitData) ?>;
 
     const canvas = document.getElementById('salesChart');
+
+    const chartExpenseData = <?= json_encode($chartExpenseData) ?>;
+
+    const chartBalanceData = <?= json_encode($chartBalanceData) ?>;
 
     if (canvas) {
 
@@ -888,6 +982,40 @@ $averageProfit = $daysCount > 0
                         pointRadius: 3,
 
                         pointHoverRadius: 5
+                    },
+
+                    {
+                        label: 'Разходи',
+
+                        data: chartExpenseData,
+
+                        borderColor: '#dc3545',
+
+                        backgroundColor: 'rgba(220,53,69,0.08)',
+
+                        tension: 0.35,
+
+                        borderWidth: 2,
+
+                        borderDash: [4,4],
+
+                        pointRadius: 2
+                    },
+
+                    {
+                        label: 'Баланс',
+
+                        data: chartBalanceData,
+
+                        borderColor: '#6f42c1',
+
+                        backgroundColor: 'rgba(111,66,193,0.08)',
+
+                        tension: 0.35,
+
+                        borderWidth: 3,
+
+                        pointRadius: 3
                     }
                 ]
             },

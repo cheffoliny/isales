@@ -30,7 +30,7 @@ $currentPage = $_GET['page'] ?? 'routes';
         <ul class="dropdown-menu text-center shadow">
             <li>
                 <a class="dropdown-item <?= $currentPage === 'sales_analysis' ? 'active' : '' ?>" href="dashboard.php?page=sales_analysis">
-                    <i class="fa-solid fa-file-import me-2"></i> АНАЛИЗ ПРОДАЖБИ
+                    <i class="fa-solid fa-chart-line me-2"></i> АНАЛИЗ ПРОДАЖБИ
                 </a>
             </li>
             <li>

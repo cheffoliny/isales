@@ -23,13 +23,94 @@ $db = db_connect('sod');
 
 /*
 |--------------------------------------------------------------------------
+| FILTER MODE
+|--------------------------------------------------------------------------
+*/
+
+$mode = $_GET['mode'] ?? 'month';
+
+$allowedModes = ['month', 'period'];
+
+if (!in_array($mode, $allowedModes, true)) {
+    $mode = 'month';
+}
+
+/*
+|--------------------------------------------------------------------------
+| MONTH FILTER
+|--------------------------------------------------------------------------
+*/
+
+$selectedMonth = $_GET['month'] ?? date('Y-m');
+
+if (!preg_match('/^\d{4}-\d{2}$/', $selectedMonth)) {
+    $selectedMonth = date('Y-m');
+}
+
+/*
+|--------------------------------------------------------------------------
+| MONTH RANGE
+|--------------------------------------------------------------------------
+*/
+
+$monthStart = date(
+    'Y-m-01 00:00:00',
+    strtotime($selectedMonth . '-01')
+);
+
+$monthEnd = date(
+    'Y-m-01 00:00:00',
+    strtotime($monthStart . ' +1 month')
+);
+
+/*
+|--------------------------------------------------------------------------
+| MONTH OPTIONS
+|--------------------------------------------------------------------------
+*/
+
+$months = [];
+
+$monthNames = [
+    1 => 'Януари',
+    2 => 'Февруари',
+    3 => 'Март',
+    4 => 'Април',
+    5 => 'Май',
+    6 => 'Юни',
+    7 => 'Юли',
+    8 => 'Август',
+    9 => 'Септември',
+    10 => 'Октомври',
+    11 => 'Ноември',
+    12 => 'Декември'
+];
+
+$currentMonth = new DateTime('first day of this month');
+
+for ($i = 0; $i < 12; $i++) {
+
+    $key = $currentMonth->format('Y-m');
+
+    $monthNumber = (int)$currentMonth->format('n');
+
+    $months[$key] =
+        $monthNames[$monthNumber]
+        . ' '
+        . $currentMonth->format('Y');
+
+    $currentMonth->modify('-1 month');
+}
+
+/*
+|--------------------------------------------------------------------------
 | PERIOD
 |--------------------------------------------------------------------------
 */
 
 $period = (int)($_GET['period'] ?? 30);
 
-$allowedPeriods = [7, 30, 90, 180];
+$allowedPeriods = [30, 90, 180];
 
 if (!in_array($period, $allowedPeriods, true)) {
     $period = 30;
@@ -128,26 +209,12 @@ $sql = "
 |--------------------------------------------------------------------------
 | OFFICE JOIN
 |--------------------------------------------------------------------------
-
-
-if ($selectedOffice > 0) {
-
-    $sql .= "
-        LEFT JOIN ". DB_NAMES['sod'] .".objects o
-            ON o.id = p.id_dest
-    ";
-}
-*/
-/*
-|--------------------------------------------------------------------------
-| OFFICE JOIN
-|--------------------------------------------------------------------------
 */
 
 if ($selectedOffice > 0) {
 
     $sql .= "
-        INNER JOIN ". DB_NAMES['sod'] .".offices_objects oo
+        INNER JOIN " . DB_NAMES['sod'] . ".offices_objects oo
             ON oo.id_object = p.id_dest
     ";
 }
@@ -161,29 +228,21 @@ if ($selectedOffice > 0) {
 $sql .= "
     WHERE
         pe.to_arc = 0
-        AND p.source_date >= CURDATE() - INTERVAL ? DAY
 ";
 
-/*
-|--------------------------------------------------------------------------
-| OFFICE FILTER
-|--------------------------------------------------------------------------
-|
-
-if ($selectedOffice > 0) {
+if ($mode === 'month') {
 
     $sql .= "
-    AND o.offices_ids IS NOT NULL
-    AND FIND_IN_SET(
-            ?,
-            REPLACE(
-                REPLACE(o.offices_ids, '[', ''),
-                ']', ''
-            )
-        )
+        AND p.source_date >= ?
+        AND p.source_date < ?
+    ";
+
+} else {
+
+    $sql .= "
+        AND p.source_date >= CURDATE() - INTERVAL ? DAY
     ";
 }
-*/
 
 /*
 |--------------------------------------------------------------------------
@@ -197,6 +256,7 @@ if ($selectedOffice > 0) {
         AND oo.id_office = ?
     ";
 }
+
 /*
 |--------------------------------------------------------------------------
 | GROUP
@@ -224,40 +284,45 @@ if (!$stmt) {
 |--------------------------------------------------------------------------
 | BIND
 |--------------------------------------------------------------------------
-
-
-if ($selectedOffice > 0) {
-
-  //  $officeJson = (string)$selectedOffice;
-
-    $stmt->bind_param(
-        'is',
-        $period,
-        $officeJson
-    );
-
-} else {
-
-    $stmt->bind_param(
-        'i',
-        $period
-    );
-}
 */
+
 if ($selectedOffice > 0) {
 
-    $stmt->bind_param(
-        'ii',
-        $period,
-        $selectedOffice
-    );
+    if ($mode === 'month') {
+
+        $stmt->bind_param(
+            'ssi',
+            $monthStart,
+            $monthEnd,
+            $selectedOffice
+        );
+
+    } else {
+
+        $stmt->bind_param(
+            'ii',
+            $period,
+            $selectedOffice
+        );
+    }
 
 } else {
 
-    $stmt->bind_param(
-        'i',
-        $period
-    );
+    if ($mode === 'month') {
+
+        $stmt->bind_param(
+            'ss',
+            $monthStart,
+            $monthEnd
+        );
+
+    } else {
+
+        $stmt->bind_param(
+            'i',
+            $period
+        );
+    }
 }
 
 /*
@@ -312,18 +377,19 @@ while ($row = $result->fetch_assoc()) {
 
     /*
     |--------------------------------------------------------------------------
-    | PROFIT
+    | CALCULATIONS
     |--------------------------------------------------------------------------
     */
 
     $profit = $netSales * ($profitPercent / 100);
+
     $expenses = $netSales * ($expensePercent / 100);
+
     $balance = $profit - $expenses;
 
     $rows[] = [
 
         'date' => $saleDate,
-        'gross' => $grossSales,
         'net' => $netSales,
         'profit' => $profit,
         'expenses' => $expenses,
@@ -341,7 +407,9 @@ while ($row = $result->fetch_assoc()) {
     $chartNetData[] = round($netSales, 2);
 
     $chartProfitData[] = round($profit, 2);
+
     $chartExpenseData[] = round($expenses, 2);
+
     $chartBalanceData[] = round($balance, 2);
 
     /*
@@ -350,12 +418,12 @@ while ($row = $result->fetch_assoc()) {
     |--------------------------------------------------------------------------
     */
 
-    $totalGross += $grossSales;
-
     $totalNet += $netSales;
 
     $totalProfit += $profit;
+
     $totalExpenses += $expenses;
+
     $totalBalance += $balance;
 
     /*
@@ -395,6 +463,7 @@ $averageExpenses = $daysCount > 0
 $averageBalance = $daysCount > 0
     ? $totalBalance / $daysCount
     : 0;
+
 ?>
 
 <div class="card shadow border-0 mb-4">
@@ -409,17 +478,17 @@ $averageBalance = $daysCount > 0
             </h5>
 
             <div class="small text-muted mt-1">
-                По период, линия/офис и печалба
-
+                Оборот, марж, разходи и баланс
             </div>
 
         </div>
 
         <div class="btn-group">
+
             <?php foreach ($allowedPeriods as $p): ?>
 
-                <a href="dashboard.php?page=sales_analysis&period=<?= $p ?>&vat=<?= $vat ?>&profit=<?= $profitPercent ?>&office=<?= $selectedOffice ?>"
-                   class="btn btn-sm <?= $period === $p
+                <a href="dashboard.php?page=sales_analysis&mode=period&period=<?= $p ?>&month=<?= urlencode($selectedMonth) ?>&vat=<?= $vat ?>&profit=<?= $profitPercent ?>&expense=<?= $expensePercent ?>&office=<?= $selectedOffice ?>"
+                   class="btn btn-sm <?= ($mode === 'period' && $period === $p)
                        ? 'btn-primary'
                        : 'btn-outline-primary' ?>">
 
@@ -438,30 +507,26 @@ $averageBalance = $daysCount > 0
         <!-- FILTER -->
 
         <form method="get" class="mb-4">
+
             <input type="hidden"
                    name="page"
                    value="sales_analysis">
-
-            <input type="hidden"
-                   name="period"
-                   value="<?= $period ?>">
 
             <div class="row g-3 align-items-end">
 
                 <!-- OFFICE -->
 
-                <div class="col-12 col-lg-4">
+                <div class="col-12 col-xl-3">
+
                     <label class="form-label small fw-semibold">
-                        Линия/Офис
+                        Линия / Офис
                     </label>
 
                     <select name="office"
                             class="form-select">
 
                         <option value="0">
-
                             ВСИЧКИ
-
                         </option>
 
                         <?php foreach ($offices as $office): ?>
@@ -481,93 +546,100 @@ $averageBalance = $daysCount > 0
 
                 </div>
 
-                <!-- VAT -->
+                <!-- MONTH -->
 
-                <div class="col-6 col-lg-2">
+                <div class="col-12 col-xl-3">
 
                     <label class="form-label small fw-semibold">
-
-                        ДДС %
-
+                        Месец
                     </label>
 
-                    <div class="input-group">
+                    <select name="month"
+                            class="form-select"
+                            onchange="this.form.mode.value='month'">
 
-                        <span class="input-group-text">
+                        <?php foreach ($months as $key => $label): ?>
 
-                            <i class="fa-solid fa-percent"></i>
+                            <option value="<?= $key ?>"
+                                <?= $selectedMonth === $key
+                                    ? 'selected'
+                                    : '' ?>>
 
-                        </span>
+                                <?= htmlspecialchars($label) ?>
 
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               max="50"
-                               name="vat"
-                               value="<?= htmlspecialchars((string)$vat) ?>"
-                               class="form-control">
+                            </option>
 
-                    </div>
+                        <?php endforeach; ?>
+
+                    </select>
+
+                </div>
+
+                <!-- VAT -->
+
+                <div class="col-6 col-md-3 col-xl-1">
+
+                    <label class="form-label small fw-semibold">
+                        ДДС %
+                    </label>
+
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           max="50"
+                           name="vat"
+                           value="<?= htmlspecialchars((string)$vat) ?>"
+                           class="form-control">
 
                 </div>
 
                 <!-- PROFIT -->
 
-                <div class="col-6 col-lg-2">
+                <div class="col-6 col-md-3 col-xl-1">
 
                     <label class="form-label small fw-semibold">
-
-                        Печалба %
-
+                        Марж %
                     </label>
 
-                    <div class="input-group">
-
-                        <span class="input-group-text">
-
-                            <i class="fa-solid fa-sack-dollar"></i>
-
-                        </span>
-
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               max="100"
-                               name="profit"
-                               value="<?= htmlspecialchars((string)$profitPercent) ?>"
-                               class="form-control">
-
-                    </div>
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           max="100"
+                           name="profit"
+                           value="<?= htmlspecialchars((string)$profitPercent) ?>"
+                           class="form-control">
 
                 </div>
-                <div class="col-6 col-lg-2">
+
+                <!-- EXPENSE -->
+
+                <div class="col-6 col-md-3 col-xl-1">
 
                     <label class="form-label small fw-semibold">
-
-                        Разходи %
-
+                        Разход %
                     </label>
 
-                    <div class="input-group">
-
-                        <span class="input-group-text">
-                            <i class="fa-solid fa-money-bill-wave"></i>
-                        </span>
-                        <input type="number"
-                               step="0.01"
-                               min="0"
-                               max="100"
-                               name="expense"
-                               value="<?= htmlspecialchars((string)$expensePercent) ?>"
-                               class="form-control">
-
-                    </div>
+                    <input type="number"
+                           step="0.01"
+                           min="0"
+                           max="100"
+                           name="expense"
+                           value="<?= htmlspecialchars((string)$expensePercent) ?>"
+                           class="form-control">
 
                 </div>
 
                 <!-- BUTTON -->
 
-                <div class="col-12 col-lg-auto">
+                <div class="col-6 col-md-3 col-xl-2">
+
+                    <input type="hidden"
+                           name="mode"
+                           value="<?= htmlspecialchars($mode) ?>">
+
+                    <input type="hidden"
+                           name="period"
+                           value="<?= $period ?>">
 
                     <button class="btn btn-primary w-100">
 
@@ -587,25 +659,20 @@ $averageBalance = $daysCount > 0
 
         <div class="row g-3 mb-4">
 
-
             <!-- NET -->
 
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-md-4 col-xl">
 
                 <div class="card border-0 bg-primary text-white shadow-sm h-100">
 
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-
-                            ОБОРОТ БЕЗ ДДС
-
+                            ОБОРОТ
                         </div>
 
                         <div class="fs-5 fw-bold">
-
                             <?= number_format($totalNet, 2) ?> €
-
                         </div>
 
                     </div>
@@ -616,22 +683,18 @@ $averageBalance = $daysCount > 0
 
             <!-- PROFIT -->
 
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-md-4 col-xl">
 
                 <div class="card border-0 bg-info text-white shadow-sm h-100">
 
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-
-                            ПЕЧАЛБА
-
+                            МАРЖ
                         </div>
 
                         <div class="fs-5 fw-bold">
-
                             <?= number_format($totalProfit, 2) ?> €
-
                         </div>
 
                     </div>
@@ -640,24 +703,20 @@ $averageBalance = $daysCount > 0
 
             </div>
 
-            <!-- EXPENSE -->
+            <!-- EXPENSES -->
 
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-md-4 col-xl">
 
                 <div class="card border-0 bg-danger text-white shadow-sm h-100">
 
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-
                             РАЗХОДИ
-
                         </div>
 
                         <div class="fs-5 fw-bold">
-
                             <?= number_format($totalExpenses, 2) ?> €
-
                         </div>
 
                     </div>
@@ -668,22 +727,18 @@ $averageBalance = $daysCount > 0
 
             <!-- BALANCE -->
 
-            <div class="col-6 col-lg-3">
+            <div class="col-6 col-md-6 col-xl">
 
                 <div class="card border-0 bg-success text-white shadow-sm h-100">
 
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-
                             БАЛАНС
-
                         </div>
 
                         <div class="fs-5 fw-bold">
-
                             <?= number_format($totalBalance, 2) ?> €
-
                         </div>
 
                     </div>
@@ -694,29 +749,23 @@ $averageBalance = $daysCount > 0
 
             <!-- AVERAGE -->
 
-            <div class="col-6 col-lg-3">
+            <div class="col-12 col-md-6 col-xl">
 
                 <div class="card border-0 bg-warning text-dark shadow-sm h-100">
 
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-
                             СРЕДНО НА ДЕН
-
                         </div>
 
                         <div class="fw-bold">
-
                             <?= number_format($averageNet, 2) ?> €
-
                         </div>
 
-                        <div class="small">
-
-                            Печалба:
-                            <?= number_format($averageProfit, 2) ?> €
-
+                        <div class="small mt-1">
+                            Баланс:
+                            <?= number_format($averageBalance, 2) ?> €
                         </div>
 
                     </div>
@@ -734,9 +783,12 @@ $averageBalance = $daysCount > 0
             <div class="card border-0 shadow-sm mb-4">
 
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+
                     <div class="fw-semibold">
+
                         <i class="fa-solid fa-chart-area text-primary"></i>
-                        Динамика на оборот и печалба
+
+                        Динамика
 
                     </div>
 
@@ -773,10 +825,15 @@ $averageBalance = $daysCount > 0
             <div class="card border-0 shadow-sm">
 
                 <div class="card-header d-flex justify-content-between align-items-center">
+
                     <div class="fw-semibold">
+
                         <i class="fa-solid fa-table"></i>
+
                         Детайлна справка
+
                     </div>
+
                     <div class="small text-muted">
 
                         <?= count($rows) ?> дни
@@ -789,13 +846,20 @@ $averageBalance = $daysCount > 0
 
                     <table class="table table-hover align-middle mb-0">
 
-                        <thead class="">
+                        <thead>
+
                         <tr>
+
                             <th>Дата</th>
+
                             <th class="text-end">Оборот</th>
+
                             <th class="text-end">Марж</th>
+
                             <th class="text-end">Разходи</th>
+
                             <th class="text-end">Баланс</th>
+
                         </tr>
 
                         </thead>
@@ -806,13 +870,9 @@ $averageBalance = $daysCount > 0
 
                             <?php
 
-                            $profitClass = 'bg-secondary';
-
-                            if ($row['profit'] >= 2000) {
-                                $profitClass = 'bg-success';
-                            } elseif ($row['profit'] >= 1000) {
-                                $profitClass = 'bg-primary';
-                            }
+                            $balanceClass = $row['balance'] >= 0
+                                ? 'text-success'
+                                : 'text-danger';
 
                             ?>
 
@@ -828,26 +888,19 @@ $averageBalance = $daysCount > 0
 
                                 </td>
 
-                                <td class="text-end">
+                                <td class="text-end text-primary fw-semibold">
 
-                                    <span class="fw-semibold text-primary">
-
-                                        <?= number_format($row['net'], 2) ?> €
-
-                                    </span>
+                                    <?= number_format($row['net'], 2) ?> €
 
                                 </td>
 
-                                <td class="text-end">
+                                <td class="text-end text-info fw-semibold">
 
-                                    <span class="badge <?= $profitClass ?> fs-6">
-
-                                        <?= number_format($row['profit'], 2) ?> €
-
-                                    </span>
+                                    <?= number_format($row['profit'], 2) ?> €
 
                                 </td>
-                                <td class="text-end">
+
+                                <td class="text-end text-danger">
 
                                     <?= number_format($row['expenses'], 2) ?> €
 
@@ -855,14 +908,12 @@ $averageBalance = $daysCount > 0
 
                                 <td class="text-end">
 
-                                    <?php
-                                    $balanceClass = $row['balance'] >= 0
-                                        ? 'text-success'
-                                        : 'text-danger';
-                                    ?>
                                     <span class="fw-bold <?= $balanceClass ?>">
+
                                         <?= number_format($row['balance'], 2) ?> €
+
                                     </span>
+
                                 </td>
 
                             </tr>
@@ -905,32 +956,21 @@ $averageBalance = $daysCount > 0
 
     const chartProfitData = <?= json_encode($chartProfitData) ?>;
 
-    const canvas = document.getElementById('salesChart');
-
     const chartExpenseData = <?= json_encode($chartExpenseData) ?>;
 
     const chartBalanceData = <?= json_encode($chartBalanceData) ?>;
+
+    const canvas = document.getElementById('salesChart');
 
     if (canvas) {
 
         const ctx = canvas.getContext('2d');
 
-        /*
-        |--------------------------------------------------------------------------
-        | BLUE GRADIENT
-        |--------------------------------------------------------------------------
-        */
-
         const gradientBlue = ctx.createLinearGradient(0, 0, 0, 400);
 
         gradientBlue.addColorStop(0, 'rgba(13,110,253,0.35)');
-        gradientBlue.addColorStop(1, 'rgba(13,110,253,0.02)');
 
-        /*
-        |--------------------------------------------------------------------------
-        | CHART
-        |--------------------------------------------------------------------------
-        */
+        gradientBlue.addColorStop(1, 'rgba(13,110,253,0.02)');
 
         new Chart(ctx, {
 
@@ -943,7 +983,7 @@ $averageBalance = $daysCount > 0
                 datasets: [
 
                     {
-                        label: 'Оборот без ДДС',
+                        label: 'Оборот',
 
                         data: chartNetData,
 
@@ -957,21 +997,15 @@ $averageBalance = $daysCount > 0
 
                         borderWidth: 3,
 
-                        pointRadius: 4,
-
-                        pointHoverRadius: 6
+                        pointRadius: 4
                     },
 
                     {
-                        label: 'Печалба',
+                        label: 'Марж',
 
                         data: chartProfitData,
 
-                        borderColor: '#198754',
-
-                        backgroundColor: 'rgba(25,135,84,0.08)',
-
-                        fill: false,
+                        borderColor: '#0dcaf0',
 
                         tension: 0.35,
 
@@ -979,9 +1013,7 @@ $averageBalance = $daysCount > 0
 
                         borderDash: [6, 6],
 
-                        pointRadius: 3,
-
-                        pointHoverRadius: 5
+                        pointRadius: 3
                     },
 
                     {
@@ -991,13 +1023,11 @@ $averageBalance = $daysCount > 0
 
                         borderColor: '#dc3545',
 
-                        backgroundColor: 'rgba(220,53,69,0.08)',
-
                         tension: 0.35,
 
                         borderWidth: 2,
 
-                        borderDash: [4,4],
+                        borderDash: [4, 4],
 
                         pointRadius: 2
                     },
@@ -1007,9 +1037,7 @@ $averageBalance = $daysCount > 0
 
                         data: chartBalanceData,
 
-                        borderColor: '#6f42c1',
-
-                        backgroundColor: 'rgba(111,66,193,0.08)',
+                        borderColor: '#198754',
 
                         tension: 0.35,
 

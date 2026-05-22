@@ -29,6 +29,21 @@ $currentPage = $_GET['page'] ?? 'routes';
 
         <ul class="dropdown-menu text-center shadow">
             <li>
+                <a class="dropdown-item <?= $currentPage === 'products_top' ? 'active' : '' ?>" href="dashboard.php?page=products_top">
+                    <i class="fa-solid fa-ranking-star me-2"></i> НАЙ-ПРОДАВАНИ
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item <?= $currentPage === 'products_slow' ? 'active' : '' ?>" href="dashboard.php?page=products_slow">
+                    <i class="fa-regular fa-star text-danger me-2"></i> НЕПРОДАВАНИ
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item <?= $currentPage === 'products_profit' ? 'active' : '' ?>" href="dashboard.php?page=products_profit">
+                    <i class="fa-solid fa-cloud-sun me-2"></i> ПРОГНОЗA
+                </a>
+            </li>
+            <li>
                 <a class="dropdown-item <?= $currentPage === 'sales_analysis' ? 'active' : '' ?>" href="dashboard.php?page=sales_analysis">
                     <i class="fa-solid fa-chart-line me-2"></i> АНАЛИЗ ПРОДАЖБИ
                 </a>

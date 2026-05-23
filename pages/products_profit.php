@@ -366,7 +366,7 @@ while ($row = $result->fetch_assoc()) {
 
                 <i class="fa-solid fa-chart-line text-success"></i>
 
-                Products Profitability
+                Рентабилност на продуктите
 
             </h5>
 

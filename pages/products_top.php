@@ -107,7 +107,7 @@ while ($row = $result->fetch_assoc()) {
 
             <h5 class="mb-0 text-primary">
                 <i class="fa-solid fa-fire"></i>
-                Най-продавани продукти
+                НАЙ-ПРОДАВАНИ
             </h5>
 
             <div class="small text-muted mt-1">

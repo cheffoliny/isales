@@ -398,7 +398,7 @@ while ($row = $result->fetch_assoc()) {
                     <div class="card-body">
 
                         <div class="small opacity-75 mb-1">
-                            SLOW MOVERS
+                            НЕ/БАВНО ПРОДАВАНИ
                         </div>
 
                         <div class="fs-4 fw-bold">

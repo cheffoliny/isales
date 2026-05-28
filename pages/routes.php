@@ -18,72 +18,52 @@ if( $_SESSION['offices_ids' ] != '0' ) {
 $db = db_connect('sod');
 
 $stmt = $db->prepare("
-                SELECT
-                    offs.id AS offs_id,
-                    offs.name AS offs_name,
-                    offs.km_per_roadlist AS km_per_route,
-
-                    sys.fuel_price,
-                    sys.salary_per_day,
-
-                    COUNT(DISTINCT o.id) AS obj_count,
-
-                    COUNT(DISTINCT CASE
-                        WHEN obj_sum.id_dest IS NOT NULL
-                             AND (
-                                 CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
-                                 OR offs.code = 99
-                             )
-                        THEN o.id
-                    END) AS obj_visited,
-
-                    SUM(CASE
-                        WHEN obj_sum.id_dest IS NOT NULL
-                             AND (
-                                 CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
-                                 OR offs.code = 99
-                             )
-                        THEN obj_sum.total_sum
-                        ELSE 0
-                    END) AS total_sum,
-
-                    SUM(CASE
-                        WHEN obj_sum.id_dest IS NOT NULL
-                             AND (
-                                 CAST(RIGHT(offs.code, 1) AS UNSIGNED) = WEEKDAY(NOW()) + 1
-                                 OR offs.code = 99
-                             )
-                        THEN obj_sum.total_qty
-                        ELSE 0
-                    END) AS total_qty
-
-                FROM offices offs
-                LEFT JOIN ". DB_NAMES['system'] .".`system` sys ON 1 = 1
-                LEFT JOIN objects o ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$') AND o.id_status = 1
-                LEFT JOIN (
-                    SELECT
-                        p.id_dest,
-                        SUM(pe_sum.total_qty) AS total_qty,
-                        SUM(pe_sum.total_sum) AS total_sum
-                    FROM ". DB_NAMES['storage'] .".ppp p
-                    LEFT JOIN (
-                        SELECT
-                            pe.id_ppp,
-                            SUM(pe.`count`) AS total_qty,
-                            SUM(pe.`count` * pe.single_price) AS total_sum
-                        FROM ". DB_NAMES['storage'] .".ppp_elements pe
-                        WHERE pe.count > 0
-                        GROUP BY pe.id_ppp
-                    ) pe_sum ON pe_sum.id_ppp = p.id AND p.`status` != 'cancel'
-                    WHERE p.source_date >= CURDATE()
-
-                      AND p.source_date < CURDATE() + INTERVAL 1 DAY
-                    GROUP BY p.id_dest
-                ) obj_sum ON obj_sum.id_dest = o.id
-                ". $where_offices ."
-                GROUP BY offs.id, offs.name
-                ORDER BY offs.name ASC
-            ");
+        SELECT
+            offs.id AS offs_id,
+            offs.name AS offs_name,
+            offs.km_per_roadlist AS km_per_route,
+        
+            sys.fuel_price,
+            sys.salary_per_day,
+        
+            obj_stats.obj_count,
+        
+            COALESCE(ppp_stats.obj_visited,0) AS obj_visited,
+            COALESCE(ppp_stats.total_sum,0) AS total_sum,
+            COALESCE(ppp_stats.total_qty,0) AS total_qty
+        FROM offices offs
+        LEFT JOIN ". DB_NAMES['system'] .".system sys ON 1 = 1
+        /* =========================
+           OBJECTS STATS
+        ========================= */
+        LEFT JOIN (
+            SELECT
+                oo.id_office, COUNT(DISTINCT o.id) AS obj_count
+            FROM offices_objects oo
+            JOIN objects o ON o.id = oo.id_object AND o.id_status = 1
+            WHERE oo.to_arc = 0
+            GROUP BY oo.id_office
+        ) obj_stats ON obj_stats.id_office = offs.id
+        /* =========================
+           PPP STATS
+        ========================= */
+        LEFT JOIN (
+            SELECT
+                p.id_office,
+                COUNT(DISTINCT p.id_dest) AS obj_visited,
+                SUM(pe.count * pe.single_price) AS total_sum,
+                SUM(pe.count) AS total_qty
+            FROM ". DB_NAMES['storage'] .".ppp p
+            LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON pe.id_ppp = p.id
+            WHERE p.status != 'cancel'
+              AND p.source_date >= CURDATE()
+              AND p.source_date < CURDATE() + INTERVAL 1 DAY
+            GROUP BY p.id_office
+        ) ppp_stats ON ppp_stats.id_office = offs.id
+        WHERE 1
+        GROUP BY offs.id
+        ORDER BY offs.name ASC
+");
 
 $stmt->execute();
 $result = $stmt->get_result();
@@ -132,9 +112,23 @@ if (!$result || $result->num_rows === 0) {
                     $progressClass='bg-success';
                 }
 
+                $sumExpense = 0;
+
                 $sumNoDDS   = ROUND(($oTotalSum / $no_dds), 2);
                 $sumEarning = ROUND($sumNoDDS - ($sumNoDDS / $markup_percentage_100), 2);
-                $sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * ($fuelPrice/$no_dds)) + ($sumNoDDS - ($sumNoDDS/$salary_percentage)), 2);
+
+                if($objectCount > 0){
+
+                    $sumExpense = ROUND(
+                        (
+                            2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10
+                        ) * ($fuelPrice / $no_dds)
+                        +
+                        ($sumNoDDS - ($sumNoDDS / $salary_percentage)),
+                        2
+                    );
+                }
+                //$sumExpense = ROUND((( 2 * (($kmRerRoute / $objectCount) * $objectVisited) / 10) * ($fuelPrice/$no_dds)) + ($sumNoDDS - ($sumNoDDS/$salary_percentage)), 2);
                 $sumBalance = ROUND($sumEarning - $sumExpense, 2);
         ?>
 
@@ -162,7 +156,7 @@ if (!$result || $result->num_rows === 0) {
 
         <a href="dashboard.php?page=route_objects&id=<?= $officeId ?>"
             class="fw-semibold fs-5 text-decoration-none">
-            <?= $officeName .' / '. $_SESSION['offices_ids' ]?>
+            <?= $officeName ?>
         </a>
     </div>
     <?php if($_SESSION['is_admin'] == 1 && $objectVisited > 0   ) { ?>

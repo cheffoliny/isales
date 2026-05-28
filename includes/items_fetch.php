@@ -1,222 +1,296 @@
 <?php
-include_once __DIR__.'/functions.php';
+include_once __DIR__.'/../includes/functions.php';
 
-$strDisable = 'disabled';
-if($_SESSION['is_admin'] == 1) {
-    $strDisable = '';
+if (empty($_SESSION['user_id'])) {
+    header('Location: index.php');
+    exit;
 }
+
+$idType = (int)($_GET['id_type'] ?? 0);
 
 $db = db_connect('storage');
 
-$page = (int)($_GET['page'] ?? 0);
-$search = trim($_GET['search'] ?? '');
-$newp = (int)($_GET['newp'] ?? 0);
-$norder = (int)($_GET['norder'] ?? 0);
-$promo = (int)($_GET['promo'] ?? 0);
-$zero = (int)($_GET['zero'] ?? 0);
-$image = (int)($_GET['image'] ?? NULL);
-$limit = 2000;
-$offset = $page * $limit;
-$offset = $limit;
+$typeName = 'Всички артикули';
 
-$where = " WHERE n.to_arc = 0 ";
-$having = '';
+if($idType > 0){
 
-// Защитен вход в заявката - ескейпваме
-if ($search !== '') {
-    $s = $db->real_escape_string($search);
-    // Търсим в nom_code и name (case-insensitive по подразбиране)
-    $where .= " AND (n.nom_code LIKE '%$s%' OR n.name LIKE '%$s%')";
+    $stmt = $db->prepare("
+        SELECT name
+        FROM nomenclature_types
+        WHERE id=?
+    ");
+
+    $stmt->bind_param("i",$idType);
+    $stmt->execute();
+
+    $stmt->bind_result($typeName);
+    $stmt->fetch();
+
+    $stmt->close();
 }
-if ($newp) {
-    $where .= " AND n.is_new > 0 ";
-}
-if ($norder) {
-    $having .= " HAVING norder = 0 ";
-}
+?>
 
-if ($promo) {
-    $where .= " AND n.sales_price > 0 ";
-}
-if ($zero) {
-    $where .= " AND n.is_calc = 0 ";
-} else {
-    $where .= " AND n.is_calc > 0 ";
-}
-if ($image) {
-    $where .= " AND n.image IS NULL ";
-}
+<div class="card shadow border-0">
 
-$sql = "SELECT
-            n.id,
-            n.nom_code,
-            n.name,
-            n.client_price,
-            n.sales_price,
-            n.is_calc,
-            n.image,
-            n.is_new,
-            CONCAT('(',n.promo_note,')') AS promo_note,
-            COALESCE(
-                (SELECT
-                    COUNT(pe.id)
-                FROM ppp_elements pe
-                JOIN ppp p ON p.id = pe.id_ppp AND p.`status` != 'cancel'
-                WHERE pe.id_nomenclature = n.id
-                GROUP BY pe.id_nomenclature),
-                0
-            ) AS norder
-        FROM nomenclatures n
-        $where
-        $having
-        ORDER BY n.nom_code
-        LIMIT $limit 
-        ";
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
 
-$res = $db->query($sql);
+        <div class="d-flex align-items-center gap-2">
 
-$html = '';
-$grid = '';
+            <button class="btn btn-outline-secondary btn-sm"
+                    id="backToCategories">
 
-while ($r = $res->fetch_assoc()) {
-    $hasImage = !empty($r['image']) ? 1 : 0;
-    $promoNote = htmlspecialchars($r['promo_note'] ?? '');
+                <i class="fa-solid fa-angles-left"></i>
 
-    // Thumbnail for table view
-    if ($hasImage) {
-        $thumb = '<div class="item-thumb bg-white text-danger text-center">
-                        <img src="includes/item_image_get.php?id='.$r['id'].'"
-                            style="max-height:40px;cursor:pointer"
-                            class="item-thumb"
-                            data-id="'.$r['id'].'"
-                            data-hasimage="1">
-                  </div>';
-    } else {
-        $thumb = '<div class="item-thumb bg-white text-danger text-center"
-                        style="width:auto;height:40px;line-height:40px;cursor:pointer"
-                        data-id="'.$r['id'].'"
-                        data-hasimage="0">-</div>';
-    }
+            </button>
 
-    // Табличен ред
-    $html .= '<tr>
-                <td class="text-center border-0">'.htmlspecialchars($r['nom_code']).'</td>
-                <td class="px-2 border-0">'.htmlspecialchars($r['name']).' <span class="text-danger">'.$promoNote.'</span></td>
-                <td class="text-center border-0">'.(int)$r['is_calc'].'</td>
-                <td class="text-danger border-0">'.number_format((float)$r['sales_price'], 2, '.', '').'</td>
-                <td class="border-0">'.number_format((float)$r['client_price'], 2, '.', '').'</td>
-                <td class="text-center border-0">'.$thumb.'</td>
-            </tr>';
+            <h5 class="mb-0">
+                <?= htmlspecialchars($typeName) ?>
+            </h5>
 
-        ($_SESSION['is_admin'] == 1
-        ?
-        $html .= '<tr data-id="'.$r['id'].'">
-                <td><span class="btn btn-sm btn-outline-success p-1 w-100 m-0 text-white">
-                    <input type="checkbox" class="newp mx-2" name="newp" '.($r['is_new'] ? 'checked' : '').' /> НОВО</span></td>
-                <td><input type="text" class="form-control form-control-sm promo_note text-danger"
-                           placeholder="Промо описание..." value="'.$promoNote.'" '.$strDisable.' /></td>
-                <td>&nbsp;</td>
-                <td><input type="number" class="form-control form-control-sm sales_price text-danger" value="'.number_format((float)$r['sales_price'], 2, '.', '').'" '.$strDisable.' /></td>
-                <td><input type="number" class="form-control form-control-sm client_price" value="'.number_format((float)$r['client_price'], 2, '.', '').'"  '.$strDisable.' /></td>
-                <td>
-                    <div class="d-grid gap-2">
-                        <button class="btn btn-sm btn-success save-item"><i class="fa-solid fa-check"></i></button>
-                    </div>
-                </td>
-            </tr>'
-        : ''
-        ).'';
+        </div>
 
+        <div class="d-flex gap-2 flex-wrap align-items-center">
 
-    // Цена и промо текст
-    $clientPrice = number_format((float)$r['client_price'], 2, '.', '');
-    $salesPrice = (float)$r['sales_price'];
-    $promoBadge = '';
-    $priceDisplay = '<div class="fw-bold">'.$clientPrice.' €</div>';
-    if ($salesPrice > 0) {
-        $salesFormatted = number_format($salesPrice, 2, '.', '');
-        $promoBadge = '<span class="badge bg-danger position-absolute top-0 start-0 m-2">ПРОМО</span>';
-        $priceDisplay = '<div class="fw-bold text-danger"><del class="text-muted me-2">'.$clientPrice.' €</del>'.$salesFormatted.' €</div>';
-    }
+            <input type="text"
+                   id="search"
+                   class="form-control form-control-sm py-2"
+                   placeholder="КОД / ИМЕ">
 
-    // Image HTML for grid
-    $imgSrc = $hasImage
-        ? 'includes/item_image_get.php?id='.$r['id']
-        : 'assets/images/na.jpg';
+            <button id="newFilter" class="btn btn-sm btn-success">
+                <i class="fa-solid fa-file-circle-plus"></i> НОВО
+            </button>
 
-    // Card HTML
-//     $grid .= '
-//     <div class="col-6 col-md-4 col-lg-3">
-//         <div class="card h-100 shadow-sm position-relative">
-//             '.$promoBadge.'
-//             <img src="'.$imgSrc.'" alt="'.htmlspecialchars($r['name']).'" class="card-img-top" style="object-fit:cover; max-height:150px; cursor:pointer;" data-id="'.$r['id'].'" data-hasimage="'.$hasImage.'">
-//             <div class="card-body p-2">
-//                 <h6 class="card-title mb-1 text-truncate" title="'.htmlspecialchars($r['name']).'">'.htmlspecialchars($r['name']).'</h6>
-//                 '.$priceDisplay.'
-//             </div>
-//         </div>
-//     </div>';
+            <button id="promoFilter" class="btn btn-sm btn-danger">
+                <i class="fa-solid fa-percent"></i> ПРОМО
+            </button>
 
+            <?php if($_SESSION['is_admin'] == 1) { ?>
 
-        $grid .= '
-        <div class="col-6 col-md-4 col-lg-3">
-            <div class="card h-100 shadow-sm position-relative" data-id="'.$r['id'].'">
+                <button id="zeroFilter"
+                        class="btn btn-sm btn-warning text-white">
 
-                '.$promoBadge.'
+                    <i class="fa-brands fa-creative-commons-zero"></i>
+                    НУЛЕВИ
 
-                <img src="'.$imgSrc.'"
-                     class="card-img-top"
-                     style="object-fit:cover;height:140px;cursor:pointer;"
-                     data-id="'.$r['id'].'"
-                     data-hasimage="'.$hasImage.'">
+                </button>
 
-                <div class="card-body p-2 d-flex flex-column justify-content-between">
+                <button id="zeroImage"
+                        class="btn btn-sm btn-primary text-white">
 
-                    <!-- ROW 1 -->
-                    <div>
-                        <div class="fw-bold small text-truncate">'.htmlspecialchars($r['nom_code']).' '.htmlspecialchars($r['name']).'</div>
-                        <div class="text-danger small">'.$promoNote.'</div>
-                    </div>
+                    <i class="fa-solid fa-image"></i>
+                    БЕЗ СНИМКА
 
-                    <!-- ROW 2 -->
-                    <div class="mt-1">
-                        '.$priceDisplay.'
-                    </div>
+                </button>
 
-                    <!-- ROW 3 (INPUTS) -->
-                    '.
-                    ($_SESSION['is_admin'] == 1
-                    ?
-                        '<div class="mt-2">
-                            <span class="btn btn-sm btn-outline-primary w-100 text-white p-1 m-0">
-                                <input type="checkbox"
-                                       class="newp"
-                                       name="newp"
-                                       '.($r['is_new'] ? 'checked' : '').' /> НОВО</span>
-                            <input type="number"
-                                   class="form-control form-control-sm mb-1 client_price"
-                                   value="'.$clientPrice.'" '.$strDisable.'>
+                <button id="zeroOrder"
+                        class="btn btn-sm bg-primary text-white">
 
-                            <input type="number"
-                                   class="form-control form-control-sm mb-1 sales_price"
-                                   placeholder="Промо цена"
-                                   value="'.($salesPrice > 0 ? $salesFormatted : '').'" '.$strDisable.'>
+                    <i class="fa-solid fa-ban"></i>
+                    НЕ КУПУВАНИ
 
-                            <!-- 🆕 ПРОМО ТЕКСТ -->
-                            <input type="text"
-                                   class="form-control form-control-sm promo_note"
-                                   placeholder="Промо описание..."
-                                   value="'.$promoNote.'" '.$strDisable.'>
+                </button>
 
-                            <button class="btn btn-success btn-sm w-100 mt-1 save-item">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
-                        </div>'
-                    : ''
-                    ).'
-                </div>
+            <?php } ?>
+
+            <div class="btn-group btn-group-sm">
+
+                <button type="button"
+                        class="btn btn-primary active"
+                        id="viewListBtn">
+
+                    <i class="fa-solid fa-list"></i>
+
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline-primary"
+                        id="viewGridBtn">
+
+                    <i class="fa-solid fa-table-cells"></i>
+
+                </button>
+
             </div>
-        </div>';
-}
 
-echo json_encode(['success'=>true,'html'=>$html,'grid'=>$grid]);
+        </div>
+
+    </div>
+
+    <div class="card-body p-0">
+
+        <div id="listView">
+
+            <div class="table-responsive">
+
+                <table class="table table-sm table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                    <tr>
+                        <th class="text-center col-1">Код</th>
+                        <th class="col">Име</th>
+                        <th class="text-center col-1">Кол.</th>
+                        <th class="col-1">Промо</th>
+                        <th class="col-1">Клиент</th>
+                        <th class="text-center col-1">IMG</th>
+                    </tr>
+                    </thead>
+
+                    <tbody id="itemsTable"></tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+        <div id="gridView"
+             class="row g-3 px-3 py-2"
+             style="display:none;"></div>
+
+    </div>
+</div>
+
+<!-- IMAGE MODAL -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Снимка</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body text-center">
+
+                <img id="itemImagePreview"
+                     class="img-fluid mb-3 d-none"
+                     style="max-height:80vh">
+
+                <div id="noImageText"
+                     class="text-muted">
+
+                    Няма качена снимка
+
+                </div>
+
+                <?php if($_SESSION['is_admin'] == 1): ?>
+
+                    <input type="file"
+                           id="imageUpload"
+                           class="form-control mt-3">
+
+                <?php endif; ?>
+
+            </div>
+
+            <?php if($_SESSION['is_admin'] == 1): ?>
+
+                <div class="modal-footer">
+
+                    <button class="btn btn-danger btn-sm"
+                            id="deleteImage">
+
+                        Изтрий
+
+                    </button>
+
+                    <button class="btn btn-success btn-sm"
+                            id="uploadImage">
+
+                        Качи
+
+                    </button>
+
+                </div>
+
+            <?php endif; ?>
+
+        </div>
+    </div>
+</div>
+
+<script>
+
+    let page = 0;
+    let searchVal = '';
+    let newp = false;
+    let promo = false;
+    let zero = false;
+    let image = false;
+    let norder = false;
+    let loading = false;
+    let endReached = false;
+    let viewMode = 'list';
+
+    const selectedType = <?= $idType ?>;
+
+    // LOAD ITEMS
+    function loadItems(reset=false){
+
+        if(reset){
+            page = 0;
+            $('#itemsTable').html('');
+            $('#gridView').html('');
+            endReached = false;
+        }
+
+        if(loading || endReached) return;
+
+        loading = true;
+
+        $.get('includes/items_fetch.php', {
+            page: page,
+            search: searchVal,
+            newp: newp ? 1 : 0,
+            promo: promo ? 1 : 0,
+            zero: zero ? 1 : 0,
+            image: image ? 1 : 0,
+            norder: norder ? 1 : 0,
+            id_type: selectedType
+        }, function(resp){
+
+            if(resp.success){
+
+                if(resp.html.trim() === '' && resp.grid.trim() === '') {
+
+                    if(page === 0){
+
+                        $('#itemsTable').html(
+                            '<tr><td colspan="7" class="text-center text-muted">Няма резултати</td></tr>'
+                        );
+
+                        $('#gridView').html(
+                            '<div class="text-center text-muted w-100">Няма резултати</div>'
+                        );
+
+                    }
+
+                    endReached = true;
+
+                } else {
+
+                    if(viewMode === 'list'){
+                        $('#itemsTable').append(resp.html);
+                    } else {
+                        $('#gridView').append(resp.grid);
+                    }
+
+                    page++;
+                }
+            }
+
+            loading = false;
+
+        }, 'json');
+    }
+
+    loadItems();
+
+    $('#backToCategories').on('click', function(){
+
+        window.location =
+            'dashboard.php?page=items';
+
+    });
+
+</script>

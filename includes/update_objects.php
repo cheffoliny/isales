@@ -14,7 +14,6 @@ $info = trim($_POST['info'] ?? '');
 $lat  = isset($_POST['lat']) ? (float)$_POST['lat'] : null;
 $lng  = isset($_POST['lng']) ? (float)$_POST['lng'] : null;
 
-// JSON string от JS
 $offices_json = $_POST['offices_ids'] ?? '[]';
 $offices = json_decode($offices_json, true);
 
@@ -23,46 +22,110 @@ if(!is_array($offices)){
 }
 
 $offices = array_map('intval', $offices);
-$offices_json = json_encode($offices, JSON_UNESCAPED_UNICODE);
 
-// само name задължително
 if(!$id || !$name){
     echo json_encode(['success' => false]);
     exit;
 }
 
-// за backward compatibility
-$id_office = count($offices) ? $offices[0] : null;
-
 $db = db_connect('sod');
 
-$stmt = $db->prepare("
-UPDATE objects SET
-    name = ?,
-    operativ_info = ?,
-    offices_ids = ?,
-    id_office = ?,
-    geo_lat = ?,
-    geo_lan = ?
-WHERE id = ?
-");
+$db->begin_transaction();
 
-$stmt->bind_param(
-    "sssiddi",
-    $name,
-    $info,
-    $offices_json,
-    $id_office,
-    $lat,
-    $lng,
-    $id
-);
+try {
 
-if($stmt->execute()){
-    echo json_encode(['success' => true]);
-} else {
-    echo json_encode(['success' => false, 'error'=>$stmt->error]);
+    /* ===================================
+       UPDATE OBJECT
+    =================================== */
+    $stmt = $db->prepare("
+        UPDATE objects SET
+            name = ?,
+            operativ_info = ?,
+            geo_lat = ?,
+            geo_lan = ?
+        WHERE id = ?
+    ");
+
+    $stmt->bind_param(
+        "ssddi",
+        $name,
+        $info,
+        $lat,
+        $lng,
+        $id
+    );
+
+    if(!$stmt->execute()){
+        throw new Exception($stmt->error);
+    }
+
+    $stmt->close();
+
+    /* ===================================
+       SOFT DELETE OLD OFFICES
+    =================================== */
+    $stmtDelete = $db->prepare("
+        UPDATE offices_objects
+        SET to_arc = 1
+        WHERE id_object = ?
+    ");
+
+    $stmtDelete->bind_param("i", $id);
+
+    if(!$stmtDelete->execute()){
+        throw new Exception($stmtDelete->error);
+    }
+
+    $stmtDelete->close();
+
+    /* ===================================
+       INSERT NEW OFFICES
+    =================================== */
+    if(count($offices)){
+
+        $stmtInsert = $db->prepare("
+            INSERT INTO offices_objects
+            (
+                id_object,
+                id_office,
+                to_arc
+            )
+            VALUES
+            (
+                ?, ?, 0
+            )
+        ");
+
+        foreach($offices as $officeId){
+
+            $stmtInsert->bind_param(
+                "ii",
+                $id,
+                $officeId
+            );
+
+            if(!$stmtInsert->execute()){
+                throw new Exception($stmtInsert->error);
+            }
+        }
+
+        $stmtInsert->close();
+    }
+
+    $db->commit();
+
+    echo json_encode([
+        'success' => true
+    ]);
+
+} catch(Exception $e){
+
+    $db->rollback();
+
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }
 
-$stmt->close();
 $db->close();

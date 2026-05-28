@@ -71,7 +71,6 @@ while ($row = $routesResult->fetch_assoc()) {
 }
 
 // ── 2. Objects (client locations) ─────────────────────────────────────────
-// offices_ids is stored as a JSON array in the objects table, e.g. [1,3,5]
 $objectsSql = "
     SELECT
         id,

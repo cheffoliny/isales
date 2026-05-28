@@ -27,12 +27,13 @@ $sql = "
             o.id,
             o.name,
             COALESCE(o.operativ_info,'') AS info,
-            COALESCE(o.offices_ids,'[]') AS offices_ids,
+            COALESCE(o.offices_ids,'...') AS offices_ids,
             o.geo_lat,
             o.geo_lan,
             COALESCE(GROUP_CONCAT(offs.name SEPARATOR ', '), '—') AS office_name
         FROM objects o
-        JOIN offices offs ON JSON_CONTAINS(o.offices_ids, CONCAT(offs.id), '$')
+        JOIN offices_objects oo ON oo.id_object = o.id AND oo.to_arc = 0
+        JOIN offices offs ON offs.id = oo.id_office
         WHERE o.id_status <> 4
             ". $where_offices ."
         GROUP BY o.id

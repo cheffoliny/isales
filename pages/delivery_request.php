@@ -22,15 +22,17 @@ $today = date('Y-m-d');
 
 /* ================= CHECK / CREATE PPP ================= */
 
-$checkSql = "SELECT id, status
-             FROM ppp
-             WHERE id_dest = ?
-               AND dest_type = 'object'
-               AND DATE(source_date) = ?
+$checkSql = "
+            SELECT id, status
+            FROM ppp
+            WHERE id_dest = ?
+                AND dest_type = 'object'
+                AND DATE(source_date) = ?
+                AND id_office = ? 
              LIMIT 1";
 
 $stmt = $db_storage->prepare($checkSql);
-$stmt->bind_param("is", $objectId, $today);
+$stmt->bind_param("isi", $objectId, $today, $officeId);
 $stmt->execute();
 $stmt->bind_result($existingID, $pppStatus);
 $stmt->fetch();
@@ -43,21 +45,23 @@ if ($existingID) {
 
 } else {
 
-    $sourceUser = $firstName.' '. $lastName. ''.$idUser;
+    //$sourceUser = $firstName.' '. $lastName. ''.$idUser;
     $status = 'open';
     $pppStatus = $status;
 
     $insertSql = "INSERT INTO ppp
-        (`status`,`source_date`,`source_user`,`source_type`,`id_source`,`dest_type`,`id_dest`)
-        VALUES (?,NOW(),?,'storagehouse',1,'object',?)";
+        (`status`,`source_date`,`source_user`,`source_type`,`id_source`,`dest_type`,`id_dest`,`id_office`)
+        VALUES (?,NOW(),?,'storagehouse',1,'object',?,?)";
 
     $stmt = $db_storage->prepare($insertSql);
-    $stmt->bind_param("ssi",$status,$idUser,$objectId);
+
+    $stmt->bind_param("siii",$status,$idUser,$objectId,$officeId);
     $stmt->execute();
 
     $pppID = $db_storage->insert_id;
 
     $stmt->close();
+
 }
 
 if(!$pppID) die('PPP error');
@@ -177,13 +181,13 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
                             pe1.updated_time
                         FROM ppp_elements pe1
                         JOIN ppp p1 ON p1.id = pe1.id_ppp
-                        WHERE p1.id_dest = ?
+                        WHERE p1.id_dest = ? AND p1.id_office = ?
                             AND pe1.updated_time =
                             (
                                 SELECT MAX(pe2.updated_time)
                                 FROM ppp_elements pe2
                                 JOIN ppp p2 ON p2.id = pe2.id_ppp
-                                WHERE p2.id_dest = ? AND pe2.id_nomenclature = pe1.id_nomenclature
+                                WHERE p2.id_dest = ? AND p2.id_office = ? AND pe2.id_nomenclature = pe1.id_nomenclature
                             )
                 ) oldpe ON oldpe.id_nomenclature = n.id
                 WHERE
@@ -193,7 +197,7 @@ $lockedClass  = $isConfirmed ? 'opacity-50' : '';
 ";
 
             $stmt = $db->prepare($sql);
-            $stmt->bind_param("iii",$pppID,$objectId,$objectId);
+            $stmt->bind_param("iiiii",$pppID,$objectId, $officeId, $objectId, $officeId);
             $stmt->execute();
 
             $stmt->bind_result(

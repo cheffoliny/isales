@@ -48,10 +48,12 @@ $stmt = $db->prepare("
         p.id_buy_doc AS buy_doc,
         SUM(COALESCE(pe.`count`, 0)) AS ordered_quantity
     FROM objects o
-    LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON o.id = p.id_dest AND DATE(p.source_date) = CURDATE()
+    JOIN offices_objects oo ON oo.id_object = o.id AND oo.to_arc = 0        
+    LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON o.id = p.id_dest AND DATE(p.source_date) = CURDATE() AND p.id_office = oo.id_office
     LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON p.id = pe.id_ppp
-    WHERE JSON_CONTAINS(o.offices_ids, JSON_ARRAY(?))
-      AND o.id_status <> 4
+    WHERE oo.id_office = ?
+
+        AND o.id_status <> 4
     GROUP BY o.id, p.id
     ORDER BY
         (p.id IS NULL),

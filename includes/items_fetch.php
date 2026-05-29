@@ -23,6 +23,7 @@ $promo = (int)($_GET['promo'] ?? 0);
 $zero = (int)($_GET['zero'] ?? 0);
 $image = (int)($_GET['image'] ?? 0);
 $norder = (int)($_GET['norder'] ?? 0);
+$noCategory = (int)($_GET['no_category'] ?? 0);
 
 $limit = 20;
 $offset = $page * $limit;
@@ -58,6 +59,9 @@ if ($image && $isAdmin) {
     $where .= " AND (n.image IS NULL OR n.image = '') ";
 }
 
+if ($noCategory && $isAdmin) {
+    $where .= " AND n.id_type = 0 AND LENGTH(n.nom_code) > 3 ";
+}
 /*
 |--------------------------------------------------------------------------
 | norder placeholder

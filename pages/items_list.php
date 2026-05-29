@@ -49,8 +49,8 @@ if ($isAdmin) {
             <button id="zeroFilter" class="btn btn-sm btn-warning text-white">НУЛЕВИ</button>
             <button id="zeroImage" class="btn btn-sm btn-primary text-white">БЕЗ СНИМКА</button>
             <button id="zeroOrder" class="btn btn-sm bg-primary text-white">НЕ КУПУВАНИ</button>
+            <button id="noCategory" class="btn btn-sm btn-dark">БЕЗ КАТЕГОРИЯ</button>
         <?php endif; ?>
-
         <div class="btn-group btn-group-sm ms-auto">
             <button id="viewListBtn" type="button" class="btn btn-primary active">
                 <i class="fa-solid fa-list"></i>
@@ -68,7 +68,7 @@ if ($isAdmin) {
         <div id="listView">
             <div class="table-responsive">
                 <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
+                    <thead class="table-dark">
                     <tr>
                         <th>Код</th>
                         <th>Име</th>
@@ -215,6 +215,7 @@ if ($isAdmin) {
     let zero = 0;
     let image = 0;
     let norder = 0;
+    let noCategory = 0;
 
     let currentItem = 0;
 
@@ -244,6 +245,7 @@ if ($isAdmin) {
             zero: zero,
             image: image,
             norder: norder,
+            no_category: noCategory,
             id_type: typeId
         }, function (r) {
 
@@ -336,6 +338,16 @@ if ($isAdmin) {
     $('#zeroImage').on('click', function () {
         image = image ? 0 : 1;
         $(this).toggleClass('btn-primary btn-outline-primary');
+        load(true);
+    });
+
+    $('#noCategory').on('click', function () {
+
+        noCategory = noCategory ? 0 : 1;
+
+        $(this).toggleClass(
+            'btn-primary btn-outline-primary'
+        );
         load(true);
     });
 

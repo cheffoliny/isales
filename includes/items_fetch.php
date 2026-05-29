@@ -188,9 +188,13 @@ while ($r = $res->fetch_assoc()) {
                             {$isCalc}
                         </span>
 
+
+                    ".($salesPrice > 0 ? "
                         <span class='text-danger fw-semibold'>
                             {$salesPrice}
                         </span>
+                    " : "")."
+
                     </div>
                 </div>
             </div>

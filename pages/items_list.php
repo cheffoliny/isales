@@ -36,13 +36,12 @@ if ($isAdmin) {
 <div class="card shadow border-0">
 
     <div class="card-header d-flex flex-wrap gap-2 align-items-center">
-
-        <a href="index.php?page=items" class="btn btn-dark btn-sm">
-            <i class="fa-solid fa-arrow-left"></i>
-        </a>
-
         <input type="text" id="search" class="form-control form-control-sm" placeholder="КОД / ИМЕ">
 
+
+        <a href="dashboard.php?page=items" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-angles-left"></i>
+        </a>
         <button id="newFilter" class="btn btn-sm btn-success">НОВО</button>
         <button id="promoFilter" class="btn btn-sm btn-danger">ПРОМО</button>
 
@@ -107,10 +106,10 @@ if ($isAdmin) {
 
                 <input type="hidden" id="item_id">
 
-                <div class="row g-2">
+                <div class="row g-3">
 
                     <div class="col-12">
-                        <label>Тип артикул</label>
+                        <label class="form-label fw-semibold">Тип артикул</label>
 
                         <select id="id_type" class="form-select">
                             <option value="0">-- Без тип --</option>
@@ -124,35 +123,66 @@ if ($isAdmin) {
                         </select>
                     </div>
 
-                    <div class="col-6">
-                        <label>Клиент цена</label>
-                        <input type="number" id="client_price" class="form-control">
-                    </div>
-
-                    <div class="col-6">
-                        <label>Продажна цена</label>
-                        <input type="number" id="sales_price" class="form-control">
-                    </div>
-
                     <div class="col-12">
-                        <label>Промо текст</label>
-                        <input type="text" id="promo_note" class="form-control">
+
                     </div>
 
+                    <div class="col-4">
+                        <label class="form-label fw-semibold text-success" for="is_new">Нов артикул</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="is_new">
+                        </div>
+                    </div>
+
+                    <div class="col-4">
+                        <label class="form-label fw-semibold">Клиент цена</label>
+                        <input type="number"
+                               step="0.01"
+                               id="client_price"
+                               class="form-control" disabled="disabled">
+                    </div>
+                    <div class="col-4">
+
+                        <label class="form-label fw-semibold text-danger">Промо цена</label>
+                        <input type="number"
+                               step="0.01"
+                               id="sales_price"
+                               class="form-control">
+                    </div>
                     <div class="col-12">
-                        <label>
-                            <input type="checkbox" id="is_new">
-                            НОВО
-                        </label>
+                        <label class="form-label fw-semibold">Промо текст</label>
+                        <input type="text"
+                               id="promo_note"
+                               class="form-control">
                     </div>
 
-                    <div class="col-12 mt-3">
-                        <img id="item_image" class="img-fluid d-none" style="max-height:250px;">
-                        <input type="file" id="imageUpload" class="form-control mt-2">
+                    <div class="col-12 mt-2">
+                        <label class="form-label fw-semibold">Снимка</label>
+
+                        <div class="text-center bg-light rounded p-2 mb-2">
+                            <img id="item_image"
+                                 class="img-fluid d-none"
+                                 style="max-height:250px;">
+                        </div>
+
+                        <input type="file"
+                               id="imageUpload"
+                               class="form-control">
 
                         <div class="d-flex gap-2 mt-2">
-                            <button id="uploadImage" class="btn btn-success btn-sm">Качи</button>
-                            <button id="deleteImage" class="btn btn-danger btn-sm">Изтрий</button>
+                            <button id="uploadImage"
+                                    type="button"
+                                    class="btn btn-success btn-sm">
+                                Качи
+                            </button>
+
+                            <button id="deleteImage"
+                                    type="button"
+                                    class="btn btn-danger btn-sm">
+                                Изтрий
+                            </button>
                         </div>
                     </div>
 

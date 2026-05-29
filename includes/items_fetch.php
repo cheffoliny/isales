@@ -50,6 +50,8 @@ if ($promo) {
 
 if ($zero && $isAdmin) {
     $where .= " AND n.is_calc <= 0 ";
+} else {
+    $where .= " AND n.is_calc > 0 ";
 }
 
 if ($image && $isAdmin) {
@@ -76,7 +78,8 @@ SELECT
     n.is_calc,
     n.image,
     n.is_new,
-    n.promo_note
+    n.promo_note,
+    n.unit
 FROM nomenclatures n
 $where
 ORDER BY n.nom_code
@@ -105,6 +108,7 @@ while ($r = $res->fetch_assoc()) {
 
     $nomCode = htmlspecialchars((string)$r['nom_code']);
     $name = htmlspecialchars((string)$r['name']);
+    $unit = htmlspecialchars((string)$r['unit']);
     $promoNote = htmlspecialchars((string)($r['promo_note'] ?? ''));
 
     $clientPrice = htmlspecialchars((string)$r['client_price']);
@@ -143,7 +147,7 @@ while ($r = $res->fetch_assoc()) {
             style='{$cursor}'>
             <td class='text-center'>{$nomCode}</td>
             <td>{$name} <span class='text-danger'>{$promoNote}</span></td>
-            <td class='text-center'>{$isCalc}</td>
+            <td class='text-center'>{$isCalc} <small class='badge badge-secondary'>{$unit}</small></td>
             <td class='text-danger'>{$salesPrice}</td>
             <td>{$clientPrice}</td>
             <td class='bg-light text-center'>
@@ -184,8 +188,8 @@ while ($r = $res->fetch_assoc()) {
                     " : "")."
 
                     <div class='d-flex justify-content-between align-items-center mt-2 small'>
-                        <span class='badge bg-secondary'>
-                            {$isCalc}
+                        <span class='btn btn-sm bg-success'>
+                            {$isCalc} <small class='badge badge-secondary'>/ {$unit} /</small>
                         </span>
 
 

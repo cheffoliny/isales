@@ -11,12 +11,18 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
+$isAdmin = ($_SESSION['is_admin'] ?? 0) == 1;
+
 $idType = (int)($_GET['id_type'] ?? 0);
 $page = (int)($_GET['page'] ?? 0);
 
 $search = trim($_GET['search'] ?? '');
 $newp = (int)($_GET['newp'] ?? 0);
 $promo = (int)($_GET['promo'] ?? 0);
+
+$zero = (int)($_GET['zero'] ?? 0);
+$image = (int)($_GET['image'] ?? 0);
+$norder = (int)($_GET['norder'] ?? 0);
 
 $limit = 20;
 $offset = $page * $limit;
@@ -42,9 +48,27 @@ if ($promo) {
     $where .= " AND n.sales_price > 0 ";
 }
 
+if ($zero && $isAdmin) {
+    $where .= " AND n.is_calc <= 0 ";
+}
+
+if ($image && $isAdmin) {
+    $where .= " AND (n.image IS NULL OR n.image = '') ";
+}
+
+/*
+|--------------------------------------------------------------------------
+| norder placeholder
+|--------------------------------------------------------------------------
+| Оставям го безопасно без SQL условие, защото в дадения код няма таблица
+| или поле за покупки/поръчки.
+|--------------------------------------------------------------------------
+*/
+
 $sql = "
 SELECT
     n.id,
+    n.id_type,
     n.nom_code,
     n.name,
     n.client_price,
@@ -75,48 +99,102 @@ $grid = '';
 while ($r = $res->fetch_assoc()) {
 
     $hasImage = !empty($r['image']);
+
     $id = (int)$r['id'];
+    $itemType = (int)$r['id_type'];
 
-    $promoNote = htmlspecialchars($r['promo_note'] ?? '');
+    $nomCode = htmlspecialchars((string)$r['nom_code']);
+    $name = htmlspecialchars((string)$r['name']);
+    $promoNote = htmlspecialchars((string)($r['promo_note'] ?? ''));
 
-    // LIST VIEW
-    $html .= "
-    <tr>
-        <td class='text-center'>{$r['nom_code']}</td>
-        <td>{$r['name']} <span class='text-danger'>{$promoNote}</span></td>
-        <td class='text-center'>{$r['is_calc']}</td>
-        <td class='text-danger'>{$r['sales_price']}</td>
-        <td>{$r['client_price']}</td>
-        <td>
-            <img src='includes/item_image_get.php?id={$id}'
-                 style='max-height:40px;cursor:pointer'
-                 class='item-thumb'
-                 data-id='{$id}'
-                 data-hasimage='".($hasImage ? 1 : 0)."'>
-        </td>
-    </tr>
-    ";
+    $clientPrice = htmlspecialchars((string)$r['client_price']);
+    $salesPrice = htmlspecialchars((string)$r['sales_price']);
+    $isCalc = htmlspecialchars((string)$r['is_calc']);
+    $isNew = (int)$r['is_new'];
 
-    // GRID VIEW
+    $adminRowClass = $isAdmin ? 'item-row' : '';
+    $adminCardClass = $isAdmin ? 'item-card' : '';
+
+    $cursor = $isAdmin ? 'cursor:pointer' : 'cursor:default';
+
     $img = $hasImage
         ? "includes/item_image_get.php?id={$id}"
         : "assets/images/na.jpg";
 
-    $grid .= "
-    <div class='col-6 col-md-4 col-lg-3'>
-        <div class='card h-100 shadow-sm' data-id='{$id}'>
-            <img src='{$img}'
-                 class='card-img-top'
-                 style='height:140px;object-fit:cover;cursor:pointer'
+    $listImg = $hasImage
+        ? "<img src='includes/item_image_get.php?id={$id}'
+                 style='max-height:40px;cursor:pointer'
+                 class='item-thumb'
                  data-id='{$id}'
-                 data-hasimage='".($hasImage ? 1 : 0)."'>
+                 data-hasimage='1'>"
+        : "<img src='assets/images/na.jpg'
+                 style='max-height:40px'
+                 class='item-thumb'
+                 data-hasimage='0'>";
 
-            <div class='card-body'>
-                <div class='fw-bold small'>{$r['nom_code']} {$r['name']}</div>
-                <div class='text-danger small'>{$promoNote}</div>
+    $html .= "
+        <tr class='{$adminRowClass}'
+            data-id='{$id}'
+            data-client='{$clientPrice}'
+            data-sales='{$salesPrice}'
+            data-note='{$promoNote}'
+            data-new='{$isNew}'
+            data-type='{$itemType}'
+            style='{$cursor}'>
+            <td class='text-center'>{$nomCode}</td>
+            <td>{$name} <span class='text-danger'>{$promoNote}</span></td>
+            <td class='text-center'>{$isCalc}</td>
+            <td class='text-danger'>{$salesPrice}</td>
+            <td>{$clientPrice}</td>
+            <td class='bg-light text-center'>
+                {$listImg}
+            </td>
+        </tr>
+    ";
+
+    $grid .= "
+        <div class='col-6 col-md-4 col-lg-3 col-xl-2'>
+            <div class='card h-100 shadow-sm {$adminCardClass}'
+                 data-id='{$id}'
+                 data-client='{$clientPrice}'
+                 data-sales='{$salesPrice}'
+                 data-note='{$promoNote}'
+                 data-new='{$isNew}'
+                 data-type='{$itemType}'
+                 style='{$cursor}'>
+
+                <img src='{$img}'
+                     class='card-img-top'
+                     style='height:220px;object-fit:cover;background:#f8f9fa;cursor:pointer'
+                     onerror=\"this.onerror=null;this.src='assets/images/na.jpg';\"
+                     data-id='{$id}'
+                     data-hasimage='".($hasImage ? 1 : 0)."'>
+
+                <div class='card-body p-2'>
+                    <div class='small'
+                         style='min-height:38px;line-height:1.15;overflow:hidden'>
+                        {$name}
+                    </div>
+
+                    ".($promoNote !== '' ? "
+                        <div class='text-danger small mt-1'
+                             style='line-height:1.15'>
+                            {$promoNote}
+                        </div>
+                    " : "")."
+
+                    <div class='d-flex justify-content-between align-items-center mt-2 small'>
+                        <span class='badge bg-secondary'>
+                            {$isCalc}
+                        </span>
+
+                        <span class='text-danger fw-semibold'>
+                            {$salesPrice}
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
     ";
 }
 

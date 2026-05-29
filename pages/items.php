@@ -45,7 +45,7 @@ $resTypes = $db->query("
                  data-id="0"
                  style="cursor:pointer;">
 
-                <img src="assets/images/na.jpg"
+                <img src="assets/images/all.jpg"
                      class="card-img-top"
                      style="height:180px;object-fit:cover;">
 

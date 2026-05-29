@@ -7,12 +7,34 @@ if (empty($_SESSION['user_id'])) {
 }
 
 $id_type = (int)($_GET['id_type'] ?? 0);
-$isAdmin = $_SESSION['is_admin'] == 1;
+$isAdmin = ($_SESSION['is_admin'] ?? 0) == 1;
+
+$db_storage = db_connect('storage');
+
+$nomenclatureTypes = [];
+
+if ($isAdmin) {
+
+    $typesSql = "
+        SELECT
+            id,
+            name
+        FROM nomenclature_types
+        ORDER BY name ASC
+    ";
+
+    $typesQuery = $db_storage->query($typesSql);
+
+    if ($typesQuery) {
+        while ($type = $typesQuery->fetch_assoc()) {
+            $nomenclatureTypes[] = $type;
+        }
+    }
+}
 ?>
 
 <div class="card shadow border-0">
 
-    <!-- HEADER -->
     <div class="card-header d-flex flex-wrap gap-2 align-items-center">
 
         <a href="index.php?page=items" class="btn btn-dark btn-sm">
@@ -24,29 +46,29 @@ $isAdmin = $_SESSION['is_admin'] == 1;
         <button id="newFilter" class="btn btn-sm btn-success">НОВО</button>
         <button id="promoFilter" class="btn btn-sm btn-danger">ПРОМО</button>
 
-        <?php if($isAdmin): ?>
+        <?php if ($isAdmin): ?>
             <button id="zeroFilter" class="btn btn-sm btn-warning text-white">НУЛЕВИ</button>
             <button id="zeroImage" class="btn btn-sm btn-primary text-white">БЕЗ СНИМКА</button>
             <button id="zeroOrder" class="btn btn-sm bg-primary text-white">НЕ КУПУВАНИ</button>
         <?php endif; ?>
 
         <div class="btn-group btn-group-sm ms-auto">
-            <button id="viewListBtn" class="btn btn-primary active">
+            <button id="viewListBtn" type="button" class="btn btn-primary active">
                 <i class="fa-solid fa-list"></i>
             </button>
-            <button id="viewGridBtn" class="btn btn-outline-primary">
+
+            <button id="viewGridBtn" type="button" class="btn btn-outline-primary">
                 <i class="fa-solid fa-table-cells"></i>
             </button>
         </div>
 
     </div>
 
-    <!-- BODY -->
     <div class="card-body p-0">
 
         <div id="listView">
             <div class="table-responsive">
-                <table class="table table-sm table-hover">
+                <table class="table table-sm table-hover mb-0">
                     <thead class="table-light">
                     <tr>
                         <th>Код</th>
@@ -65,9 +87,11 @@ $isAdmin = $_SESSION['is_admin'] == 1;
         <div id="gridView" class="row g-3 p-3" style="display:none;"></div>
 
     </div>
+
 </div>
 
-<!-- ================= MODAL EDITOR ================= -->
+<?php if ($isAdmin): ?>
+
 <div class="modal fade" id="itemModal" tabindex="-1">
 
     <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -84,6 +108,21 @@ $isAdmin = $_SESSION['is_admin'] == 1;
                 <input type="hidden" id="item_id">
 
                 <div class="row g-2">
+
+                    <div class="col-12">
+                        <label>Тип артикул</label>
+
+                        <select id="id_type" class="form-select">
+                            <option value="0">-- Без тип --</option>
+
+                            <?php foreach ($nomenclatureTypes as $type): ?>
+                                <option value="<?= (int)$type['id'] ?>">
+                                    <?= htmlspecialchars($type['name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+
+                        </select>
+                    </div>
 
                     <div class="col-6">
                         <label>Клиент цена</label>
@@ -110,6 +149,7 @@ $isAdmin = $_SESSION['is_admin'] == 1;
                     <div class="col-12 mt-3">
                         <img id="item_image" class="img-fluid d-none" style="max-height:250px;">
                         <input type="file" id="imageUpload" class="form-control mt-2">
+
                         <div class="d-flex gap-2 mt-2">
                             <button id="uploadImage" class="btn btn-success btn-sm">Качи</button>
                             <button id="deleteImage" class="btn btn-danger btn-sm">Изтрий</button>
@@ -130,71 +170,163 @@ $isAdmin = $_SESSION['is_admin'] == 1;
 
 </div>
 
+<?php endif; ?>
+
 <script>
 
-    let page=0, loading=0, end=0;
-    let view='list';
-    let search='';
-    let newp=0, promo=0, zero=0, image=0, norder=0;
+    let page = 0;
+    let loading = 0;
+    let end = 0;
 
-    let currentItem=0;
+    let view = 'list';
+    let search = '';
+    let newp = 0;
+    let promo = 0;
+    let zero = 0;
+    let image = 0;
+    let norder = 0;
+
+    let currentItem = 0;
+
     const typeId = <?= $id_type ?>;
     const isAdmin = <?= $isAdmin ? 1 : 0 ?>;
 
-    // ================= LOAD =================
-    function load(reset=false){
+    function load(reset = false) {
 
-        if(reset){
-            page=0;
+        if (reset) {
+            page = 0;
+            end = 0;
             $('#itemsTable').html('');
             $('#gridView').html('');
-            end=0;
         }
 
-        if(loading || end) return;
-        loading=1;
+        if (loading || end) {
+            return;
+        }
 
-        $.get('includes/items_fetch.php',{
-            page, search, newp, promo, zero, image, norder, id_type:typeId
-        },function(r){
+        loading = 1;
 
-            if(r.success){
+        $.get('includes/items_fetch.php', {
+            page: page,
+            search: search,
+            newp: newp,
+            promo: promo,
+            zero: zero,
+            image: image,
+            norder: norder,
+            id_type: typeId
+        }, function (r) {
 
-                if(!r.html.trim() && !r.grid.trim()){
-                    end=1;
+            if (r.success) {
+
+                if (!r.html.trim() && !r.grid.trim()) {
+                    end = 1;
                 } else {
-                    view==='list'
-                        ? $('#itemsTable').append(r.html)
-                        : $('#gridView').append(r.grid);
+
+                    $('#itemsTable').append(r.html);
+                    $('#gridView').append(r.grid);
 
                     page++;
                 }
+
+            } else {
+                alert(r.error || 'Грешка при зареждане');
             }
 
-            loading=0;
-        },'json');
+            loading = 0;
+
+        }, 'json');
     }
 
-    load(true);
+    function setView(nextView) {
 
-    // ================= CLICK ITEM =================
-    $(document).on('click','.item-thumb, .card-img-top, .item-card',function(){
+        view = nextView;
+
+        if (view === 'grid') {
+
+            $('#listView').hide();
+            $('#gridView').show();
+
+            $('#viewGridBtn')
+                .removeClass('btn-outline-primary')
+                .addClass('btn-primary active');
+
+            $('#viewListBtn')
+                .removeClass('btn-primary active')
+                .addClass('btn-outline-primary');
+
+        } else {
+
+            $('#gridView').hide();
+            $('#listView').show();
+
+            $('#viewListBtn')
+                .removeClass('btn-outline-primary')
+                .addClass('btn-primary active');
+
+            $('#viewGridBtn')
+                .removeClass('btn-primary active')
+                .addClass('btn-outline-primary');
+        }
+    }
+
+    $('#viewGridBtn').on('click', function () {
+        setView('grid');
+    });
+
+    $('#viewListBtn').on('click', function () {
+        setView('list');
+    });
+
+    $('#search').on('keyup', function () {
+        search = $(this).val().trim();
+        load(true);
+    });
+
+    $('#newFilter').on('click', function () {
+        newp = newp ? 0 : 1;
+        $(this).toggleClass('btn-success btn-outline-success');
+        load(true);
+    });
+
+    $('#promoFilter').on('click', function () {
+        promo = promo ? 0 : 1;
+        $(this).toggleClass('btn-danger btn-outline-danger');
+        load(true);
+    });
+
+    <?php if ($isAdmin): ?>
+
+    $('#zeroFilter').on('click', function () {
+        zero = zero ? 0 : 1;
+        $(this).toggleClass('btn-warning btn-outline-warning');
+        load(true);
+    });
+
+    $('#zeroImage').on('click', function () {
+        image = image ? 0 : 1;
+        $(this).toggleClass('btn-primary btn-outline-primary');
+        load(true);
+    });
+
+    $('#zeroOrder').on('click', function () {
+        norder = norder ? 0 : 1;
+        $(this).toggleClass('bg-primary btn-outline-primary');
+        load(true);
+    });
+
+    $(document).on('click', '.item-row, .item-thumb, .card-img-top, .item-card', function () {
 
         const el = $(this).closest('[data-id]');
 
         currentItem = el.data('id') || 0;
 
-        // =========================
-        // SAFE VALUE EXTRACTION
-        // =========================
         const client = el.data('client');
-        const sales  = el.data('sales');
-        const note   = el.data('note');
-        const isNew  = el.data('new');
+        const sales = el.data('sales');
+        const note = el.data('note');
+        const isNew = el.data('new');
+        const idType = el.data('type');
 
-        // =========================
-        // POPULATE MODAL INPUTS
-        // =========================
         $('#item_id').val(currentItem);
 
         $('#client_price').val(
@@ -214,46 +346,57 @@ $isAdmin = $_SESSION['is_admin'] == 1;
             parseInt(isNew || 0, 10) === 1
         );
 
-        // =========================
-        // IMAGE HANDLING
-        // =========================
-        const img = $('#item_image');
-        const imgUrl = 'includes/item_image_get.php?id=' + currentItem;
+        $('#id_type').val(
+            (idType !== undefined && idType !== null) ? idType : 0
+        );
 
-        img.attr('src', imgUrl).removeClass('d-none');
+        $('#item_image')
+            .attr('src', 'includes/item_image_get.php?id=' + currentItem)
+            .removeClass('d-none');
 
-        // =========================
-        // OPEN MODAL
-        // =========================
         bootstrap.Modal.getOrCreateInstance(
             document.getElementById('itemModal')
         ).show();
 
     });
 
-    // ================= SAVE =================
-    $('#saveItem').click(function(){
+    $('#saveItem').on('click', function () {
 
-        $.post('includes/item_save.php',{
+        $.post('includes/item_save.php', {
             id: currentItem,
             client_price: $('#client_price').val(),
             sales_price: $('#sales_price').val(),
             promo_note: $('#promo_note').val(),
-            newp: $('#is_new').is(':checked')?1:0
-        },function(r){
+            newp: $('#is_new').is(':checked') ? 1 : 0,
+            id_type: $('#id_type').val()
+        }, function (r) {
 
-            if(r.success){
+            if (r.success) {
                 location.reload();
             } else {
-                alert('Грешка');
+                alert(r.error || 'Грешка');
             }
 
-        },'json');
+        }, 'json');
 
     });
 
-    $('#item_image').on('error', function(){
+    $('#item_image').on('error', function () {
         $(this).addClass('d-none');
     });
+
+    <?php endif; ?>
+
+    $(window).on('scroll', function () {
+
+        if (
+            $(window).scrollTop() + $(window).height()
+            >= $(document).height() - 300
+        ) {
+            load(false);
+        }
+    });
+
+    load(true);
 
 </script>

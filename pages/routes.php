@@ -33,9 +33,7 @@ $stmt = $db->prepare("
             COALESCE(ppp_stats.total_qty,0) AS total_qty
         FROM offices offs
         LEFT JOIN ". DB_NAMES['system'] .".system sys ON 1 = 1
-        /* =========================
-           OBJECTS STATS
-        ========================= */
+        /* ====== OBJECTS STATS ====== */
         LEFT JOIN (
             SELECT
                 oo.id_office, COUNT(DISTINCT o.id) AS obj_count
@@ -44,9 +42,7 @@ $stmt = $db->prepare("
             WHERE oo.to_arc = 0
             GROUP BY oo.id_office
         ) obj_stats ON obj_stats.id_office = offs.id
-        /* =========================
-           PPP STATS
-        ========================= */
+        /* ====== PPP STATS ====== */
         LEFT JOIN (
             SELECT
                 p.id_office,
@@ -60,7 +56,7 @@ $stmt = $db->prepare("
               AND p.source_date < CURDATE() + INTERVAL 1 DAY
             GROUP BY p.id_office
         ) ppp_stats ON ppp_stats.id_office = offs.id
-        WHERE 1
+        ".$where_offices."
         GROUP BY offs.id
         ORDER BY offs.name ASC
 ");

@@ -120,6 +120,10 @@ while ($r = $res->fetch_assoc()) {
     $isCalc = htmlspecialchars((string)$r['is_calc']);
     $isNew = (int)$r['is_new'];
 
+
+
+    $textColor = $isNew > 0 ? ' text-success ' : '';
+
     $adminRowClass = $isAdmin ? 'item-row' : '';
     $adminCardClass = $isAdmin ? 'item-card' : '';
 
@@ -149,7 +153,7 @@ while ($r = $res->fetch_assoc()) {
             data-new='{$isNew}'
             data-type='{$itemType}'
             style='{$cursor}'>
-            <td class='text-center'>{$nomCode}</td>
+            <td class='text-center {$textColor}'>{$nomCode}</td>
             <td>{$name} <span class='text-danger'>{$promoNote}</span></td>
             <td class='text-center'>{$isCalc} <small class='badge badge-secondary'>{$unit}</small></td>
             <td class='text-danger'>{$salesPrice}</td>

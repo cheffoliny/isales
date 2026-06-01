@@ -169,7 +169,8 @@ if ($isAdmin) {
 
                         <input type="file"
                                id="imageUpload"
-                               class="form-control">
+                               class="form-control"
+                               accept="image/*">
 
                         <div class="d-flex gap-2 mt-2">
                             <button id="uploadImage"
@@ -425,6 +426,49 @@ if ($isAdmin) {
 
     $('#item_image').on('error', function () {
         $(this).addClass('d-none');
+    });
+
+    $('#uploadImage').on('click', function () {
+
+        const fileInput = $('#imageUpload')[0];
+
+        if (!currentItem) {
+            alert('Няма избран артикул');
+            return;
+        }
+
+        if (!fileInput.files.length) {
+            alert('Изберете снимка');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('id', currentItem);
+        formData.append('image', fileInput.files[0]);
+
+        $.ajax({
+            url: 'includes/item_image_upload.php',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function (r) {
+                if (r.success) {
+                    $('#item_image')
+                        .attr('src', 'includes/item_image_get.php?id=' + currentItem + '&t=' + Date.now())
+                        .removeClass('d-none');
+
+                    alert('Снимката е качена');
+                    load(true);
+                } else {
+                    alert(r.error || 'Грешка при качване');
+                }
+            },
+            error: function () {
+                alert('AJAX грешка при качване');
+            }
+        });
     });
 
     <?php endif; ?>

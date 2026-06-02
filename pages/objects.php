@@ -105,7 +105,9 @@ $result = $db->query($sql);
                         </div>
 
                         <?php if ($_SESSION['is_admin'] == 1) { ?>
-                            <button class="btn btn-secondary mx-1">
+                            <button class="btn btn-secondary mx-1 openPaidObligationsModal"
+                                    data-id="<?= $id ?>"
+                                    data-name="<?= $name ?>">
                                 <i class="fa-solid fa-coins fa-lg"></i>
                             </button>
                             <button class="btn btn-warning openObligationModal ms-auto"
@@ -300,6 +302,37 @@ $result = $db->query($sql);
             <div class="modal-footer py-2">
                 <button class="btn btn-secondary btn-sm"
                         data-bs-dismiss="modal">
+                    Затвори
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- PAID OBLIGATIONS MODAL -->
+<div class="modal fade" id="paidObligationsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header py-2">
+                <h5 class="modal-title mb-0">
+                    Погасени задължения: <span id="paid_obligations_object_name"></span>
+                </h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body py-2">
+                <input type="hidden" id="paid_obligations_object_id">
+
+                <div id="paidObligationsList" class="small">
+                    <div class="text-muted">Зареждане...</div>
+                </div>
+            </div>
+
+            <div class="modal-footer py-2">
+                <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
                     Затвори
                 </button>
             </div>
@@ -693,5 +726,94 @@ $(document).on("click", ".addPppObligationBtn", function () {
         alert("Грешка при заявката.");
         btn.prop("disabled", false).text("Добави");
     });
+});
+
+
+function loadPaidObligations(idObject) {
+
+    $("#paidObligationsList").html('<div class="text-muted">Зареждане...</div>');
+
+    $.post("includes/object_obligation_paid_load.php", {
+        id_object: idObject
+    }, function (r) {
+
+        if (!r.success) {
+            $("#paidObligationsList").html(
+                '<div class="alert alert-danger py-2 mb-0">' +
+                escapeHtml(r.error || "Грешка при зареждане.") +
+                '</div>'
+            );
+            return;
+        }
+
+        if (!r.paid_obligations || r.paid_obligations.length === 0) {
+            $("#paidObligationsList").html(
+                '<div class="text-muted">Няма погасени задължения.</div>'
+            );
+            return;
+        }
+
+        let html = `
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Дата</th>
+                            <th class="text-end">Общо</th>
+                            <th class="text-end">Платено</th>
+                            <th>Създал</th>
+                            <th>Дата плащане</th>
+                            <th>Погасил</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        r.paid_obligations.forEach(function (row) {
+            html += `
+                <tr>
+                    <td class="text-nowrap">${formatBgDate(row.from_date)}</td>
+                    <td class="text-end text-nowrap">${parseFloat(row.total_sum).toFixed(2)} €</td>
+                    <td class="text-end text-nowrap fw-bold text-success">${parseFloat(row.paid_sum).toFixed(2)} €</td>
+                    <td class="text-nowrap">${escapeHtml(row.created_user || "—")}</td>
+                    <td class="text-nowrap">${row.paid_date ? escapeHtml(row.paid_date) : "—"}</td>
+                    <td class="text-nowrap">${escapeHtml(row.updated_user || "—")}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        $("#paidObligationsList").html(html);
+
+    }, "json").fail(function (xhr) {
+        $("#paidObligationsList").html(
+            '<div class="alert alert-danger py-2 mb-0">Грешка при заявката: ' +
+            xhr.status +
+            '</div>'
+        );
+    });
+}
+
+$(document).on("click", ".openPaidObligationsModal", function (e) {
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const idObject = $(this).data("id") || 0;
+    const objectName = $(this).data("name") || "";
+
+    $("#paid_obligations_object_id").val(idObject);
+    $("#paid_obligations_object_name").text(objectName);
+
+    loadPaidObligations(idObject);
+
+    bootstrap.Modal.getOrCreateInstance(
+        document.getElementById("paidObligationsModal")
+    ).show();
 });
 </script>

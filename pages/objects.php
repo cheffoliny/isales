@@ -105,8 +105,7 @@ $result = $db->query($sql);
                         </div>
 
                         <?php if ($_SESSION['is_admin'] == 1) { ?>
-                            <button class="btn btn-secondary mx-1"
-                                   >
+                            <button class="btn btn-secondary mx-1">
                                 <i class="fa-solid fa-coins fa-lg"></i>
                             </button>
                             <button class="btn btn-warning openObligationModal ms-auto"

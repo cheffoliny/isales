@@ -105,10 +105,14 @@ $result = $db->query($sql);
                         </div>
 
                         <?php if ($_SESSION['is_admin'] == 1) { ?>
-                            <button class="btn btn-warning btn-sm openObligationModal ms-auto"
+                            <button class="btn btn-secondary mx-1"
+                                   >
+                                <i class="fa-solid fa-coins fa-lg"></i>
+                            </button>
+                            <button class="btn btn-warning openObligationModal ms-auto"
                                     data-id="<?= $id ?>"
                                     data-name="<?= $name ?>">
-                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                                <i class="fa-solid fa-coins fa-lg"></i>
                             </button>
                         <?php } ?>
 

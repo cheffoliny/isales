@@ -16,7 +16,7 @@ $currentPage = $_GET['page'] ?? 'routes';
         <span>Заявки</span>
     </a>
 
-<?php if($_SESSION['is_admin'] == 1) { ?>
+<?php if($_SESSION['is_admin'] == 1 || $_SESSION['is_admin'] == 4) { ?>
 
  <!-- CENTER FLOAT BUTTON -->
     <div class="dropup center-action">
@@ -28,6 +28,7 @@ $currentPage = $_GET['page'] ?? 'routes';
         </button>
 
         <ul class="dropdown-menu text-center shadow">
+            <?php if($_SESSION['is_admin'] == 1)  { ?>
             <li>
                 <a class="dropdown-item <?= $currentPage === 'products_top' ? 'active' : '' ?>" href="dashboard.php?page=products_top">
                     <i class="fa-solid fa-ranking-star text-success me-2"></i> НАЙ-ПРОДАВАНИ
@@ -49,13 +50,14 @@ $currentPage = $_GET['page'] ?? 'routes';
                 </a>
             </li>
             <li>
-                <a class="dropdown-item <?= $currentPage === 'import_nomenclatures' ? 'active' : '' ?>" href="dashboard.php?page=import_nomenclatures">
-                    <i class="fa-solid fa-file-import me-2"></i> ИМПОРТ ДАННИ
-                </a>
-            </li>
-            <li>
                 <a class="dropdown-item" href="dashboard.php?page=users">
                     <i class="fa-solid fa-users me-2"></i> ПОТРЕБИТЕЛИ
+                </a>
+            </li>
+            <?php } ?>
+            <li>
+                <a class="dropdown-item <?= $currentPage === 'import_nomenclatures' ? 'active' : '' ?>" href="dashboard.php?page=import_nomenclatures">
+                    <i class="fa-solid fa-file-import me-2"></i> ИМПОРТ ДАННИ
                 </a>
             </li>
         </ul>

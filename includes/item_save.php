@@ -3,10 +3,7 @@ include_once __DIR__.'/functions.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-if (
-    empty($_SESSION['user_id'])
-    || ($_SESSION['is_admin'] ?? 0) != 1
-) {
+if (empty($_SESSION['user_id']) || ($_SESSION['is_admin'] ?? 0) != 1) {
     echo json_encode([
         'success' => false,
         'error' => 'forbidden'

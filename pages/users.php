@@ -323,6 +323,7 @@ $result = $db->query($sql);
                             class="form-select form-select-sm">
 
                         <option value="1">Администратор</option>
+                        <option value="4">Мениджър</option>
                         <option value="2">Служител</option>
                         <option value="3">Клиент</option>
 

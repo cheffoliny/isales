@@ -208,4 +208,37 @@ function update_ppp_status($pppID, $newStatus, $idUser)
         return false;
     }
 }
+
+function normalizeDateToMysql(string $dateInput): array
+{
+    $dateInput = trim($dateInput);
+
+    if (preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $dateInput)) {
+        [$day, $month, $year] = explode('.', $dateInput);
+    } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateInput)) {
+        [$year, $month, $day] = explode('-', $dateInput);
+    } else {
+        return [
+            'success' => false,
+            'error' => 'Моля, въведете дата във формат дд.мм.гггг.'
+        ];
+    }
+
+    $day = (int)$day;
+    $month = (int)$month;
+    $year = (int)$year;
+
+    if (!checkdate($month, $day, $year)) {
+        return [
+            'success' => false,
+            'error' => 'Невалидна дата.'
+        ];
+    }
+
+    return [
+        'success' => true,
+        'date' => sprintf('%04d-%02d-%02d', $year, $month, $day)
+    ];
+}
+
 ?>

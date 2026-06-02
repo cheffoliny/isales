@@ -198,62 +198,36 @@ if (!$result || $result->num_rows === 0) {
 
 
 <!-- MODAL -->
-
 <div class="modal fade" id="editOfficeModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
 
-<div class="modal-dialog">
+            <div class="modal-header">
+                <h5 class="modal-title">Редакция на офис</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
 
-<div class="modal-content">
+            <div class="modal-body">
+                <input type="hidden" id="edit_office_id">
 
-<div class="modal-header">
+                <div class="mb-3">
+                    <label class="form-label">Име на офис</label>
+                    <input type="text" class="form-control" id="edit_office_name" />
+                </div>
+            </div>
 
-<h5 class="modal-title">Редакция на офис</h5>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Затвори
+                </button>
+                <button type="button" class="btn btn-success" id="saveOfficeBtn">
+                    <span id="saveText">Запиши</span>
+                    <span id="saveSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                </button>
+            </div>
 
-<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-
-</div>
-
-<div class="modal-body">
-
-<input type="hidden" id="edit_office_id">
-
-<div class="mb-3">
-
-<label class="form-label">Име на офис</label>
-
-<input type="text"
-class="form-control"
-id="edit_office_name">
-
-</div>
-
-</div>
-
-<div class="modal-footer">
-
-<button type="button"
-class="btn btn-secondary"
-data-bs-dismiss="modal">
-
-Затвори
-
-</button>
-
-<button type="button"
-class="btn btn-success"
-id="saveOfficeBtn">
-
-<span id="saveText">Запиши</span>
-
-<span id="saveSpinner"
-class="spinner-border spinner-border-sm d-none"></span>
-
-</button>
-
-</div>
-
-</div>
-</div>
+        </div>
+    </div>
 </div>
 
 

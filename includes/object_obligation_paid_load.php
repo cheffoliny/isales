@@ -34,8 +34,8 @@ $stmt = $db->prepare("
         CONCAT(pc.fname, ' ', pc.lname) AS created_user,
         CONCAT(pu.fname, ' ', pu.lname) AS updated_user
     FROM objects_obligations oo
-    LEFT JOIN personnel.personnel pc ON pc.id = oo.created_user
-    LEFT JOIN personnel.personnel pu ON pu.id = oo.updated_user
+    LEFT JOIN ". DB_NAMES['personnel'] .".personnel pc ON pc.id = oo.created_user
+    LEFT JOIN ". DB_NAMES['personnel'] .".personnel pu ON pu.id = oo.updated_user
     WHERE oo.id_object = ?
       AND oo.total_sum = oo.paid_sum
     ORDER BY oo.paid_date DESC, oo.from_date DESC

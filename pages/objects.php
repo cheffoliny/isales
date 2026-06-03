@@ -29,12 +29,23 @@ $sql = "
         COALESCE(o.offices_ids,'...') AS offices_ids,
         o.geo_lat,
         o.geo_lan,
-        COALESCE(GROUP_CONCAT(offs.name SEPARATOR ', '), '—') AS office_name
+        COALESCE(
+            GROUP_CONCAT(DISTINCT offs.name SEPARATOR ', '),
+            '—'
+        ) AS office_name,
+        COALESCE(obl.remaining_sum, 0) AS remaining_sum
     FROM objects o
     JOIN offices_objects oo ON oo.id_object = o.id AND oo.to_arc = 0
     JOIN offices offs ON offs.id = oo.id_office
+    LEFT JOIN (
+                SELECT
+                    id_object,
+                    SUM(GREATEST(total_sum - paid_sum, 0)) AS remaining_sum
+                FROM ". DB_NAMES['storage'] .".objects_obligations
+                GROUP BY id_object
+            ) obl
+    ON obl.id_object = o.id
     WHERE o.id_status <> 4
-        " . $where_offices . "
     GROUP BY o.id
     ORDER BY o.name ASC
     LIMIT 1000
@@ -71,6 +82,8 @@ $result = $db->query($sql);
                 $info = htmlspecialchars($row['info']);
                 $officesJson = htmlspecialchars($row['offices_ids'], ENT_QUOTES);
 
+                $remaining_sum = $row['remaining_sum'];
+
                 $lat = $row['geo_lat'] ?: 43.2728759;
                 $lng = $row['geo_lan'] ?: 26.9266601;
             ?>
@@ -103,6 +116,15 @@ $result = $db->query($sql);
                                 <div class="small text-muted"><?= htmlspecialchars($row['office_name']) ?></div>
                             </button>
                         </div>
+
+                        <?php
+                        if ($remaining_sum > 0) {
+                            echo '<span class="badge bg-danger pulse-badge d-flex align-items-center gap-1 px-3 py-2">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <span>'.$remaining_sum.'</span>
+                            </span>';
+                         }
+                         ?>
 
                         <?php if ($_SESSION['is_admin'] == 1) { ?>
                             <button class="btn btn-secondary mx-1 openPaidObligationsModal"

@@ -91,7 +91,7 @@ try {
             SET
                 paid_sum = COALESCE(paid_sum, 0) + ?,
                 paid_date = NOW(),
-                updated_date = NOW(),
+                updated_time = NOW(),
                 updated_user = ?
             WHERE id = ?
               AND id_object = ?

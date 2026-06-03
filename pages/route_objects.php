@@ -46,11 +46,19 @@ $stmt = $db->prepare("
         COALESCE(p.id, 0) AS pppID,
         p.`status` AS order_status,
         p.id_buy_doc AS buy_doc,
-        SUM(COALESCE(pe.`count`, 0)) AS ordered_quantity
+        SUM(COALESCE(pe.`count`, 0)) AS ordered_quantity,
+        COALESCE(obl.remaining_sum, 0) AS remaining_sum
     FROM objects o
-    JOIN offices_objects oo ON oo.id_object = o.id AND oo.to_arc = 0        
+    JOIN offices_objects oo ON oo.id_object = o.id AND oo.to_arc = 0
     LEFT JOIN ". DB_NAMES['storage'] .".ppp p ON o.id = p.id_dest AND DATE(p.source_date) = CURDATE() AND p.id_office = oo.id_office
     LEFT JOIN ". DB_NAMES['storage'] .".ppp_elements pe ON p.id = pe.id_ppp
+    LEFT JOIN (
+            SELECT
+                id_object,
+                SUM(GREATEST(total_sum - paid_sum, 0)) AS remaining_sum
+            FROM ". DB_NAMES['storage'] .".objects_obligations
+            GROUP BY id_object
+        ) obl ON obl.id_object = o.id
     WHERE oo.id_office = ?
 
         AND o.id_status <> 4
@@ -81,6 +89,7 @@ while ($row = $result->fetch_assoc()):
     $buyDoc = (int) ($row['buy_doc'] ?? 0);
     $oQty = (int)($row['ordered_quantity'] ?? 0);
 
+    $remaining_sum = $row['remaining_sum'];
 
     $oNum     = htmlspecialchars($row['oNum']);
     $oName    = htmlspecialchars($row['oName']);
@@ -137,7 +146,20 @@ while ($row = $result->fetch_assoc()):
         <div class="flex-grow-1 px-2">
             <a href="dashboard.php?page=delivery_request&id=<?= $oID ?>&office_id=<?= $officeId ?>"
                class="text-decoration-none text-body">
-                <div class="fw-semibold fs-5"><?= $oName ?></div>
+                <div class="fw-semibold fs-5">
+                    <?= $oName ?>
+
+
+                    <?php
+                        if ($remaining_sum > 0) {
+                            $bg_remaining_sum = $remaining_sum > 200 ? 'bg-danger' : 'bg-warning text-dark';
+                    ?>
+                        <span class="badge <?= $bg_remaining_sum ?> gap-1 px-3 py-2">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span><?= $remaining_sum ?></span>
+                        </span>
+                    <?php } ?>
+                </div>
                 <div class="text-body-secondary small"><?= $oAddress ?></div>
             </a>
         </div>

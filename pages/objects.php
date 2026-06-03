@@ -616,6 +616,8 @@ $(document).on("click", "#payObligationsBtn", function () {
     }
 
     const btn = $("#payObligationsBtn");
+    const defaultBtnHtml = '<i class="fa-solid fa-money-bill-wave"></i> Плати';
+
     btn.prop("disabled", true).text("Запис...");
 
     $.post("includes/object_obligation_pay.php", {
@@ -626,17 +628,25 @@ $(document).on("click", "#payObligationsBtn", function () {
         if (r.success) {
             $("#payment_sum").val("");
             $("#payment_distributed_sum").val("0.00");
+
+            btn.prop("disabled", false).html(defaultBtnHtml);
+
             loadObligationData(idObject);
+
             alert("Плащането е записано успешно.");
             return;
         }
 
         alert(r.error || "Грешка при запис.");
-        btn.prop("disabled", false).html('<i class="fa-solid fa-money-bill-wave"></i> Плати');
 
-    }, "json").fail(function () {
-        alert("Грешка при заявката.");
-        btn.prop("disabled", false).html('<i class="fa-solid fa-money-bill-wave"></i> Плати');
+    }, "json").fail(function (xhr) {
+
+        alert("Грешка при заявката: " + xhr.status);
+
+    }).always(function () {
+
+        btn.prop("disabled", false).html(defaultBtnHtml);
+
     });
 });
 

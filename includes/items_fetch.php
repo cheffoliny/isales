@@ -182,7 +182,7 @@ while ($r = $res->fetch_assoc()) {
                      data-id='{$id}'
                      data-hasimage='".($hasImage ? 1 : 0)."'>
 
-                <div class='card-body p-2'>
+                <div class='card-body p-2 d-flex flex-column'>
                     <div class='small'
                          style='min-height:38px;line-height:1.15;overflow:hidden'>
                         {$name}
@@ -195,18 +195,20 @@ while ($r = $res->fetch_assoc()) {
                         </div>
                     " : "")."
 
-                    <div class='d-flex justify-content-between align-items-center mt-2 small'>
-                        <span class='btn btn-sm bg-success'>
-                            {$isCalc} <small class='badge badge-secondary'>/ {$unit} /</small>
+                    <div class='mt-auto pt-2 d-flex justify-content-between align-items-center gap-2 small'>
+                        <span class='btn btn-sm bg-success text-white py-0 px-2'>
+                            {$isCalc} <small class='badge bg-success'>/ {$unit} /</small>
                         </span>
 
-
-                    ".($salesPrice > 0 ? "
-                        <span class='text-danger fw-semibold'>
-                            {$salesPrice}
+                        <span class='ms-auto fw-semibold ".($salesPrice > 0 ? "text-decoration-line-through text-muted" : "")."'>
+                            {$clientPrice}€
                         </span>
-                    " : "")."
 
+                        ".($salesPrice > 0 ? "
+                            <span class='badge bg-danger fw-semibold fs-6'>
+                                {$salesPrice}€
+                            </span>
+                        " : "")."
                     </div>
                 </div>
             </div>

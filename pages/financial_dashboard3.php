@@ -158,7 +158,7 @@ $topSql = "
     FROM objects_obligations
     GROUP BY id_object
     ORDER BY debt DESC
-    LIMIT 10
+    LIMIT 1000
 ";
 
 $topRes = $db_storage->query($topSql);

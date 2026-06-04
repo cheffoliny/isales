@@ -114,6 +114,43 @@ try {
         }
 
         $stmt->close();
+
+        $stmtTx = $db->prepare("
+            INSERT INTO objects_obligation_transactions
+            (
+                id_object,
+                id_obligation,
+                transaction_type,
+                amount,
+                created_user,
+                created_time,
+                transaction_date 
+            )
+            VALUES
+            (
+                ?, ?, 'payment', ?, ?, NOW(), NOW()
+            )
+        ");
+
+        if (!$stmtTx) {
+            throw new Exception($db->error);
+        }
+
+        $negativeAmount = -$amount;
+
+        $stmtTx->bind_param(
+            'iidi',
+            $idObject,
+            $idObligation,
+            $negativeAmount,
+            $updateUser
+        );
+
+        if (!$stmtTx->execute()) {
+            throw new Exception($stmtTx->error);
+        }
+
+        $stmtTx->close();
     }
 
     $db->commit();

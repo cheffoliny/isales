@@ -121,6 +121,39 @@ $stmt->bind_param(
 
 $ok = $stmt->execute();
 
+$obligationId = $stmt->insert_id;
+if ($ok) {
+
+    $stmtTx = $db->prepare("
+        INSERT INTO objects_obligation_transactions
+        (
+            id_object,
+            id_obligation,
+            transaction_type,
+            amount,
+            created_user,
+            created_time,
+            transaction_date 
+         
+        )
+        VALUES
+        (
+            ?, ?, 'create', ?, ?, NOW(), NOW()
+        )
+    ");
+
+    $stmtTx->bind_param(
+        'iidi',
+        $idObject,
+        $obligationId,
+        $totalSum,
+        $createdUser
+    );
+
+    $stmtTx->execute();
+    $stmtTx->close();
+}
+
 echo json_encode([
     'success' => $ok,
     'id' => $ok ? $stmt->insert_id : 0,

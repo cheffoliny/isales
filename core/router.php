@@ -16,7 +16,8 @@ $allowedPages = [
     'products_top',
     'products_slow',
     'products_profit',
-    'items_list'
+    'items_list',
+    'financial_dashboard'
 ];
 
 $page = $_GET['page'] ?? 'routes';

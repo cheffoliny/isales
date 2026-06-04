@@ -82,27 +82,12 @@ $result = $db->query($sql);
                 </select>
 
                 <!-- PROFILE -->
-                <select id="personProfileFilter"
-                        class="form-select form-select-sm">
-
+                <select id="personProfileFilter" class="form-select form-select-sm">
                     <option value="">Всички профили</option>
-
-                    <option value="1">
-                        Администратор
-                    </option>
-
-                    <option value="2">
-                        Служител
-                    </option>
-
-                    <option value="3">
-                        Клиент
-                    </option>
-
-                    <option value="0">
-                        Без акаунт
-                    </option>
-
+                    <option value="1">Администратор</option>
+                    <option value="2">Служител</option>
+                    <option value="3">Клиент</option>
+                    <option value="0">Без акаунт</option>
                 </select>
 
             </div>
@@ -123,7 +108,8 @@ $result = $db->query($sql);
     $profiles = [
         1 => 'Администратор',
         2 => 'Служител',
-        3 => 'Клиент'
+        3 => 'Клиент',
+        4 => 'Мениджър'
     ];
 
     while($row = $result->fetch_assoc()):
@@ -319,14 +305,11 @@ $result = $db->query($sql);
 
                     <label>Профил *</label>
 
-                    <select id="modal_profile"
-                            class="form-select form-select-sm">
-
+                    <select id="modal_profile" class="form-select form-select-sm">
                         <option value="1">Администратор</option>
                         <option value="4">Мениджър</option>
                         <option value="2">Служител</option>
                         <option value="3">Клиент</option>
-
                     </select>
 
                 </div>

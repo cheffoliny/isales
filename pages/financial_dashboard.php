@@ -280,7 +280,7 @@ $closingBalance = $runningBalance;
                     <th class="text-end">Задължения</th>
                     <th class="text-end">Разплащания</th>
                     <th class="text-end">Промяна</th>
-                    <th class="text-end">Баланс</th>
+                    <th class="text-end">Салдо</th>
                 </tr>
                 </thead>
 
@@ -293,7 +293,7 @@ $closingBalance = $runningBalance;
                         <td class="text-end text-danger">-<?= number_format($r['creates'], 2) ?></td>
                         <td class="text-end text-success">+<?= number_format($r['payments'], 2) ?></td>
                         <td class="text-end"><?= number_format($r['net'], 2) ?></td>
-                        <td class="text-end fw-bold"><?= number_format($r['balance'], 2) ?></td>
+                        <td class="text-end fw-bold text-primary"><?= number_format($r['balance'], 2) ?></td>
                     </tr>
 
                 <?php endforeach; ?>

@@ -195,7 +195,7 @@ usort($sorted, function ($a, $b) {
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
-                        <div class="small">Крайно салдо</div>
+                        <div class="small">Салдо</div>
                         <div class="fs-5 fw-bold">
                             <?= number_format((float)$endBalance, 2) ?> €
                         </div>
@@ -257,7 +257,7 @@ usort($sorted, function ($a, $b) {
                                 <?= number_format((float)$r['net'], 2) ?>
                             </td>
 
-                            <td class="text-end fw-bold">
+                            <td class="text-end fw-bold text-primary">
                                 <?= number_format((float)$r['balance'], 2) ?>
                             </td>
                         </tr>

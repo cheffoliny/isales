@@ -72,7 +72,7 @@ JOIN ". DB_NAMES['sod'] .".objects o ON o.id = oo.id_object
 WHERE oo.transaction_date >= ?
   AND oo.transaction_date < ?
 GROUP BY oo.id_object
-HAVING (creates_sum - payments_sum) > 0
+#HAVING (creates_sum - payments_sum) > 0
 ORDER BY oo.id_object
 ";
 

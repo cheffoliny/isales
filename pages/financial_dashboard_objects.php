@@ -62,16 +62,17 @@ $stmt->close();
 
 $sql = "
 SELECT
-    id_object,
+    o.`name` AS id_object,
 
-    SUM(CASE WHEN transaction_type='debit' THEN amount ELSE 0 END) AS creates_sum,
-    SUM(CASE WHEN transaction_type='credit' THEN amount ELSE 0 END) AS payments_sum
+    SUM(CASE WHEN oo.transaction_type='debit' THEN oo.amount ELSE 0 END) AS creates_sum,
+    SUM(CASE WHEN oo.transaction_type='credit' THEN oo.amount ELSE 0 END) AS payments_sum
 
-FROM objects_obligation_transactions
-WHERE transaction_date >= ?
-  AND transaction_date < ?
-GROUP BY id_object
-ORDER BY id_object
+FROM objects_obligation_transactions oo
+JOIN ". DB_NAMES['sod'] .".objects o ON o.id = oo.id_object
+WHERE oo.transaction_date >= ?
+  AND oo.transaction_date < ?
+GROUP BY oo.id_object
+ORDER BY oo.id_object
 ";
 
 $stmt = $db->prepare($sql);

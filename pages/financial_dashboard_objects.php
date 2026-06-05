@@ -62,7 +62,7 @@ $stmt->close();
 
 $sql = "
 SELECT
-    o.`name` AS id_object,
+    o.`name` AS name_object,
 
     SUM(CASE WHEN oo.transaction_type='debit' THEN oo.amount ELSE 0 END) AS creates_sum,
     SUM(CASE WHEN oo.transaction_type='credit' THEN oo.amount ELSE 0 END) AS payments_sum
@@ -94,7 +94,7 @@ $totalPayments = 0.0;
 
 while ($r = $res->fetch_assoc()) {
 
-    $idObject = $r['id_object'];
+    $nObject = $r['name_object'];
 
     $creates  = (float)($r['creates_sum'] ?? 0);
     $payments = (float)($r['payments_sum'] ?? 0);
@@ -105,7 +105,7 @@ while ($r = $res->fetch_assoc()) {
     $balance = $startBalance + $net;
 
     $rows[] = [
-        'object'   => $idObject,
+        'object'   => $nObject,
         'creates'  => $creates,
         'payments' => $payments,
         'net'      => $net,

@@ -18,6 +18,7 @@ $allowedPages = [
     'products_profit',
     'items_list',
     'financial_dashboard',
+    'financial_dashboard_objects',
     'financial_dashboard2',
     'financial_dashboard3',
     'financial_dashboard4'

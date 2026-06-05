@@ -194,17 +194,16 @@ $closingBalance = $runningBalance;
 
             <input type="hidden" name="page" value="financial_dashboard">
 
-            <div class="row g-3">
+            <div class="row g-2">
 
                 <div class="col-md-4">
-                    <label class="form-label">Месец</label>
                     <input type="month" name="month"
                            value="<?= htmlspecialchars($selectedMonth) ?>"
                            class="form-control">
                 </div>
 
                 <div class="col-md-4">
-                    <button class="btn btn-primary w-100 mt-4">
+                    <button class="btn btn-primary w-100">
                         Филтрирай
                     </button>
                 </div>
@@ -219,7 +218,8 @@ $closingBalance = $runningBalance;
             <div class="col-md-3">
                 <div class="card bg-secondary text-white">
                     <div class="card-body">
-                        <div class="small">Начално салдо</div>
+                        <div class="fs-5">Начално салдо</div>
+                        <div class="small">Всички движения преди избрания период</div>
                         <div class="fs-5"><?= number_format($openingBalance, 2) ?> €</div>
                     </div>
                 </div>
@@ -228,7 +228,8 @@ $closingBalance = $runningBalance;
             <div class="col-md-3">
                 <div class="card bg-danger text-white">
                     <div class="card-body">
-                        <div class="small">Нови задължения</div>
+                        <div class="fs-5">Нови задължения</div>
+                        <div class="small">Всички натрупани задължения в НАЧАЛОТО на периода</div>
                         <div class="fs-5">-<?= number_format($totalCreates, 2) ?> €</div>
                     </div>
                 </div>
@@ -237,7 +238,8 @@ $closingBalance = $runningBalance;
             <div class="col-md-3">
                 <div class="card bg-success text-white">
                     <div class="card-body">
-                        <div class="small">Разплащания</div>
+                        <div class="fs-5">Разплащания</div>
+                        <div class="small">Всички разплащания за избрания период</div>
                         <div class="fs-5">+<?= number_format($totalPayments, 2) ?> €</div>
                     </div>
                 </div>
@@ -246,7 +248,8 @@ $closingBalance = $runningBalance;
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
-                        <div class="small">Крайно салдо</div>
+                        <div class="fs-5">Крайно салдо</div>
+                        <div class="small">Всички натрупани задължения в КРАЯ на периода</div>
                         <div class="fs-5"><?= number_format($closingBalance, 2) ?> €</div>
                     </div>
                 </div>

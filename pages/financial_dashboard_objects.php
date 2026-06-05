@@ -242,7 +242,7 @@ usort($sorted, function ($a, $b) {
                     <?php foreach (array_slice($sorted, 0, 100) as $r): ?>
 
                         <tr>
-                            <td><?= (int)$r['object'] ?></td>
+                            <td><?= $r['object'] ?></td>
 
                             <td class="text-end text-danger">
                                 <?= number_format((float)$r['creates'], 2) ?>

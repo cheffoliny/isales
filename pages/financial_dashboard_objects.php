@@ -147,7 +147,7 @@ usort($sorted, function ($a, $b) {
 
     <div class="card-header">
         <h5 class="mb-0 text-primary">
-            📊 Обектен финансов отчет (V6 FIX)
+            <i class="fa-solid fa-coins"></i> Непогасени задължения (ПО ОБЕКТИ)
         </h5>
         <div class="small text-muted">
             Начално салдо → Нови задължения → Разплащания → Крайно салдо

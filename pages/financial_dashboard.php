@@ -181,7 +181,7 @@ $closingBalance = $runningBalance;
 <div class="card shadow border-0 mb-4">
 
     <div class="card-header">
-        <h5 class="mb-0">📊 Финансова справка V6.1 (ERP Engine)</h5>
+        <h5 class="mb-0"><i class="fa-solid fa-coins"></i> Непогасени задължения (ОБОБЩЕНА)</h5>
         <div class="small text-muted">
             Реален анализ на задължения и разплащания
         </div>

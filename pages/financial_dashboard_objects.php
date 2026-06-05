@@ -275,7 +275,7 @@ usort($sorted, function ($a, $b) {
 
                     <tbody>
 
-                    <?php foreach (array_slice($sorted, 0, 10) as $r): ?>
+                    <?php foreach (array_slice($sorted, 0, 100) as $r): ?>
 
                         <tr>
                             <td><?= (int)$r['object'] ?></td>

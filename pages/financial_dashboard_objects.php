@@ -155,11 +155,6 @@ usort($sorted, function ($a, $b) {
 
     <div class="card-body">
 
-        <!-- CHART -->
-        <div class="mt-4">
-            <canvas id="chart" style="height:400px"></canvas>
-        </div>
-
         <!-- KPI -->
         <div class="row g-3 mb-4">
 
@@ -207,6 +202,16 @@ usort($sorted, function ($a, $b) {
                 </div>
             </div>
 
+        </div>
+
+        <!-- CHART -->
+        <div class="card mb-4">
+            <div class="card-header">
+                Графика – ERP движение
+            </div>
+            <div class="card-body">
+                <canvas id="chart" style="height:400px"></canvas>
+            </div>
         </div>
 
         <!-- TOP DEBTORS -->

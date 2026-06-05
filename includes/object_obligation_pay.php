@@ -115,6 +115,9 @@ try {
 
         $stmt->close();
 
+        $currentBalance = getObjectDebtBalance( $db, $idObject );
+        $newBalance = $currentBalance - $amount;
+
         $stmtTx = $db->prepare("
             INSERT INTO objects_obligation_transactions
             (
@@ -122,13 +125,15 @@ try {
                 id_obligation,
                 transaction_type,
                 amount,
+                balance_after,
                 created_user,
                 created_time,
-                transaction_date 
+                transaction_date
             )
             VALUES
             (
-                ?, ?, 'payment', ?, ?, NOW(), NOW()
+                ?, ?, 'payment',
+                ?, ?, ?, NOW(), NOW()
             )
         ");
 
@@ -139,10 +144,11 @@ try {
         $negativeAmount = -$amount;
 
         $stmtTx->bind_param(
-            'iidi',
+            'iiddi',
             $idObject,
             $idObligation,
             $negativeAmount,
+            $newBalance,
             $updateUser
         );
 

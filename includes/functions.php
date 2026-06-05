@@ -241,4 +241,28 @@ function normalizeDateToMysql(string $dateInput): array
     ];
 }
 
+
+function getObjectDebtBalance(mysqli $db, int $idObject): float
+{
+    $stmt = $db->prepare("
+        SELECT balance_after
+        FROM objects_obligation_transactions
+        WHERE id_object = ?
+        ORDER BY transaction_date DESC, id DESC
+        LIMIT 1
+    ");
+
+    $stmt->bind_param('i', $idObject);
+    $stmt->execute();
+
+    $res = $stmt->get_result();
+    $row = $res->fetch_assoc();
+
+    $stmt->close();
+
+    return $row
+        ? (float)$row['balance_after']
+        : 0.0;
+}
+
 ?>

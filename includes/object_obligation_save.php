@@ -124,6 +124,9 @@ $ok = $stmt->execute();
 $obligationId = $stmt->insert_id;
 if ($ok) {
 
+    $currentBalance = getObjectDebtBalance( $db, $idObject );
+    $newBalance = $currentBalance + $totalSum;
+
     $stmtTx = $db->prepare("
         INSERT INTO objects_obligation_transactions
         (
@@ -131,22 +134,25 @@ if ($ok) {
             id_obligation,
             transaction_type,
             amount,
+            balance_after,
             created_user,
             created_time,
-            transaction_date 
-         
+            transaction_date
         )
         VALUES
         (
-            ?, ?, 'create', ?, ?, NOW(), NOW()
+            ?, ?, 'create',
+            ?, ?,
+            ?, NOW(), NOW()
         )
     ");
 
     $stmtTx->bind_param(
-        'iidi',
+        'iiddi',
         $idObject,
         $obligationId,
         $totalSum,
+        $newBalance,
         $createdUser
     );
 

@@ -146,9 +146,7 @@ usort($sorted, function ($a, $b) {
 <div class="card shadow border-0 mb-4">
 
     <div class="card-header">
-        <h5 class="mb-0 text-primary">
-            <i class="fa-solid fa-coins"></i> Непогасени задължения (ПО ОБЕКТИ)
-        </h5>
+        <h5 class="mb-0"><i class="fa-solid fa-coins"></i> Непогасени задължения (ПО ОБЕКТИ) </h5>
         <div class="small text-muted">
             Начално салдо → Нови задължения → Разплащания → Крайно салдо
         </div>

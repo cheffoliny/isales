@@ -160,12 +160,11 @@ usort($sorted, function ($a, $b) {
         <div class="row g-3 mb-4">
 
             <div class="col-md-3">
-                <div class="card bg-dark text-white">
+                <div class="card bg-secondary text-white">
                     <div class="card-body">
-                        <div class="small">Начално салдо</div>
-                        <div class="fs-5 fw-bold">
-                            <?= number_format((float)$startBalance, 2) ?> €
-                        </div>
+                        <div class="fs-5">Начално салдо</div>
+                        <div class="small">Всички движения преди избрания период</div>
+                        <div class="fs-5"><?= number_format((float)$startBalance, 2) ?> €</div>
                     </div>
                 </div>
             </div>
@@ -173,10 +172,9 @@ usort($sorted, function ($a, $b) {
             <div class="col-md-3">
                 <div class="card bg-danger text-white">
                     <div class="card-body">
-                        <div class="small">Нови задължения</div>
-                        <div class="fs-5 fw-bold">
-                            <?= number_format((float)$totalCreates, 2) ?> €
-                        </div>
+                        <div class="fs-5">Нови задължения</div>
+                        <div class="small">Всички натрупани задължения в НАЧАЛОТО на периода</div>
+                        <div class="fs-5">-<?= number_format((float)$totalCreates, 2) ?> €</div>
                     </div>
                 </div>
             </div>
@@ -184,10 +182,9 @@ usort($sorted, function ($a, $b) {
             <div class="col-md-3">
                 <div class="card bg-success text-white">
                     <div class="card-body">
-                        <div class="small">Разплащания</div>
-                        <div class="fs-5 fw-bold">
-                            <?= number_format((float)$totalPayments, 2) ?> €
-                        </div>
+                        <div class="fs-5">Разплащания</div>
+                        <div class="small">Всички разплащания за избрания период</div>
+                        <div class="fs-5">+<?= number_format((float)$totalPayments, 2) ?> €</div>
                     </div>
                 </div>
             </div>
@@ -195,10 +192,9 @@ usort($sorted, function ($a, $b) {
             <div class="col-md-3">
                 <div class="card bg-primary text-white">
                     <div class="card-body">
-                        <div class="small">Салдо</div>
-                        <div class="fs-5 fw-bold">
-                            <?= number_format((float)$endBalance, 2) ?> €
-                        </div>
+                        <div class="fs-5">Крайно салдо</div>
+                        <div class="small">Всички натрупани задължения в КРАЯ на периода</div>
+                        <div class="fs-5"><?= number_format((float)$endBalance, 2) ?> €</div>
                     </div>
                 </div>
             </div>

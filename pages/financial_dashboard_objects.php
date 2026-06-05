@@ -35,14 +35,14 @@ $end   = date('Y-m-01 00:00:00', strtotime($start . ' +1 month'));
 */
 
 $stmt = $db->prepare("
-    SELECT COALESCE(
+    SELECT
         SUM(
-            CASE
-                WHEN transaction_type = 'payment' THEN -amount
-                ELSE amount
+            CASE 
+                WHEN transaction_type = 'credit' THEN -amount
+                WHEN transaction_type = 'debit' THEN amount
+                ELSE 0
             END
-        ),0
-    ) AS balance
+        ) AS balance
     FROM objects_obligation_transactions
     WHERE transaction_date < ?
 ");
@@ -64,8 +64,8 @@ $sql = "
 SELECT
     id_object,
 
-    COALESCE(SUM(CASE WHEN transaction_type='create' THEN amount END),0) AS creates_sum,
-    COALESCE(SUM(CASE WHEN transaction_type='payment' THEN amount END),0) AS payments_sum
+    SUM(CASE WHEN transaction_type='debit' THEN amount ELSE 0 END) AS creates_sum,
+    SUM(CASE WHEN transaction_type='credit' THEN amount ELSE 0 END) AS payments_sum
 
 FROM objects_obligation_transactions
 WHERE transaction_date >= ?

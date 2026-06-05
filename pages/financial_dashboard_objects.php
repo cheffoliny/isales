@@ -256,7 +256,7 @@ usort($sorted, function ($a, $b) {
 
             <div class="card-header">
                 <h6 class="mb-0 text-danger">
-                    Най-задлъжнели обекти (ТОП 10)
+                    Най-задлъжнели обекти (ТОП 100)
                 </h6>
             </div>
 
@@ -270,6 +270,7 @@ usort($sorted, function ($a, $b) {
                         <th class="text-end">Нови</th>
                         <th class="text-end">Плащания</th>
                         <th class="text-end">Нетно</th>
+                        <th class="text-end">Салдо</th>
                     </tr>
                     </thead>
 
@@ -290,6 +291,10 @@ usort($sorted, function ($a, $b) {
 
                             <td class="text-end fw-bold text-danger">
                                 <?= number_format((float)$r['net'], 2) ?>
+                            </td>
+
+                            <td class="text-end fw-bold">
+                                <?= number_format((float)$r['balance'], 2) ?>
                             </td>
                         </tr>
 

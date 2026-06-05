@@ -155,6 +155,60 @@ usort($sorted, function ($a, $b) {
 
     <div class="card-body">
 
+        <!-- CHART -->
+        <div class="mt-4">
+            <canvas id="chart" style="height:400px"></canvas>
+        </div>
+
+        <!-- KPI -->
+        <div class="row g-3 mb-4">
+
+            <div class="col-md-3">
+                <div class="card bg-dark text-white">
+                    <div class="card-body">
+                        <div class="small">Начално салдо</div>
+                        <div class="fs-5 fw-bold">
+                            <?= number_format((float)$startBalance, 2) ?> €
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="small">Нови задължения</div>
+                        <div class="fs-5 fw-bold">
+                            <?= number_format((float)$totalCreates, 2) ?> €
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
+                    <div class="card-body">
+                        <div class="small">Разплащания</div>
+                        <div class="fs-5 fw-bold">
+                            <?= number_format((float)$totalPayments, 2) ?> €
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="small">Крайно салдо</div>
+                        <div class="fs-5 fw-bold">
+                            <?= number_format((float)$endBalance, 2) ?> €
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
         <!-- TOP DEBTORS -->
         <div class="card shadow border-0 mt-4">
 
@@ -211,10 +265,6 @@ usort($sorted, function ($a, $b) {
             </div>
         </div>
 
-        <!-- CHART -->
-        <div class="mt-4">
-            <canvas id="chart" style="height:400px"></canvas>
-        </div>
 
     </div>
 </div>

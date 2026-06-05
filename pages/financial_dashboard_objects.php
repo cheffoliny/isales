@@ -94,7 +94,7 @@ $totalPayments = 0.0;
 
 while ($r = $res->fetch_assoc()) {
 
-    $idObject = (int)$r['id_object'];
+    $idObject = $r['id_object'];
 
     $creates  = (float)($r['creates_sum'] ?? 0);
     $payments = (float)($r['payments_sum'] ?? 0);

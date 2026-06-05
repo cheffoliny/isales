@@ -11,18 +11,11 @@ if (empty($_SESSION['user_id'])) {
     exit;
 }
 
-/*
-|--------------------------------------------------------------------------
-| DB
-|--------------------------------------------------------------------------
-*/
-
-$db_storage = db_connect('storage');
-$db = db_connect('sod');
+$db = db_connect('storage');
 
 /*
 |--------------------------------------------------------------------------
-| FILTERS
+| ФИЛТРИ
 |--------------------------------------------------------------------------
 */
 
@@ -49,68 +42,78 @@ if (!in_array($period, [30, 90, 180], true)) {
 
 /*
 |--------------------------------------------------------------------------
-| QUERY - DAILY TRANSACTIONS
+| НАЧАЛНО САЛДО (преди периода)
+|--------------------------------------------------------------------------
+*/
+
+$openingBalance = 0.0;
+
+$stmtOpen = $db->prepare("
+    SELECT COALESCE(SUM(
+        CASE
+            WHEN transaction_type = 'create' THEN amount
+            WHEN transaction_type = 'payment' THEN -amount
+            ELSE 0
+        END
+    ), 0) AS balance
+    FROM objects_obligation_transactions
+    WHERE transaction_date < ?
+");
+
+$stmtOpen->bind_param('s', $monthStart);
+$stmtOpen->execute();
+$resOpen = $stmtOpen->get_result();
+$openingBalance = (float)($resOpen->fetch_assoc()['balance'] ?? 0);
+$stmtOpen->close();
+
+/*
+|--------------------------------------------------------------------------
+| ДВИЖЕНИЕ ЗА ПЕРИОДА
 |--------------------------------------------------------------------------
 */
 
 $sql = "
     SELECT
         DATE(transaction_date) AS tx_date,
-        SUM(CASE WHEN transaction_type = 'payment' THEN amount ELSE 0 END) AS payments,
-        SUM(CASE WHEN transaction_type != 'payment' THEN amount ELSE 0 END) AS charges
+
+        SUM(CASE WHEN transaction_type = 'create' THEN amount ELSE 0 END) AS creates,
+        SUM(CASE WHEN transaction_type = 'payment' THEN amount ELSE 0 END) AS payments
+
     FROM objects_obligation_transactions
-    WHERE 1=1
-";
-
-if ($mode === 'month') {
-    $sql .= " AND transaction_date >= ? AND transaction_date < ? ";
-} else {
-    $sql .= " AND transaction_date >= CURDATE() - INTERVAL ? DAY ";
-}
-
-$sql .= "
+    WHERE transaction_date >= ? AND transaction_date < ?
     GROUP BY tx_date
     ORDER BY tx_date ASC
 ";
 
-$stmt = $db_storage->prepare($sql);
-
-if (!$stmt) {
-    die("SQL Error: " . $db_storage->error);
-}
-
-if ($mode === 'month') {
-    $stmt->bind_param('ss', $monthStart, $monthEnd);
-} else {
-    $stmt->bind_param('i', $period);
-}
-
+$stmt = $db->prepare($sql);
+$stmt->bind_param('ss', $monthStart, $monthEnd);
 $stmt->execute();
 $result = $stmt->get_result();
 
 /*
 |--------------------------------------------------------------------------
-| DATA ARRAYS
+| ДАННИ
 |--------------------------------------------------------------------------
 */
 
 $rows = [];
 
 $chartLabels = [];
+$chartCreates = [];
 $chartPayments = [];
-$chartCharges = [];
 $chartBalance = [];
 
+$totalCreates = 0;
 $totalPayments = 0;
-$totalCharges = 0;
-$totalBalance = 0;
+
+$runningBalance = $openingBalance;
 
 $bestDay = 0;
 $bestDate = null;
 
 /*
 |--------------------------------------------------------------------------
-| PROCESS
+| ОБРАБОТКА
 |--------------------------------------------------------------------------
 */
 
@@ -118,33 +121,35 @@ while ($row = $result->fetch_assoc()) {
 
     $date = $row['tx_date'];
 
+    $creates  = (float)$row['creates'];
     $payments = (float)$row['payments'];
-    $charges  = (float)$row['charges'];
 
-    $balance = $payments - $charges;
+    $netChange = $creates - $payments;
+    $runningBalance += $netChange;
 
     $rows[] = [
         'date' => $date,
+        'creates' => $creates,
         'payments' => $payments,
-        'charges' => $charges,
-        'balance' => $balance
+        'net' => $netChange,
+        'balance' => $runningBalance
     ];
 
     $chartLabels[] = date('d.m', strtotime($date));
+    $chartCreates[] = $creates;
     $chartPayments[] = $payments;
-    $chartCharges[] = $charges;
-    $chartBalance[] = $balance;
+    $chartBalance[] = $runningBalance;
 
+    $totalCreates += $creates;
     $totalPayments += $payments;
-    $totalCharges += $charges;
-    $totalBalance += $balance;
 
-    if ($balance > $bestDay) {
-        $bestDay = $balance;
+    if ($runningBalance > $bestDay) {
+        $bestDay = $runningBalance;
         $bestDate = $date;
     }
 }
 
+$closingBalance = $runningBalance;
 ?>
 
 <div class="card shadow border-0 mb-4">
@@ -154,10 +159,11 @@ while ($row = $result->fetch_assoc()) {
 
         <div>
             <h5 class="mb-0 text-primary">
-                <i class="fa-solid fa-coins"></i>
-                Financial Dashboard
+                📊 Финансова справка (V6 ERP)
             </h5>
-            <div class="small text-muted">Плащания, задължения и нетен поток</div>
+            <div class="small text-muted">
+                Анализ на задължения, разплащания и общо вземане
+            </div>
         </div>
 
     </div>
@@ -171,41 +177,25 @@ while ($row = $result->fetch_assoc()) {
 
             <div class="row g-3 align-items-end">
 
-                <!-- MONTH -->
-                <div class="col-12 col-md-4">
-
+                <div class="col-md-4">
                     <label class="form-label small">Месец</label>
-
-                    <input type="month"
-                           name="month"
+                    <input type="month" name="month"
                            value="<?= htmlspecialchars($selectedMonth) ?>"
                            class="form-control">
-
                 </div>
 
-                <!-- PERIOD -->
-                <div class="col-12 col-md-4">
-
+                <div class="col-md-4">
                     <label class="form-label small">Период</label>
-
                     <select name="period" class="form-select">
-
                         <option value="30" <?= $period === 30 ? 'selected' : '' ?>>30 дни</option>
                         <option value="90" <?= $period === 90 ? 'selected' : '' ?>>90 дни</option>
                         <option value="180" <?= $period === 180 ? 'selected' : '' ?>>180 дни</option>
-
                     </select>
-
                 </div>
 
-                <div class="col-12 col-md-4">
-
+                <div class="col-md-4">
                     <input type="hidden" name="mode" value="<?= htmlspecialchars($mode) ?>">
-
-                    <button class="btn btn-primary w-100">
-                        Филтрирай
-                    </button>
-
+                    <button class="btn btn-primary w-100">Филтрирай</button>
                 </div>
 
             </div>
@@ -215,29 +205,38 @@ while ($row = $result->fetch_assoc()) {
         <!-- KPI -->
         <div class="row g-3 mb-4">
 
-            <div class="col-md-4">
-                <div class="card bg-primary text-white shadow-sm">
+            <div class="col-md-3">
+                <div class="card bg-secondary text-white">
                     <div class="card-body">
-                        <div class="small">Плащания</div>
-                        <div class="fs-5 fw-bold"><?= number_format($totalPayments, 2) ?> €</div>
+                        <div class="small">Начално салдо</div>
+                        <div class="fs-5 fw-bold"><?= number_format($openingBalance, 2) ?> €</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card bg-danger text-white shadow-sm">
+            <div class="col-md-3">
+                <div class="card bg-danger text-white">
                     <div class="card-body">
-                        <div class="small">Задължения</div>
-                        <div class="fs-5 fw-bold"><?= number_format($totalCharges, 2) ?> €</div>
+                        <div class="small">Нови задължения</div>
+                        <div class="fs-5 fw-bold">-<?= number_format($totalCreates, 2) ?> €</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="card bg-success text-white shadow-sm">
+            <div class="col-md-3">
+                <div class="card bg-success text-white">
                     <div class="card-body">
-                        <div class="small">Баланс</div>
-                        <div class="fs-5 fw-bold"><?= number_format($totalBalance, 2) ?> €</div>
+                        <div class="small">Разплащания</div>
+                        <div class="fs-5 fw-bold">+<?= number_format($totalPayments, 2) ?> €</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="small">Крайно салдо</div>
+                        <div class="fs-5 fw-bold"><?= number_format($closingBalance, 2) ?> €</div>
                     </div>
                 </div>
             </div>
@@ -250,15 +249,14 @@ while ($row = $result->fetch_assoc()) {
             <div class="card shadow-sm border-0 mb-4">
 
                 <div class="card-header">
-                    <strong>Динамика</strong>
+                    <strong>Графика – ERP анализ</strong>
                     <span class="float-end small text-muted">
-                    Най-добър ден:
-                    <?= $bestDate ? date('d.m.Y', strtotime($bestDate)) : '-' ?>
+                    Най-високо салдо: <?= $bestDate ? date('d.m.Y', strtotime($bestDate)) : '-' ?>
                 </span>
                 </div>
 
                 <div class="card-body">
-                    <div style="height:400px">
+                    <div style="height:420px">
                         <canvas id="financeChart"></canvas>
                     </div>
                 </div>
@@ -269,7 +267,7 @@ while ($row = $result->fetch_assoc()) {
             <div class="card shadow-sm border-0">
 
                 <div class="card-header">
-                    <strong>Детайл</strong>
+                    <strong>Детайлен отчет</strong>
                 </div>
 
                 <div class="table-responsive">
@@ -279,9 +277,10 @@ while ($row = $result->fetch_assoc()) {
                         <thead>
                         <tr>
                             <th>Дата</th>
-                            <th class="text-end">Плащания</th>
-                            <th class="text-end">Задължения</th>
-                            <th class="text-end">Баланс</th>
+                            <th class="text-end">Нови задължения</th>
+                            <th class="text-end">Разплащания</th>
+                            <th class="text-end">Промяна</th>
+                            <th class="text-end">Салдо</th>
                         </tr>
                         </thead>
 
@@ -292,15 +291,19 @@ while ($row = $result->fetch_assoc()) {
                             <tr>
                                 <td><?= date('d.m.Y', strtotime($r['date'])) ?></td>
 
-                                <td class="text-end text-primary fw-bold">
-                                    <?= number_format($r['payments'], 2) ?>
-                                </td>
-
                                 <td class="text-end text-danger">
-                                    <?= number_format($r['charges'], 2) ?>
+                                    -<?= number_format($r['creates'], 2) ?>
                                 </td>
 
-                                <td class="text-end fw-bold <?= $r['balance'] >= 0 ? 'text-success' : 'text-danger' ?>">
+                                <td class="text-end text-success">
+                                    +<?= number_format($r['payments'], 2) ?>
+                                </td>
+
+                                <td class="text-end fw-bold">
+                                    <?= number_format($r['net'], 2) ?>
+                                </td>
+
+                                <td class="text-end fw-bold">
                                     <?= number_format($r['balance'], 2) ?>
                                 </td>
                             </tr>
@@ -332,44 +335,39 @@ while ($row = $result->fetch_assoc()) {
 <script>
 
     const labels = <?= json_encode($chartLabels) ?>;
+    const creates = <?= json_encode($chartCreates) ?>;
     const payments = <?= json_encode($chartPayments) ?>;
-    const charges = <?= json_encode($chartCharges) ?>;
     const balance = <?= json_encode($chartBalance) ?>;
 
-    const ctx = document.getElementById('financeChart');
-
-    if (ctx) {
-
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Плащания',
-                        data: payments,
-                        borderColor: '#0d6efd',
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Задължения',
-                        data: charges,
-                        borderColor: '#dc3545',
-                        tension: 0.3
-                    },
-                    {
-                        label: 'Баланс',
-                        data: balance,
-                        borderColor: '#198754',
-                        tension: 0.3
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
+    new Chart(document.getElementById('financeChart'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Нови задължения',
+                    data: creates,
+                    borderColor: '#dc3545',
+                    tension: 0.3
+                },
+                {
+                    label: 'Разплащания',
+                    data: payments,
+                    borderColor: '#198754',
+                    tension: 0.3
+                },
+                {
+                    label: 'Общо вземане',
+                    data: balance,
+                    borderColor: '#0d6efd',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    });
 
 </script>

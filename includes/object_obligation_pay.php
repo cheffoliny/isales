@@ -115,7 +115,7 @@ try {
 
         $stmt->close();
 
-        $currentBalance = getObjectDebtBalance( $db, $idObject );
+        $currentBalance = getLastObjectBalanceForUpdate($db, $idObject);
         $newBalance = $currentBalance - $amount;
 
         $stmtTx = $db->prepare("

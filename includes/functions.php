@@ -242,7 +242,7 @@ function normalizeDateToMysql(string $dateInput): array
 }
 
 
-function getObjectDebtBalance(mysqli $db, int $idObject): float
+function getLastObjectBalanceForUpdate(mysqli $db, int $idObject): float
 {
     $stmt = $db->prepare("
         SELECT balance_after
@@ -250,6 +250,7 @@ function getObjectDebtBalance(mysqli $db, int $idObject): float
         WHERE id_object = ?
         ORDER BY transaction_date DESC, id DESC
         LIMIT 1
+        FOR UPDATE
     ");
 
     $stmt->bind_param('i', $idObject);
@@ -260,9 +261,7 @@ function getObjectDebtBalance(mysqli $db, int $idObject): float
 
     $stmt->close();
 
-    return $row
-        ? (float)$row['balance_after']
-        : 0.0;
+    return $row ? (float)$row['balance_after'] : 0.0;
 }
 
 ?>

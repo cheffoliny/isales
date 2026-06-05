@@ -124,7 +124,7 @@ $ok = $stmt->execute();
 $obligationId = $stmt->insert_id;
 if ($ok) {
 
-    $currentBalance = getObjectDebtBalance( $db, $idObject );
+    $currentBalance = getLastObjectBalanceForUpdate($db, $idObject);
     $newBalance = $currentBalance + $totalSum;
 
     $stmtTx = $db->prepare("
